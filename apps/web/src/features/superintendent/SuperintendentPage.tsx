@@ -116,7 +116,7 @@ export default function SuperintendentPage() {
                       open document ↗
                     </a>{" "}
                     <span className="ml-1 rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-bold text-orange-800">
-                      AI-DRAFTED — PENDING LAWYER REVIEW ({o.llmSource})
+                      Lawyer review pending
                     </span>
                   </span>
                 ) : (
@@ -209,7 +209,8 @@ export default function SuperintendentPage() {
             </table>
           </div>
           <p className="text-xs text-slate-400">
-            Drafted applications appear on each prisoner profile under “Application progress” with an AI-drafted badge;
+            Drafted applications appear on each prisoner profile under "Application progress" with a
+            lawyer-review-pending warning;
             they must be marked reviewed by a DLSA lawyer or superintendent before they can be filed.
             {review.isPending ? " Saving review…" : ""}
           </p>

@@ -1,4 +1,4 @@
-import path from "node:path";
+﻿import path from "node:path";
 import fs from "node:fs";
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -19,6 +19,13 @@ import {
   trainingProgramsRouter,
 } from "./routes/prisoners.routes.js";
 import { superintendentRouter } from "./routes/superintendent.routes.js";
+import { courtJailRouter } from "./routes/court.routes.js";
+import { applicationCourtRouter } from "./routes/application-court.routes.js";
+// PARKED: import { verifyRouter } from "./routes/verify.routes.js";
+import {
+  overcrowdingJailRouter,
+  overcrowdingRollupRouter,
+} from "./routes/overcrowding.routes.js";
 
 const uploadsDir = path.resolve(process.cwd(), process.cwd().endsWith("apps\\api") || process.cwd().endsWith("apps/api") ? "../../uploads" : "uploads");
 fs.mkdirSync(uploadsDir, { recursive: true });
@@ -48,6 +55,11 @@ export function createApp() {
   app.use("/api/v1/jails", jailsRouter);
   app.use("/api/v1/jails/:jailId/prisoners", prisonersNestedRouter);
   app.use("/api/v1/jails/:jailId/superintendent", superintendentRouter);
+  app.use("/api/v1/jails/:jailId", courtJailRouter);
+  app.use("/api/v1/jails/:jailId/overcrowding", overcrowdingJailRouter);
+  app.use("/api/v1/overcrowding", overcrowdingRollupRouter);
+  app.use("/api/v1/applications", applicationCourtRouter);
+  // PARKED: app.use("/api/v1/verify", verifyRouter);
   app.use("/api/v1/prisoners", prisonersRouter);
   app.use("/api/v1/enrollments", enrollmentsRouter);
   app.use("/api/v1/training-programs", trainingProgramsRouter);
@@ -60,3 +72,4 @@ export function createApp() {
   logger.debug(`Serving uploads from ${uploadsDir}`);
   return app;
 }
+

@@ -1,4 +1,4 @@
-import { Router } from "express";
+﻿import { Router } from "express";
 import multer from "multer";
 import path from "node:path";
 import crypto from "node:crypto";
@@ -35,7 +35,9 @@ import {
   advanceStage,
   createManualApplication,
   markReviewed,
+  toApplicationDto,
 } from "../services/applications.service.js";
+import { renderApplicationStatusSheet } from "../services/superintendent.service.js";
 
 export const prisonersRouter = Router();
 export const prisonersNestedRouter = Router({ mergeParams: true });
@@ -185,6 +187,18 @@ prisonersRouter.get(
   }),
 );
 
+prisonersRouter.delete(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    const { membership } = await loadPrisonerForUser(req.user!, req.params.id!);
+    if (![Role.SuperAdmin as Role, Role.JailSuperintendent].includes(membership.roleAtJail as Role)) {
+      throw ApiError.forbidden("Only superintendents can delete prisoner records");
+    }
+    await prisma.prisoner.delete({ where: { id: req.params.id } });
+    res.status(204).send();
+  }),
+);
+
 prisonersRouter.patch(
   "/:id/case/:caseId",
   asyncHandler(async (req, res) => {
@@ -248,7 +262,7 @@ prisonersRouter.post(
       throw ApiError.forbidden("Only staff can open applications");
     }
     const { type } = applicationTypeSchema.parse(req.body ?? {});
-    res.status(201).json({ data: await createManualApplication(req.params.id!, type) });
+    res.status(201).json({ data: await createManualApplication(req.params.id!, type, req.user!.id) });
   }),
 );
 
@@ -314,6 +328,33 @@ trainingProgramsRouter.get(
 export const applicationActionsRouter = Router();
 applicationActionsRouter.use(requireAuth);
 
+applicationActionsRouter.get(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    const app = await prisma.application.findUnique({
+      where: { id: req.params.id },
+      include: { reviewer: { select: { name: true } } },
+    });
+    if (!app) throw ApiError.notFound("Application not found");
+    await loadPrisonerForUser(req.user!, app.prisonerId);
+    res.json({ data: toApplicationDto(app) });
+  }),
+);
+
+applicationActionsRouter.get(
+  "/:id/document",
+  asyncHandler(async (req, res) => {
+    const app = await prisma.application.findUnique({
+      where: { id: req.params.id },
+      select: { prisonerId: true },
+    });
+    if (!app) throw ApiError.notFound("Application not found");
+    await loadPrisonerForUser(req.user!, app.prisonerId);
+    const html = await renderApplicationStatusSheet(req.params.id!);
+    res.type("html").send(html);
+  }),
+);
+
 applicationActionsRouter.patch(
   "/:id/stage",
   asyncHandler(async (req, res) => {
@@ -327,7 +368,7 @@ applicationActionsRouter.patch(
       throw ApiError.forbidden("Your role cannot advance application stages");
     }
     const body = z.object({ stage: z.nativeEnum(ApplicationStage) }).parse(req.body);
-    res.json({ data: await advanceStage(req.params.id!, body.stage) });
+    res.json({ data: await advanceStage(req.params.id!, body.stage, req.user!.id) });
   }),
 );
 
@@ -346,3 +387,4 @@ applicationActionsRouter.post(
     res.json({ data: await markReviewed(req.params.id!, req.user!.id) });
   }),
 );
+

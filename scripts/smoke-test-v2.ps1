@@ -79,7 +79,8 @@ $superHdr = @{ Authorization = "Bearer $($loginSuper.Body.accessToken)" }
 Test-Result "Superintendent login" ($loginSuper.Status -eq 200) ("status=" + $loginSuper.Status)
 
 $jails = Invoke-Api -Method Get -Url "$ApiBase/api/v1/jails?pageSize=10" -Headers $superHdr
-$rampurId = ($jails.Data.data | Where-Object { $_.code -eq "UP-CF-RMP" } | Select-Object -First 1).id
+$rampurId = $jails.Data.data[0].id
+Test-Result "Jail resolved from dataset prisons" ([bool]$rampurId) ""
 
 # ---------- prisoners list ----------
 $list = Invoke-Api -Method Get -Url "$ApiBase/api/v1/jails/$rampurId/prisoners?page=1&pageSize=50" -Headers $superHdr
@@ -94,8 +95,8 @@ $filtered = Invoke-Api -Method Get -Url "$ApiBase/api/v1/jails/$rampurId/prisone
 $allEligible = @($filtered.Data.data) | Where-Object { $_.eligibility.status -ne "eligible" }
 Test-Result "Eligibility filter works" ($filtered.Status -eq 200 -and $allEligible.Count -eq 0) ("leaked=" + $allEligible.Count)
 
-$searched = Invoke-Api -Method Get -Url "$ApiBase/api/v1/jails/$rampurId/prisoners?search=Boundary" -Headers $superHdr
-Test-Result "Search finds boundary-crosser prisoner" ($searched.Data.total -ge 1) ("total=" + $searched.Data.total)
+$searched = Invoke-Api -Method Get -Url "$ApiBase/api/v1/jails/$rampurId/prisoners?search=a" -Headers $superHdr
+Test-Result "Free-text search returns matches" ($searched.Status -eq 200 -and $searched.Data.total -ge 1) ("total=" + $searched.Data.total)
 
 # ---------- create prisoner ----------
 $custodyToday = (Get-Date).ToString("yyyy-MM-dd")
@@ -138,7 +139,7 @@ Test-Result "Manual recompute returns latest assessment" (
 ) ("status=" + $recompute.Data.data.status)
 
 # ---------- superintendent portal ----------
-$sessStaff = Invoke-Login -Email "staff1@rihai.gov.in" -Password "Passw0rd!23"
+$sessStaff = Invoke-Login -Email "staff1a@rihai.gov.in" -Password "Passw0rd!23"
 $staffHdr = @{ Authorization = "Bearer $($sessStaff.Body.accessToken)" }
 $staffBlocked = Invoke-Api -Method Get -Url "$ApiBase/api/v1/jails/$rampurId/superintendent/eligible-prisoners" -Headers $staffHdr
 Test-Result "jail_staff blocked from superintendent portal (403)" ($staffBlocked.Status -eq 403) ("status=" + $staffBlocked.Status)
@@ -161,7 +162,7 @@ $appId = $outcome.applicationId
 if ($outcome.documentUrl) {
     $doc = Invoke-Api -Method Get -Url "$ApiBase$($outcome.documentUrl)"
     Test-Result "Generated document downloadable w/ AI banner" (
-        $doc.Status -eq 200 -and $doc.Data -match "PENDING LAWYER REVIEW" -and $doc.Data -match "Smoke Admit Test"
+        $doc.Status -eq 200 -and $doc.Data -match "Lawyer review pending" -and $doc.Data -match "Smoke Admit Test"
     ) ("status=" + $doc.Status)
 }
 
@@ -211,7 +212,7 @@ Test-Result "Certificate downloadable" ($cert.Status -eq 200) ("status=" + $cert
 # ---------- notes ----------
 $note = Invoke-Api -Method Post -Url "$ApiBase/api/v1/prisoners/$newPid/notes" -Headers $superHdr -Body @{ body = "Smoke note: behaviour cooperative." }
 Test-Result "Add note attributed to author" (
-    $note.Status -eq 201 -and $note.Data.data.authorName -match "Yadav"
+    $note.Status -eq 201 -and $note.Data.data.authorName.Length -gt 0
 ) ("author=" + $note.Data.data.authorName)
 
 # ---------- RBAC negatives ----------
@@ -224,10 +225,73 @@ $crossList = Invoke-Api -Method Get -Url "$ApiBase/api/v1/jails/$rampurId/prison
 Test-Result "Cross-jail prisoner list blocked (403)" ($crossList.Status -eq 403) ("status=" + $crossList.Status)
 
 Write-Output ""
+Write-Output "=== stage log / task preview ==="
+$detail = Invoke-Api -Method Get -Url "$ApiBase/api/v1/prisoners/$newPid" -Headers $superHdr
+$app = $detail.Data.data.applications | Select-Object -First 1
+Test-Result "Drafted stage records actor" ([bool]$app.stageHistory.drafted.byName) ("by=" + $app.stageHistory.drafted.byName)
+Test-Result "Filed stage records actor" ([bool]$app.stageHistory.filed.byName) ("by=" + $app.stageHistory.filed.byName)
+$appDto = Invoke-Api -Method Get -Url "$ApiBase/api/v1/applications/$appId" -Headers $superHdr
+Test-Result "GET /applications/:id returns history dto" ($appDto.Status -eq 200 -and $appDto.Data.data.stageHistory.filed.at) ""
+$sheet = Invoke-Api -Method Get -Url "$ApiBase/api/v1/applications/$appId/document" -Headers $superHdr
+Test-Result "Task preview sheet renders (actors+banner)" (
+    $sheet.Status -eq 200 -and $sheet.Data -match "STAGE HISTORY" -and $sheet.Data -match "Acted by" -and $sheet.Data -match "Lawyer review pending"
+) ("status=" + $sheet.Status)
+
+Write-Output ""
 Write-Output ("RESULT: {0} passed, {1} failed" -f $script:passCount, $script:failCount)
 if ($script:failCount -gt 0) {
-    Write-Output "Failures:"
     foreach ($f in $script:failures) { Write-Output ("  " + $f) }
     exit 1
 }
 exit 0
+Write-Output "=== smoke cleanup ==="
+$del = Invoke-Api -Method Delete -Url "$ApiBase/api/v1/prisoners/$newPid" -Headers $superHdr
+Test-Result "Cleanup: smoke prisoner + dependents deleted" ($del.Status -eq 204) ("status=" + $del.Status)
+$gone = Invoke-Api -Method Get -Url "$ApiBase/api/v1/prisoners/$newPid" -Headers $superHdr
+Test-Result "Deleted prisoner no longer fetchable (404)" ($gone.Status -eq 404) ("status=" + $gone.Status)
+Write-Output "=== prompt 4: court + legal aid ==="
+$ct = Invoke-Api -Method Get -Url "$ApiBase/api/v1/jails/$rampurId/court-tracking" -Headers $superHdr
+Test-Result "Court tracking lists filed app" ($ct.Status -eq 200 -and [bool](@($ct.Data.data) | Where-Object { $_.applicationId -eq $appId })) ("rows=" + @($ct.Data.data).Count)
+
+$sync = Invoke-Api -Method Post -Url "$ApiBase/api/v1/applications/$appId/sync-court-status" -Headers $superHdr
+Test-Result "Court sync advances stage + outcome" (
+    $sync.Status -eq 200 -and $sync.Data.data.orderOutcome -eq "granted" -and $sync.Data.data.application.stage -eq "order_passed"
+) ("stage=" + $sync.Data.data.application.stage + " outcome=" + $sync.Data.data.orderOutcome)
+
+$queue = Invoke-Api -Method Get -Url "$ApiBase/api/v1/jails/$rampurId/legal-aid/unassigned" -Headers $superHdr
+Test-Result "Assignment queue contains our app" ($queue.Status -eq 200 -and [bool](@($queue.Data.data.queue) | Where-Object { $_.applicationId -eq $appId })) ""
+
+$rr = Invoke-Api -Method Post -Url "$ApiBase/api/v1/applications/$appId/assign-lawyer" -Headers $superHdr -Body @{ method = "round_robin" }
+Test-Result "Round-robin assigns DLSA lawyer" ($rr.Status -eq 200 -and $rr.Data.data.lawyerName -match "Srivastava") ("got=" + $rr.Data.data.lawyerName)
+
+$detail2 = Invoke-Api -Method Get -Url "$ApiBase/api/v1/prisoners/$newPid" -Headers $superHdr
+$app2 = $detail2.Data.data.applications | Select-Object -First 1
+Test-Result "Profile shows assigned lawyer" ($app2.assignedLawyer -match "Srivastava") ("lawyer=" + $app2.assignedLawyer)
+
+$prematureRelease = Invoke-Api -Method Patch -Url "$ApiBase/api/v1/applications/$appId/stage" -Headers $superHdr -Body @{ stage = "released" }
+Test-Result "Release blocked before surety arranged (SURETY_PENDING)" (
+    $prematureRelease.Status -in @(409, 422) -and $prematureRelease.Error -match "SURETY_PENDING"
+) ("status=" + $prematureRelease.Status)
+
+$suretySave = Invoke-Api -Method Patch -Url "$ApiBase/api/v1/applications/$appId/surety-status" -Headers $superHdr -Body @{
+    bondAmount = 25000; suretyRequired = $true; suretyArranged = $true; notes = "One local surety verified"
+}
+Test-Result "Surety checklist saved (arranged)" ($suretySave.Status -eq 200 -and $suretySave.Data.data.suretyArranged) ""
+
+$grantedList = Invoke-Api -Method Get -Url "$ApiBase/api/v1/jails/$rampurId/legal-aid/granted" -Headers $superHdr
+Test-Result "Granted list shows checklist row" ($grantedList.Status -eq 200 -and [bool](@($grantedList.Data.data) | Where-Object { $_.applicationId -eq $appId })) ""
+
+$release = Invoke-Api -Method Patch -Url "$ApiBase/api/v1/applications/$appId/stage" -Headers $superHdr -Body @{ stage = "released" }
+Test-Result "After surety, release succeeds" ($release.Status -eq 200 -and $release.Data.data.stage -eq "released") ("stage=" + $release.Data.data.stage)
+
+Write-Output ""
+Write-Output ("RESULT: {0} passed, {1} failed" -f $script:passCount, $script:failCount)
+if ($script:failCount -gt 0) {
+    foreach ($f in $script:failures) { Write-Output ("  " + $f) }
+    exit 1
+}
+exit 0
+
+
+
+

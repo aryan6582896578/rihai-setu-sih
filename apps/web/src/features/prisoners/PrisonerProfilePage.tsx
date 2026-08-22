@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from "react";
+﻿import { useRef, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -11,7 +11,7 @@ import {
 import { api, extractApiError } from "../../lib/api";
 import { formatDate, formatDateTime, STAGE_LABELS, eligibilityBadge } from "../../lib/format";
 import { useAuthStore } from "../../state/authStore";
-import { ErrorBanner, Spinner } from "../../components/ui";
+import { EmptyState, ErrorBanner, Spinner } from "../../components/ui";
 
 const EDITOR_ROLES = ["super_admin", "jail_superintendent", "jail_staff"];
 const ADVANCE_ROLES = [...EDITOR_ROLES, "dlsa_lawyer"];
@@ -410,6 +410,25 @@ function ApplicationProgressCard({ detail, onChanged }: { detail: PrisonerDetail
     onError: (e) => setError(extractApiError(e).message),
   });
 
+  const [previewBusy, setPreviewBusy] = useState(false);
+  const openPreview = async (applicationId: string) => {
+    setPreviewBusy(true);
+    try {
+      const res = await api.get(`/applications/${applicationId}/document`, {
+        responseType: "text",
+        transformResponse: [(d) => d],
+      });
+      const blob = new Blob([res.data as string], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (e) {
+      setError(extractApiError(e).message);
+    } finally {
+      setPreviewBusy(false);
+    }
+  };
+
   const canAdvance = !!user && ADVANCE_ROLES.includes(user.role);
   const canReview = !!user && REVIEW_ROLES.includes(user.role);
 
@@ -437,7 +456,7 @@ function ApplicationProgressCard({ detail, onChanged }: { detail: PrisonerDetail
         <>
           <ol className="mt-4 flex flex-col gap-0 sm:flex-row sm:items-start">
             {STAGE_ORDER.map((stage, i) => {
-              const date = active.stageHistory?.[stage];
+              const date = active.stageHistory?.[stage]?.at;
               const currentIdx = STAGE_ORDER.indexOf(active.stage);
               const done = i < currentIdx || (!!date && i === currentIdx);
               const isCurrent = i === currentIdx;
@@ -476,6 +495,13 @@ function ApplicationProgressCard({ detail, onChanged }: { detail: PrisonerDetail
               </span>
             )}
             <div className="ml-auto flex flex-wrap gap-2">
+              <button
+                onClick={() => void openPreview(active.id)}
+                disabled={previewBusy}
+                className="rounded-md border border-indigo-300 px-3 py-1.5 text-xs font-semibold text-indigo-800 hover:bg-indigo-50 disabled:opacity-60"
+              >
+                {previewBusy ? "Opening…" : "Task preview ↗"}
+              </button>
               {active.generatedDocumentUrl && (
                 <a
                   href={apiOriginUrl(active.generatedDocumentUrl)!}
@@ -483,7 +509,7 @@ function ApplicationProgressCard({ detail, onChanged }: { detail: PrisonerDetail
                   rel="noreferrer"
                   className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
                 >
-                  View document ↗
+                  Formal draft document ↗
                 </a>
               )}
               {canReview && !active.reviewedByName &&
@@ -508,6 +534,46 @@ function ApplicationProgressCard({ detail, onChanged }: { detail: PrisonerDetail
               )}
             </div>
           </div>
+          <div className="mt-4 border-t border-slate-100 pt-3">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Stage log — who did what</p>
+            <ul className="space-y-1.5">
+              {STAGE_ORDER.map((stage) => {
+                const h = active.stageHistory?.[stage];
+                const currentIdx = STAGE_ORDER.indexOf(active.stage);
+                const idx = STAGE_ORDER.indexOf(stage);
+                const isCurrent = idx === currentIdx;
+                const done = !!h || idx < currentIdx;
+                return (
+                  <li
+                    key={stage}
+                    className={`flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 rounded-lg px-3 py-2 text-sm ${
+                      isCurrent ? "bg-blue-50/70" : done ? "bg-emerald-50/40" : "bg-slate-50/60"
+                    }`}
+                  >
+                    <span className={`font-medium ${isCurrent ? "text-blue-900" : done ? "text-emerald-800" : "text-slate-400"}`}>
+                      {done && !isCurrent ? "✓ " : isCurrent ? "● " : "●‹ "}
+                      {STAGE_LABELS[stage]}
+                      {isCurrent && <span className="ml-1 text-[10px] font-bold uppercase text-blue-700">current</span>}
+                    </span>
+                    <span className="flex flex-wrap items-center gap-x-3 text-xs text-slate-500">
+                      {h?.byName && (
+                        <span>
+                          by <strong className="font-semibold text-slate-700">{h.byName}</strong>
+                        </span>
+                      )}
+                      {h?.note && <span className="italic text-slate-400">{h.note}</span>}
+                      {h ? (
+                        <span>{formatDateTime(h.at)}</span>
+                      ) : (
+                        <span className="text-slate-300">not yet reached</span>
+                      )}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+
           {nextStage === ApplicationStage.Filed && !active.reviewedByName && (
             <p className="mt-2 text-xs text-orange-700">
               Filing is blocked until a DLSA lawyer or superintendent marks this draft reviewed.
@@ -559,8 +625,13 @@ function SkillPassportPanel({ detail, canEdit, onChanged }: { detail: PrisonerDe
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm" id="skills">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-semibold text-slate-900">Skill Passport</h2>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="font-semibold text-slate-900">Skill Passport</h2>
+          <p className="text-xs text-slate-400">
+            Vocational training record that follows the individual after release
+          </p>
+        </div>
         {canEdit && programsQuery.data && programsQuery.data.length > 0 && (
           <div className="flex gap-2">
             <select value={programId} onChange={(e) => setProgramId(e.target.value)} className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs">
@@ -576,75 +647,148 @@ function SkillPassportPanel({ detail, canEdit, onChanged }: { detail: PrisonerDe
               disabled={!programId || enroll.isPending}
               className="rounded-md bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-800 disabled:opacity-40"
             >
-              Enroll
+              + Enroll
             </button>
           </div>
         )}
       </div>
+
+      {detail.enrollments.length > 0 && (
+        <SkillSummary enrollments={detail.enrollments} />
+      )}
+
       {error && <div className="mt-2"><ErrorBanner message={error} /></div>}
 
       {detail.enrollments.length === 0 ? (
-        <p className="mt-2 text-sm text-slate-500">No training enrollments yet.</p>
+        <EmptyState
+          title="No training enrollments yet"
+          body={canEdit ? "Enroll this person in a program to start building their passport." : "Enrollments will appear here once staff add them."}
+        />
       ) : (
-        <ul className="mt-3 divide-y divide-slate-100">
+        <div className="mt-4 grid gap-3 lg:grid-cols-2">
           {detail.enrollments.map((e) => (
-            <li key={e.id} className="py-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <p className="text-sm font-medium text-slate-800">{e.program.name}</p>
-                  <p className="text-xs text-slate-400">{e.program.category}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                    e.status === "completed"
-                      ? "bg-emerald-100 text-emerald-800"
-                      : e.status === "in_progress"
-                        ? "bg-blue-100 text-blue-800"
-                        : "bg-slate-100 text-slate-600"
-                  }`}>
-                    {e.status.replace("_", " ")}
-                  </span>
-                  {e.certificateUrl && (
-                    <a href={apiOriginUrl(e.certificateUrl)!} target="_blank" rel="noreferrer" className="rounded-md border border-emerald-300 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-50">
-                      Certificate ↓
-                    </a>
-                  )}
-                </div>
-              </div>
-              <div className="mt-2 flex items-center gap-3">
-                <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
-                  <div className="h-full rounded-full bg-blue-600" style={{ width: `${e.progressPct}%` }} />
-                </div>
-                <span className="w-10 text-right text-xs font-semibold text-slate-600">{e.progressPct}%</span>
-                {canEdit && e.status !== "completed" && (
-                  <>
-                    <input
-                      type="number"
-                      min={0}
-                      max={100}
-                      defaultValue={e.progressPct}
-                      onBlur={(ev) => {
-                        const v = Number(ev.target.value);
-                        if (!Number.isNaN(v) && v !== e.progressPct) update.mutate({ id: e.id, progressPct: v });
-                      }}
-                      className="w-16 rounded-md border border-slate-300 px-2 py-1 text-xs"
-                    />
-                    <button
-                      onClick={() => update.mutate({ id: e.id, markComplete: true })}
-                      disabled={update.isPending}
-                      className="rounded-md border border-emerald-300 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-50 disabled:opacity-50"
-                    >
-                      Mark complete
-                    </button>
-                  </>
-                )}
-              </div>
-            </li>
+            <SkillCard key={e.id} enrollment={e} canEdit={canEdit} busy={update.isPending} onSave={update.mutate} />
           ))}
-        </ul>
+        </div>
       )}
     </section>
   );
+
+  function SkillSummary({ enrollments }: { enrollments: PrisonerDetail["enrollments"] }) {
+    const completed = enrollments.filter((e) => e.status === "completed").length;
+    const inProgress = enrollments.filter((e) => e.status === "in_progress").length;
+    const avg = Math.round(
+      enrollments.reduce((sum, e) => sum + e.progressPct, 0) / enrollments.length,
+    );
+    const chips = [
+      { label: "completed", value: completed, cls: "bg-emerald-50 text-emerald-800 border-emerald-200" },
+      { label: "in progress", value: inProgress, cls: "bg-blue-50 text-blue-800 border-blue-200" },
+      {
+        label: "enrolled",
+        value: enrollments.filter((e) => e.status === "enrolled").length,
+        cls: "bg-slate-50 text-slate-600 border-slate-200",
+      },
+      { label: "avg progress", value: `${avg}%`, cls: "bg-indigo-50 text-indigo-800 border-indigo-200" },
+    ];
+    return (
+      <div className="mt-3 flex flex-wrap gap-2">
+        {chips.map((c) => (
+          <span key={c.label} className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${c.cls}`}>
+            {c.value} {c.label}
+          </span>
+        ))}
+      </div>
+    );
+  }
+
+  function SkillCard({
+    enrollment,
+    canEdit,
+    busy,
+    onSave,
+  }: {
+    enrollment: PrisonerDetail["enrollments"][number];
+    canEdit: boolean;
+    busy: boolean;
+    onSave: (vars: { id: string; progressPct?: number; markComplete?: boolean }) => void;
+  }) {
+    const e = enrollment;
+    const [draftPct, setDraftPct] = useState(e.progressPct);
+    const pct = e.status === "completed" ? 100 : draftPct;
+
+    const accent =
+      e.status === "completed" ? "border-l-emerald-500" : e.status === "in_progress" ? "border-l-blue-500" : "border-l-slate-300";
+    const pillCls =
+      e.status === "completed"
+        ? "bg-emerald-100 text-emerald-800"
+        : e.status === "in_progress"
+          ? "bg-blue-100 text-blue-800"
+          : "bg-slate-100 text-slate-600";
+    const barColor = e.status === "completed" ? "bg-emerald-500" : e.status === "in_progress" ? "bg-blue-600" : "bg-slate-400";
+
+    return (
+      <div className={`rounded-xl border border-slate-200 border-l-4 bg-white p-4 shadow-sm transition hover:shadow-md ${accent}`}>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-slate-900">{e.program.name}</p>
+            <span className="mt-0.5 inline-block rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+              {e.program.category}
+            </span>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${pillCls}`}>
+              {e.status.replace("_", " ")}
+            </span>
+            {e.certificateUrl && (
+              <a
+                href={apiOriginUrl(e.certificateUrl)!}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-md bg-emerald-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-emerald-700"
+              >
+                Certificate
+              </a>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-3 flex items-center gap-3">
+          <div className="relative h-2.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+            <div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${pct}%` }} />
+          </div>
+          <span className="w-11 text-right text-sm font-bold tabular-nums text-slate-700">{pct}%</span>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-50 pt-2.5 text-xs text-slate-400">
+          <span>
+            {e.completedAt ? `Completed ${formatDate(e.completedAt)}` : e.status === "in_progress" ? "Underway" : "Not started yet"}
+          </span>
+          {canEdit && e.status !== "completed" && (
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                value={draftPct}
+                onChange={(ev) => setDraftPct(Number(ev.target.value))}
+                onMouseUp={() => draftPct !== e.progressPct && onSave({ id: e.id, progressPct: draftPct })}
+                onTouchEnd={() => draftPct !== e.progressPct && onSave({ id: e.id, progressPct: draftPct })}
+                className="h-1.5 w-32 cursor-pointer accent-blue-600"
+              />
+              <button
+                onClick={() => onSave({ id: e.id, markComplete: true })}
+                disabled={busy}
+                className="rounded-md border border-emerald-300 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-50 disabled:opacity-50"
+              >
+                Mark complete
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 }
 
 function NotesPanel({ detail, canEdit, onChanged }: { detail: PrisonerDetail; canEdit: boolean; onChanged: () => void }) {
@@ -698,3 +842,4 @@ function NotesPanel({ detail, canEdit, onChanged }: { detail: PrisonerDetail; ca
     </section>
   );
 }
+

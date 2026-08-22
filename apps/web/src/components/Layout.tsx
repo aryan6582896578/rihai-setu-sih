@@ -41,6 +41,18 @@ export default function Layout() {
               >
                 Jails
               </NavLink>
+              {user?.role === "super_admin" && (
+                <NavLink
+                  to="/overcrowding"
+                  className={({ isActive }) =>
+                    `rounded-md px-3 py-1.5 text-sm font-medium ${
+                      isActive ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-100"
+                    }`
+                  }
+                >
+                  Overcrowding
+                </NavLink>
+              )}
             </nav>
           </div>
           {user && (

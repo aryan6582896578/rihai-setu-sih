@@ -14,6 +14,7 @@ const envSchema = z.object({
   JWT_ACCESS_TTL: z.string().default("15m"),
   JWT_REFRESH_TTL_DAYS: z.coerce.number().int().positive().default(7),
   WEB_ORIGIN: z.string().url().default("http://localhost:5173"),
+  PUBLIC_API_URL: z.string().url().default("http://localhost:4000"),
   LOGIN_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(5),
   LOGIN_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60_000),
 });

@@ -65,6 +65,7 @@ model User {
   jailAccess    JailAccess[]
   notesAuthored Note[]       @relation("NoteAuthor")
   applicationsReviewed Application[] @relation("ApplicationReviewer")
+  legalAidAssignments  LegalAidAssignment[] @relation("LegalAidAssignments")
 
   @@map("User")
 }
@@ -82,6 +83,7 @@ model Jail {
 
   jailAccess JailAccess[]
   prisoners  Prisoner[]
+  occupancySnapshots OccupancySnapshot[]
 
   @@map("Jail")
 }
@@ -109,6 +111,8 @@ model Prisoner {
   gender        String
   admissionDate DateTime  @map("admission_date")
   photoUrl      String?   @map("photo_url")
+  nextOfKinName  String?  @map("next_of_kin_name")
+  nextOfKinPhone String?  @map("next_of_kin_phone")
   createdAt     DateTime  @default(now()) @map("created_at")
 
   jail          Jail                    @relation(fields: [jailId], references: [id])
@@ -175,10 +179,40 @@ model Application {
   prisoner   Prisoner @relation(fields: [prisonerId], references: [id], onDelete: Cascade)
   reviewer   User?    @relation("ApplicationReviewer", fields: [reviewedBy], references: [id])
   stallAlerts StallAlert[]
+  legalAidAssignment LegalAidAssignment?
+  suretyStatus       SuretyStatus?
 
   @@index([stage, updatedAt])
   @@index([prisonerId])
   @@map("Application")
+}
+
+model LegalAidAssignment {
+  id            String   @id @default(cuid())
+  applicationId String   @unique @map("application_id")
+  lawyerId      String   @map("lawyer_id")
+  assignedAt    DateTime @default(now()) @map("assigned_at")
+  method        String
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  lawyer      User        @relation("LegalAidAssignments", fields: [lawyerId], references: [id])
+
+  @@map("LegalAidAssignment")
+}
+
+model SuretyStatus {
+  id             String    @id @default(cuid())
+  applicationId  String    @unique @map("application_id")
+  bondAmount     Float?    @map("bond_amount")
+  suretyRequired Boolean   @default(false) @map("surety_required")
+  suretyArranged Boolean   @default(false) @map("surety_arranged")
+  arrangedAt     DateTime? @map("arranged_at")
+  notes          String?
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@map("SuretyStatus")
 }
 
 model TrainingProgram {
@@ -236,4 +270,37 @@ model Note {
 
   @@index([prisonerId])
   @@map("Note")
+}
+
+model OccupancySnapshot {
+  id             String   @id @default(cuid())
+  jailId         String   @map("jail_id")
+  date           DateTime @db.Date
+  occupancy      Int
+  undertrialCount Int     @map("undertrial_count")
+  convictCount   Int      @map("convict_count")
+
+  jail Jail @relation(fields: [jailId], references: [id], onDelete: Cascade)
+
+  @@unique([jailId, date])
+  @@index([date])
+  @@map("OccupancySnapshot")
+}
+
+model NotificationLog {
+  id                String   @id @default(cuid())
+  recipientType     String   @map("recipient_type")
+  recipientContact  String?  @map("recipient_contact")
+  recipientUserId   String?  @map("recipient_user_id")
+  channel           String
+  message           String
+  relatedEntityType String   @map("related_entity_type")
+  relatedEntityId   String   @map("related_entity_id")
+  sentAt            DateTime @default(now()) @map("sent_at")
+  status            String
+  isRead            Boolean  @default(false) @map("is_read")
+
+  @@index([recipientUserId])
+  @@index([relatedEntityType, relatedEntityId])
+  @@map("NotificationLog")
 }

@@ -140,6 +140,12 @@ export interface EligibilityAssessmentDto {
   computedAt: string;
 }
 
+export interface StageHistoryEntry {
+  at: string;
+  byName?: string;
+  note?: string;
+}
+
 export interface ApplicationDto {
   id: string;
   type: ApplicationType;
@@ -152,7 +158,8 @@ export interface ApplicationDto {
   reviewedByName: string | null;
   reviewedAt: string | null;
   updatedAt: string;
-  stageHistory: Record<string, string>;
+  stageHistory: Partial<Record<ApplicationStage, StageHistoryEntry>>;
+  assignedLawyer?: string | null;
 }
 
 export interface TrainingProgramDto {
@@ -235,4 +242,82 @@ export interface AutoDraftOutcome {
   documentUrl?: string;
   llmSource?: "openai" | "template";
   error?: string;
+}
+
+export interface CourtTrackingRow {
+  applicationId: string;
+  prisonerId: string;
+  prisonerName: string;
+  caseNumber: string;
+  cnrNumber: string | null;
+  stage: ApplicationStage;
+  hearingDate: string | null;
+  orderOutcome: string | null;
+  daysSinceFiled: number | null;
+}
+
+export interface AvailableLawyer {
+  lawyerId: string;
+  name: string;
+  email: string;
+  activeCases: number;
+}
+
+export interface UnassignedRow {
+  applicationId: string;
+  prisonerId: string;
+  prisonerName: string;
+  prisonerRegNo: string;
+  caseNumber: string;
+  stage: ApplicationStage;
+  openedAt: string;
+}
+
+export interface SuretyStatusDto {
+  bondAmount: number | null;
+  suretyRequired: boolean;
+  suretyArranged: boolean;
+  arrangedAt: string | null;
+  notes: string | null;
+}
+
+export interface GrantedSuretyRow {
+  applicationId: string;
+  prisonerName: string;
+  stage: ApplicationStage;
+  orderOutcome: string | null;
+  bondAmount: number | null;
+  suretyRequired: boolean;
+  suretyArranged: boolean;
+  arrangedAt: string | null;
+  notes: string | null;
+}
+
+export interface ProjectionPoint {
+  day: number;
+  baseline: number;
+  projected: number;
+}
+
+export interface OvercrowdingRollup {
+  jails: {
+    jailId: string;
+    name: string;
+    district: string;
+    state: string;
+    occupancy: number;
+    sanctionedCapacity: number;
+    capacityPct: number;
+    eligibleButUnprocessed: number;
+  }[];
+  totals: {
+    occupancy: number;
+    sanctionedCapacity: number;
+    capacityPct: number;
+    eligibleButUnprocessed: number;
+  };
+  projection30: {
+    baselineSum: number;
+    projectedSum: number;
+  };
 }

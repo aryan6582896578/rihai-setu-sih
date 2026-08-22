@@ -12,12 +12,14 @@ import {
   type Paginated,
   type PrisonerDetail,
   type PrisonerListItem,
+  type StageHistoryEntry,
 } from "@rihai/shared-types";
 import { prisma } from "../lib/prisma.js";
 import { logger } from "../lib/logger.js";
 import { storage } from "../lib/storage.js";
 import { ApiError } from "../middleware/errors.js";
 import { getPrimaryCase, recomputeForPrisoner } from "./eligibility.service.js";
+import { buildCertificateHtml } from "./certificates.service.js";
 
 const MS_PER_DAY = 86_400_000;
 
@@ -163,7 +165,10 @@ export async function getPrisonerDetail(prisonerId: string): Promise<PrisonerDet
       cases: { orderBy: { updatedAt: "desc" } },
       applications: {
         orderBy: { updatedAt: "desc" },
-        include: { reviewer: { select: { name: true } } },
+        include: {
+          reviewer: { select: { name: true } },
+          legalAidAssignment: { include: { lawyer: { select: { name: true, email: true } } } },
+        },
       },
       enrollments: { include: { program: true }, orderBy: { id: "asc" } },
       notes: { include: { author: { select: { name: true } } }, orderBy: { createdAt: "desc" } },
@@ -190,6 +195,9 @@ export async function getPrisonerDetail(prisonerId: string): Promise<PrisonerDet
     reviewedAt: a.reviewedAt?.toISOString() ?? null,
     updatedAt: a.updatedAt.toISOString(),
     stageHistory: normalizeStageHistory(a.stageHistory),
+    assignedLawyer: a.legalAidAssignment
+      ? `${a.legalAidAssignment.lawyer.name} (${a.legalAidAssignment.lawyer.email})`
+      : null,
   }));
 
   const enrollments: EnrollmentDto[] = prisoner.enrollments.map((e) => ({
@@ -236,9 +244,20 @@ export async function getPrisonerDetail(prisonerId: string): Promise<PrisonerDet
   };
 }
 
-export function normalizeStageHistory(raw: Prisma.JsonValue | null): Record<string, string> {
+export function normalizeStageHistory(
+  raw: unknown,
+): Partial<Record<ApplicationStage, StageHistoryEntry>> {
   if (raw && typeof raw === "object" && !Array.isArray(raw)) {
-    return raw as Record<string, string>;
+    const out: Partial<Record<ApplicationStage, StageHistoryEntry>> = {};
+    for (const [stage, value] of Object.entries(raw as Record<string, unknown>)) {
+      if (typeof value === "string") {
+        out[stage as ApplicationStage] = { at: value };
+      } else if (value && typeof value === "object" && typeof (value as { at?: unknown }).at === "string") {
+        const v = value as { at: string; byName?: string; note?: string };
+        out[stage as ApplicationStage] = { at: v.at, byName: v.byName, note: v.note };
+      }
+    }
+    return out;
   }
   return {};
 }
@@ -450,15 +469,19 @@ export async function updateEnrollment(
   let completedAt = existing.completedAt;
 
   if (complete && !certificateUrl) {
-    const certHtml = buildCertificateHtml(enrollmentId);
+    await prisma.enrollment.update({
+      where: { id: enrollmentId },
+      data: { progressPct: progress, status, completedAt: new Date() },
+    });
+    const certHtml = await buildCertificateHtml(enrollmentId);
     const stored = await storage.save(`certificates/certificate-${enrollmentId}.html`, certHtml);
     certificateUrl = stored.url;
-    completedAt = new Date();
+    completedAt = existing.completedAt ?? null;
   }
 
   const e = await prisma.enrollment.update({
     where: { id: enrollmentId },
-    data: { progressPct: progress, status, certificateUrl, completedAt },
+    data: { progressPct: progress, status, certificateUrl, ...(completedAt ? { completedAt } : {}) },
     include: { program: true },
   });
   return {
@@ -471,14 +494,3 @@ export async function updateEnrollment(
   };
 }
 
-function buildCertificateHtml(enrollmentId: string): string {
-  return `<!doctype html><html><head><meta charset="utf-8"><title>Certificate</title>
-<style>body{font-family:Georgia,serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f8fafc}
-.card{border:6px double #1d4ed8;padding:60px;text-align:center;max-width:600px;background:white}
-h1{color:#1d4ed8}</style></head>
-<body><div class="card"><h1>Certificate of Completion</h1>
-<p>Enrollment ID: <strong>${enrollmentId}</strong></p>
-<p>has successfully completed the training program.</p>
-<p style="margin-top:30px;color:#64748b">Placeholder certificate &mdash; RIHAI SETU</p>
-</div></body></html>`;
-}

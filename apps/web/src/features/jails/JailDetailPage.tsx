@@ -81,6 +81,24 @@ export default function JailDetailPage() {
             >
               Prisoners ({stats.totalPrisoners})
             </Link>
+            <Link
+              to={`/jails/${jailId}/court-tracking`}
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Court tracking
+            </Link>
+            <Link
+              to={`/jails/${jailId}/legal-aid`}
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Legal aid
+            </Link>
+            <Link
+              to={`/jails/${jailId}/overcrowding`}
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Overcrowding
+            </Link>
             {canManageStaff && (
               <Link
                 to={`/jails/${jailId}/superintendent`}

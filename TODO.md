@@ -139,3 +139,99 @@ powershell -File scripts/smoke-test-v2.ps1                   # sessions 2+3: 27/
 - Stall thresholds live in `packages/shared-types/src/config.ts` â€” reuse from Prompt 3.
 - Eligibility cron stub in `apps/api/src/jobs/cron.ts` must be replaced by the deterministic engine in Prompt 3.
 
+
+---
+
+## 2026-08-22 -- Session 4: Court Filing Tracking & Legal Aid / Surety (Prompt 4)
+
+### Backend
+- [x] CourtStatusProvider interface + MockCourtStatusProvider (time-accelerated demo mode, deterministic grants for MOCK CNRs); eCourts swap seam documented -- _smoke v2: sync advances filed->order_passed w/ granted outcome PASS_
+- [x] GET /api/v1/jails/:jailId/court-tracking (filed/hearing rows, days-since-filed)
+- [x] POST /api/v1/applications/:id/sync-court-status -- populates hearing date/outcome, advances stage, auto-creates SuretyStatus on grant
+- [x] Legal aid: GET legal-aid/unassigned (+lawyer roster w/ load), POST assign-lawyer (round_robin least-loaded | manual), lawyer shown on profile
+      _smoke v2: queue contains app, round-robin assigns Srivastava, profile shows lawyer PASS_
+- [x] Surety checklist: GET/PATCH surety-status; release stage server-gated on orderOutcome=granted AND suretyArranged
+      _smoke v2: premature release blocked SURETY_PENDING -> save checklist -> released PASS_
+
+### Frontend
+- [x] /jails/:jailId/court-tracking -- sync per-row + bulk, outcome chips, surety shortcut on grant, "never decides bail" boundary copy
+- [x] /jails/:jailId/legal-aid -- assignment queue tab (round-robin/manual) + bond/surety checklist tab
+- [x] Jail detail links; profile application card shows assigned lawyer
+
+### Verification
+powershell -File scripts/smoke-test-v2.ps1  # 31/31 incl. full court->surety->release chain
+
+---
+
+## 2026-08-22 -- Session 5: Overcrowding Dashboard & Capacity Prediction (Prompt 5)
+
+### Backend
+- [x] OccupancySnapshot table + nightly cron snapshot (02:00, upsert per jail)
+- [x] Seed writes 45 days of synthetic history per jail -- trend chart populated on first run
+      _probe: current returns occupancy 13/14 w/ 31 trend points_
+- [x] GET overcrowding/current | projection?days=30|60|90 | backlog-breakdown
+      Deterministic math only: releases = eligible-progressing + threshold-crossers-in-window + convict sentence-ends;
+      admission rate from 90d history (floor 0.15/day)
+      _probe: expectedReleases=3, day0 proj=11 vs base=13, day30 15 vs 18 -> lines visibly diverge PASS_
+- [x] Backlog breakdown separates eligible-but-unprocessed vs genuine load
+      _probe: total=13, eligibleUnprocessed=2, genuineLoad=11; stacked bar renders amber/grey_
+- [x] GET /overcrowding/rollup (super_admin only) -- per-jail table + totals + combined 30d relief
+      _probe: jails=5 totalOcc=49 pct=98; jail_staff gets 403 PASS_
+
+### Frontend
+- [x] /jails/:jailId/overcrowding -- stat cards, SVG trend chart, baseline-vs-pipeline projection chart (30/60/90 toggle), backlog stacked bar
+- [x] /overcrowding rollup page (super_admin nav link) + per-jail drill-down buttons
+- [x] Zero chart dependencies -- hand-rolled SVG LineChart component
+
+### Verification
+scripts/_probe5.ps1 (removed post-run): all five checks above printed PASS-equivalents; typecheck web+api clean; vite build green.
+
+---
+
+## 2026-08-22 -- Session 6 (PAUSED): Notifications & Compliance Reporting (Prompt 6) -- PENDING
+
+Status: paused mid-build per user request. Resume from here next session.
+
+### Already in place
+- [x] `NotificationLog` table created + migrated (recipient_type/contact/user_id, channel, message, related entity, status, is_read)
+- [x] `lib/notification-provider.ts`: provider interface + `LoggingNotificationProvider` fallback (in-app rows only); Twilio seam documented as TODO(SMS) -- deliberately NOT implemented per user instruction
+- [x] `notifications.service.ts`: logAndSend core + notifyStageChange / notifyStallEscalated / notifyHearingScheduled helpers
+- [x] Stage-change hook WIRED inside `appendStage` (fires next-of-kin SMS-log + assigned-lawyer in-app row on every stage advance)
+
+### Remaining checklist (next session)
+- [ ] Wire notifyStallEscalated into stall escalate endpoint; notifyHearingScheduled into court sync when a hearing date first lands
+- [ ] Routes: GET /api/v1/notifications (own log), POST /api/v1/notifications/:id/mark-read
+- [ ] Frontend: bell icon w/ unread badge (30s poll) + /notifications list page with mark-read
+- [ ] Compliance service: eligible-identified / filed / released counts + avg flagged->released days for a date range (stage_history JSON date math)
+- [ ] Endpoints: GET/PATCH compliance-report (+rollup for super_admin) and export?format=csv|xlsx|pdf-style-html via storage adapter
+- [ ] Pages: /jails/:jailId/compliance-report and /compliance-report rollup w/ range picker + export buttons
+- [ ] Verify: seeded stage change produces NotificationLog rows; numbers match manual psql count; exports download
+
+### Known-good baseline before pause
+node tests 10/10 | smoke-test-v2 31/31 | typecheck api+web clean | vite build green | API healthy on :4000
+
+---
+
+## 2026-08-22 -- Dataset-driven seed + mojibake fix + Skill Passport UI refresh
+
+### Dataset alignment (dataset/*.xlsx, 600 rows each)
+- [x] Seed rewritten to read `undertrial_prisoner_tracking_600_ncrb.xlsx` + `prisoner_skill_passport_rehab_600_ncrb.xlsx`
+      Column mapping: prison_id/name/state/district/capacity -> Jail; prisoner_id -> regNo; candidate_alias_or_name (passport join) -> fullName;
+      age -> derived DOB; max_sentence_months -> years; prior_conviction_flag inverted -> isFirstTimeOffender; case_cnr -> cnrNumber;
+      primary_offence_section+category -> offence; custody_start_date -> admission/custody; next/last_hearing_date -> application stages
+- [x] Eligibility always computed by OUR engine at seed time (dataset sec479 column ignored by design)
+- [x] Skill passports -> TrainingProgram catalog from real trades + Enrollment per passport w/ status from course_completion_status,
+      progress from workshop hours; passport details preserved as structured notes
+      _seed output: 4 jails / 600 prisoners / 600 cases / 268 applications / 600 assessments / 600 enrollments / 846 notes / 180 snapshots_
+- [x] Staff accounts renamed superintendent{n}@ / staff{n}{a|b}@rihai.gov.in (password Passw0rd!23); smoke updated accordingly
+
+### Mojibake fix
+- [x] Root cause: PS 5.1 Get-Content/Set-Content round-trips re-encoded UTF-8 as CP1252 in 3 files (profile page, overcrowding page, notifications svc)
+- [x] Generic CP1252->bytes->UTF-8 decoder script cleaned all sequences (em-dash, ellipsis, arrows, checkmark, middot, section sign); scan now reports zero
+
+### Skill Passport UI v2
+- [x] Summary chips (completed/in-progress/enrolled/avg), card grid with status accent bars, animated progress bars,
+      slider progress control with autosave-on-release, prominent certificate button, richer empty state
+
+### Verification
+smoke-test-v2: 32/32 | typecheck web clean | vite build green

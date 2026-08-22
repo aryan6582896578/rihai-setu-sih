@@ -1,0 +1,55 @@
+﻿// PARKED FEATURE - signed QR verification endpoint (re-enable by mounting in app.ts)
+import { Router, type Request, type Response } from "express";
+import {
+  loadEnrollmentFull,
+  renderVerifyPage,
+  verifySignature,
+} from "../services/certificates.service.js";
+
+export const verifyRouter = Router();
+
+function esc(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function send(res: Response, valid: boolean, detailHtml: string): void {
+  res.type("html").send(renderVerifyPage(valid, detailHtml));
+}
+
+verifyRouter.get(
+  "/certificate/:id/:sig",
+  async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id ?? "";
+      const sig = req.params.sig ?? "";
+
+      if (!id || !sig || !verifySignature(id, sig)) {
+        return send(
+          res,
+          false,
+          `<p>The QR code or link does not match any signed RIHAI SETU certificate.<br>This document may be forged or altered.</p>`,
+        );
+      }
+
+      const e = await loadEnrollmentFull(id);
+      if (!e || e.status !== "completed") {
+        return send(res, false, `<p>No completed certificate exists for this reference.</p>`);
+      }
+
+      const detail = `
+        <table>
+          <tr><td>Certificate holder</td><td><strong>${esc(e.prisoner.fullName)}</strong></td></tr>
+          <tr><td>Registration no.</td><td>${esc(e.prisoner.prisonerRegNo)}</td></tr>
+          <tr><td>Facility</td><td>${esc(e.prisoner.jail.name)}, ${esc(e.prisoner.jail.district)}</td></tr>
+          <tr><td>Training program</td><td><strong>${esc(e.program.name)}</strong></td></tr>
+          <tr><td>Domain</td><td>${esc(e.program.category)}</td></tr>
+          <tr><td>Completed on</td><td>${new Date(e.completedAt ?? Date.now()).toLocaleDateString("en-IN", { dateStyle: "long" })}</td></tr>
+          <tr><td>Certificate ID</td><td style="font-family:monospace">${esc(e.id)}</td></tr>
+        </table>`;
+      return send(res, true, detail);
+    } catch {
+      return send(res, false, "<p>Verification service temporarily unavailable.</p>");
+    }
+  },
+);
+

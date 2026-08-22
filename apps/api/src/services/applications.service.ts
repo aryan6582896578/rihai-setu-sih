@@ -2,11 +2,14 @@ import {
   ApplicationStage,
   STAGE_ORDER,
   type ApplicationDto,
+  type StageHistoryEntry,
 } from "@rihai/shared-types";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { logger } from "../lib/logger.js";
 import { ApiError } from "../middleware/errors.js";
 import { normalizeStageHistory } from "./prisoners.service.js";
+import { notifyStageChange } from "./notifications.service.js";
 
 export async function getApplicationOrFail(applicationId: string) {
   const app = await prisma.application.findUnique({
@@ -47,52 +50,74 @@ export function toApplicationDto(a: {
     reviewedByName: a.reviewer?.name ?? null,
     reviewedAt: a.reviewedAt?.toISOString() ?? null,
     updatedAt: a.updatedAt.toISOString(),
-    stageHistory: normalizeStageHistory(a.stageHistory as PrismaJson),
+    stageHistory: normalizeStageHistory(a.stageHistory),
   };
 }
 
-type PrismaJson = Record<string, string>;
+async function actorName(userId?: string): Promise<string | undefined> {
+  if (!userId) return undefined;
+  const u = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+  return u?.name;
+}
 
-async function appendStage(
-  applicationId: string,
-  stage: ApplicationStage,
-  extraData: Record<string, unknown> = {},
-) {
-  const current = await prisma.application.findUniqueOrThrow({
-    where: { id: applicationId },
-  });
-  const history = normalizeStageHistory(current.stageHistory);
-  history[stage] = new Date().toISOString();
-  return prisma.application.update({
-    where: { id: applicationId },
-    data: { stage, stageHistory: history, ...extraData },
-  });
+function entry(at: Date, byName?: string, note?: string): StageHistoryEntry {
+  return { at: at.toISOString(), ...(byName ? { byName } : {}), ...(note ? { note } : {}) };
 }
 
 export async function createManualApplication(
   prisonerId: string,
   type: "bail" | "personal_bond",
+  actorId: string,
 ): Promise<ApplicationDto> {
   const activeApp = await prisma.application.findFirst({
     where: { prisonerId, stage: { notIn: ["order_passed", "released"] } },
   });
   if (activeApp) throw ApiError.conflict("An active application already exists for this prisoner");
 
+  const byName = await actorName(actorId);
   const app = await prisma.application.create({
     data: {
       prisonerId,
       type,
       stage: ApplicationStage.Flagged,
-      stageHistory: { [ApplicationStage.Flagged]: new Date().toISOString() },
+      stageHistory: {
+        [ApplicationStage.Flagged]: entry(new Date(), byName, "Opened manually"),
+      } as unknown as Prisma.InputJsonValue,
     },
     include: { reviewer: { select: { name: true } } },
   });
+  logger.info(`Manual application opened`, { prisonerId, applicationId: app.id, byUser: actorId });
   return toApplicationDto(app);
+}
+
+export async function appendStage(
+  applicationId: string,
+  stage: ApplicationStage,
+  extraData: Record<string, unknown> = {},
+  actorId?: string,
+) {
+  const current = await prisma.application.findUniqueOrThrow({
+    where: { id: applicationId },
+  });
+  const history = normalizeStageHistory(current.stageHistory);
+  history[stage] = entry(new Date(), await actorName(actorId));
+  const updated = await prisma.application.update({
+    where: { id: applicationId },
+    data: { stage, stageHistory: history as unknown as Prisma.InputJsonValue, ...extraData },
+  });
+
+  if (stage !== current.stage) {
+    void notifyStageChange(applicationId, stage).catch((err) =>
+      logger.error("[notify] stage-change hook failed", err),
+    );
+  }
+  return updated;
 }
 
 export async function advanceStage(
   applicationId: string,
   target: ApplicationStage,
+  actorId: string,
 ): Promise<ApplicationDto> {
   const app = await getApplicationOrFail(applicationId);
 
@@ -112,11 +137,29 @@ export async function advanceStage(
     );
   }
 
+  if (target === ApplicationStage.Released) {
+    if (app.orderOutcome !== "granted") {
+      throw new ApiError(
+        409,
+        "ORDER_REQUIRED",
+        "Release requires a granted court order — sync the court status first",
+      );
+    }
+    const surety = await prisma.suretyStatus.findUnique({ where: { applicationId: app.id } });
+    if (!surety || !surety.suretyArranged) {
+      throw new ApiError(
+        409,
+        "SURETY_PENDING",
+        "Bond/surety checklist must be completed (surety arranged) before release",
+      );
+    }
+  }
+
   const extra: Record<string, unknown> = {};
   if (target === ApplicationStage.Filed && !app.filedDate) extra.filedDate = new Date();
 
-  const updated = await appendStage(app.id, target, extra);
-  logger.info(`Application ${app.id} advanced ${app.stage} -> ${target}`);
+  const updated = await appendStage(app.id, target, extra, actorId);
+  logger.info(`Application ${app.id} advanced ${app.stage} -> ${target}`, { byUser: actorId });
 
   return toApplicationDto({ ...updated, reviewer: null });
 }
