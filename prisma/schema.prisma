@@ -1,0 +1,239 @@
+// RIHAI SETU — shared database schema
+// Table/column names mirror 00-rihai-setu-master-context.md exactly.
+// Prisma model/field names are camelCase; @@map/@map pin the physical names.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  super_admin
+  jail_superintendent
+  jail_staff
+  dlsa_lawyer
+  viewer
+}
+
+enum ApplicationType {
+  bail
+  personal_bond
+}
+
+enum ApplicationStage {
+  flagged
+  drafted
+  filed
+  hearing_scheduled
+  order_passed
+  released
+}
+
+enum EligibilityStatus {
+  eligible
+  not_eligible
+  excluded
+}
+
+enum EnrollmentStatus {
+  enrolled
+  in_progress
+  completed
+}
+
+// Not named in master context; required for undertrial vs convict counts.
+enum CaseStatus {
+  undertrial
+  convict
+  acquitted
+  closed
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         Role
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  jailAccess    JailAccess[]
+  notesAuthored Note[]       @relation("NoteAuthor")
+  applicationsReviewed Application[] @relation("ApplicationReviewer")
+
+  @@map("User")
+}
+
+model Jail {
+  id                 String   @id @default(cuid())
+  name               String
+  state              String
+  district           String
+  code               String   @unique
+  sanctionedCapacity Int      @map("sanctioned_capacity")
+  address            String?
+  contactPhone       String?  @map("contact_phone")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  jailAccess JailAccess[]
+  prisoners  Prisoner[]
+
+  @@map("Jail")
+}
+
+model JailAccess {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  jailId     String   @map("jail_id")
+  roleAtJail Role     @map("role_at_jail")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jail Jail @relation(fields: [jailId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, jailId])
+  @@index([jailId])
+  @@map("JailAccess")
+}
+
+model Prisoner {
+  id            String    @id @default(cuid())
+  jailId        String    @map("jail_id")
+  fullName      String    @map("full_name")
+  prisonerRegNo String    @unique @map("prisoner_reg_no")
+  dateOfBirth   DateTime  @map("date_of_birth")
+  gender        String
+  admissionDate DateTime  @map("admission_date")
+  photoUrl      String?   @map("photo_url")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  jail          Jail                    @relation(fields: [jailId], references: [id])
+  cases         CaseRecord[]
+  assessments   EligibilityAssessment[]
+  applications  Application[]
+  enrollments   Enrollment[]
+  notes         Note[]
+
+  @@index([jailId])
+  @@map("Prisoner")
+}
+
+model CaseRecord {
+  id                  String     @id @default(cuid())
+  prisonerId          String     @map("prisoner_id")
+  cnrNumber           String?    @unique @map("cnr_number")
+  caseNumber          String     @map("case_number")
+  courtName           String     @map("court_name")
+  offence             String
+  maxSentenceYears    Int        @map("max_sentence_years")
+  carriesDeathOrLife  Boolean    @map("carries_death_or_life")
+  isFirstTimeOffender Boolean    @map("is_first_time_offender")
+  pendingCaseCount    Int        @map("pending_case_count")
+  custodyStartDate    DateTime   @map("custody_start_date")
+  caseStatus          CaseStatus @map("case_status")
+  updatedAt           DateTime   @default(now()) @updatedAt @map("updated_at")
+
+  prisoner Prisoner @relation(fields: [prisonerId], references: [id], onDelete: Cascade)
+
+  @@index([prisonerId])
+  @@index([caseStatus])
+  @@map("CaseRecord")
+}
+
+// Append-only by design: insert a new row per computation, never update in place.
+model EligibilityAssessment {
+  id          String            @id @default(cuid())
+  prisonerId  String            @map("prisoner_id")
+  status      EligibilityStatus
+  reason      String
+  computedAt  DateTime          @default(now()) @map("computed_at")
+
+  prisoner Prisoner @relation(fields: [prisonerId], references: [id], onDelete: Cascade)
+
+  @@index([prisonerId])
+  @@map("EligibilityAssessment")
+}
+
+model Application {
+  id                   String           @id @default(cuid())
+  prisonerId           String           @map("prisoner_id")
+  type                 ApplicationType
+  stage                ApplicationStage @default(flagged)
+  generatedDocumentUrl String?          @map("generated_document_url")
+  filedDate            DateTime?        @map("filed_date")
+  hearingDate          DateTime?        @map("hearing_date")
+  orderOutcome         String?          @map("order_outcome")
+  reviewedBy           String?          @map("reviewed_by")
+  reviewedAt           DateTime?        @map("reviewed_at")
+  updatedAt            DateTime         @default(now()) @updatedAt @map("updated_at")
+  stageHistory         Json             @default("{}") @map("stage_history")
+
+  prisoner   Prisoner @relation(fields: [prisonerId], references: [id], onDelete: Cascade)
+  reviewer   User?    @relation("ApplicationReviewer", fields: [reviewedBy], references: [id])
+  stallAlerts StallAlert[]
+
+  @@index([stage, updatedAt])
+  @@index([prisonerId])
+  @@map("Application")
+}
+
+model TrainingProgram {
+  id       String @id @default(cuid())
+  name     String @unique
+  category String
+
+  enrollments Enrollment[]
+
+  @@map("TrainingProgram")
+}
+
+model Enrollment {
+  id             String           @id @default(cuid())
+  prisonerId     String           @map("prisoner_id")
+  programId      String           @map("program_id")
+  status         EnrollmentStatus @default(enrolled)
+  progressPct    Int              @default(0) @map("progress_pct")
+  certificateUrl String?          @map("certificate_url")
+  completedAt    DateTime?        @map("completed_at")
+
+  prisoner Prisoner        @relation(fields: [prisonerId], references: [id], onDelete: Cascade)
+  program  TrainingProgram @relation(fields: [programId], references: [id])
+
+  @@unique([prisonerId, programId])
+  @@map("Enrollment")
+}
+
+model StallAlert {
+  id          String   @id @default(cuid())
+  entityType  String   @map("entity_type")
+  entityId    String   @map("entity_id")
+  stage       String
+  daysStalled Int      @map("days_stalled")
+  escalated   Boolean  @default(false)
+  escalatedAt DateTime? @map("escalated_at")
+
+  application Application? @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  // Upsert identity: one alert per entity per stage.
+  @@unique([entityType, entityId, stage])
+  @@index([escalated])
+  @@map("StallAlert")
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  prisonerId String  @map("prisoner_id")
+  authorId  String   @map("author_id")
+  body      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  prisoner Prisoner @relation(fields: [prisonerId], references: [id], onDelete: Cascade)
+  author   User     @relation("NoteAuthor", fields: [authorId], references: [id])
+
+  @@index([prisonerId])
+  @@map("Note")
+}
