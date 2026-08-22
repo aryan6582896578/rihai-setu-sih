@@ -1,0 +1,157 @@
+[
+  {
+    "category": "Getting started",
+    "question": "How do I use RIHAI SETU?",
+    "answer": "Sign in through your assigned portal account. Your NGO or caseworker can then help you review your profile, training status, job recommendations and applications."
+  },
+  {
+    "category": "Jobs",
+    "question": "How do I apply for a recommended job?",
+    "answer": "Open the recommended job, review its requirements and ask your NGO caseworker to support the application process. Only active vacancies can be pursued."
+  },
+  {
+    "category": "Jobs",
+    "question": "Why is a job recommendation score low?",
+    "answer": "A lower score can mean fewer matched required skills, fewer preferred skills, lower skill similarity, a district or job-domain mismatch, or missing certificates or experience."
+  },
+  {
+    "category": "Jobs",
+    "question": "What does cosine similarity mean?",
+    "answer": "Cosine similarity measures how closely verified candidate skills match the skill requirements of a job. A higher value means the two skill sets are more similar."
+  },
+  {
+    "category": "Jobs",
+    "question": "Why is a closed or paused job not shown?",
+    "answer": "Only active jobs are normally recommended. Closed and paused jobs are excluded so that users do not apply to unavailable vacancies."
+  },
+  {
+    "category": "Jobs",
+    "question": "Why am I not receiving any job recommendations?",
+    "answer": "Recommendations may be unavailable if consent is not provided, there are no suitable active jobs, or your profile needs verified skills or updated preferences. Please ask your NGO caseworker to review your profile."
+  },
+  {
+    "category": "Jobs",
+    "question": "Can I apply for a job outside my preferred district?",
+    "answer": "You may discuss opportunities outside your preferred district with your NGO caseworker. District preference affects recommendation relevance but should not replace an informed decision about travel and support."
+  },
+  {
+    "category": "Jobs",
+    "question": "Can I apply for more than one job?",
+    "answer": "You can discuss multiple suitable active opportunities with your NGO caseworker. They can help you prioritise applications and track their progress."
+  },
+  {
+    "category": "Jobs",
+    "question": "How do I know whether a job is active?",
+    "answer": "The system normally recommends only active vacancies. Your NGO caseworker or portal staff can confirm whether an opportunity is still open before an application is submitted."
+  },
+  {
+    "category": "Jobs",
+    "question": "What information should I check before applying for a job?",
+    "answer": "Review the job title, required skills, preferred skills, district, certificate requirements, experience requirement and current status. Ask your NGO caseworker about employer details and the application process."
+  },
+  {
+    "category": "Skills and training",
+    "question": "How can I improve my job recommendation score?",
+    "answer": "Complete verified training, add approved certificates and experience when available, keep district preferences current, and ask your NGO caseworker about courses that address missing skills."
+  },
+  {
+    "category": "Skills and training",
+    "question": "Why are some training skills not counted as verified?",
+    "answer": "The system only treats skills as verified after the relevant course is certified or another approved verification process confirms them."
+  },
+  {
+    "category": "Skills and training",
+    "question": "Can I update my skills or training profile?",
+    "answer": "Yes. Ask your NGO caseworker or authorized portal staff to update verified training, certificates and employment information."
+  },
+  {
+    "category": "Skills and training",
+    "question": "What training should I take for a job I want?",
+    "answer": "Compare the job's missing required skills with your verified profile. Your NGO caseworker can help identify suitable approved training or certification opportunities."
+  },
+  {
+    "category": "Skills and training",
+    "question": "Why do certificates matter for job recommendations?",
+    "answer": "Some employers require specific certificates. Certificates contribute to the recommendation score when the same approved certificate is recorded in both the candidate and job profile."
+  },
+  {
+    "category": "Skills and training",
+    "question": "Can work experience be added to my profile?",
+    "answer": "Yes. Authorized staff can add verified employment experience in months. Training practice hours and formal employment experience should be recorded separately."
+  },
+  {
+    "category": "Skills and training",
+    "question": "What is a skill gap?",
+    "answer": "A skill gap is a required or preferred job skill that is not yet recorded as a verified skill in your profile. It can guide future training choices."
+  },
+  {
+    "category": "Privacy",
+    "question": "Why is consent required for recommendations?",
+    "answer": "Consent is required before an employment profile is included in normal recommendations. A profile without consent is not recommended to employers."
+  },
+  {
+    "category": "Privacy",
+    "question": "What personal information is used for job recommendations?",
+    "answer": "Recommendations use employment-related information such as verified skills, certificates, experience, preferred district and preferred job category. Sensitive legal or personal-history fields should not be used."
+  },
+  {
+    "category": "Privacy",
+    "question": "Can an employer see my sensitive personal information?",
+    "answer": "Employment recommendations should use only approved employment-related information. Sensitive legal, case and personal-history information should not be included in employer-facing recommendation data."
+  },
+  {
+    "category": "Privacy",
+    "question": "Can I withdraw my consent?",
+    "answer": "Please contact your authorized NGO caseworker or portal administrator to update your consent preference. A profile without consent should not appear in normal employment recommendations."
+  },
+  {
+    "category": "NGO support",
+    "question": "How can an NGO help me?",
+    "answer": "An NGO can help review your profile, identify training needs, support applications, connect you with employers and explain available support services."
+  },
+  {
+    "category": "NGO support",
+    "question": "Who should I contact if I need help with an application?",
+    "answer": "Please contact your assigned NGO caseworker or authorized portal administrator for application support and verified information."
+  },
+  {
+    "category": "NGO support",
+    "question": "How can I check my application status?",
+    "answer": "Ask your NGO caseworker or authorized portal staff to check the latest application status. They can confirm whether further documents, an interview or another action is needed."
+  },
+  {
+    "category": "NGO support",
+    "question": "What should I do if my profile information is incorrect?",
+    "answer": "Report incorrect employment, training or preference information to your NGO caseworker or authorized portal administrator so it can be reviewed and corrected."
+  },
+  {
+    "category": "Profile",
+    "question": "Can I change my preferred work district?",
+    "answer": "Yes. Ask authorized staff to update your preferred work districts. Matching districts can improve the relevance of job recommendations."
+  },
+  {
+    "category": "Profile",
+    "question": "Can I change my target job domain?",
+    "answer": "Yes. Your target job domain can be updated by authorized staff after discussing your verified skills, training and employment goals."
+  },
+  {
+    "category": "Profile",
+    "question": "What documents may be needed for an application?",
+    "answer": "Document requirements vary by employer and program. Your NGO caseworker can provide the verified list needed for a specific application and help you prepare it."
+  },
+  {
+    "category": "Interview preparation",
+    "question": "How can I prepare for a job interview?",
+    "answer": "Review the job requirements, prepare a simple explanation of your verified skills and training, practice clear answers and ask your NGO caseworker for interview preparation support."
+  },
+  {
+    "category": "Interview preparation",
+    "question": "What is a resume?",
+    "answer": "A resume is a short document that lists relevant skills, training, experience and contact details for an employer. Your NGO caseworker can help prepare one using approved employment information."
+  },
+  {
+    "category": "Safety",
+    "question": "What should I do if I need urgent help?",
+    "answer": "For urgent safety, medical or legal help, contact your authorized NGO caseworker, prison authority, emergency service or legal aid provider immediately."
+  }
+]
