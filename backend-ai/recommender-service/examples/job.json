@@ -1,0 +1,19 @@
+{
+  "job_id": "JOB-0007",
+  "title": "Bakery Assistant",
+  "description": "Assist with bread preparation, baking and kitchen hygiene.",
+  "required_skills": [
+    "baking",
+    "food_preparation"
+  ],
+  "preferred_skills": [
+    "kitchen_hygiene"
+  ],
+  "required_certificates": [
+    "Food Safety"
+  ],
+  "minimum_experience_months": 6,
+  "job_category": "bakery",
+  "district": "Thane",
+  "status": "active"
+}

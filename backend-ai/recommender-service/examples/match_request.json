@@ -1,0 +1,43 @@
+{
+  "candidate": {
+    "candidate_id": "PRI-0009",
+    "verified_skills": [
+      "baking",
+      "food_preparation",
+      "kitchen_hygiene"
+    ],
+    "certificates": [
+      "Food Safety"
+    ],
+    "experience_months": 10,
+    "preferred_job_categories": [
+      "bakery",
+      "food service"
+    ],
+    "preferred_districts": [
+      "Thane",
+      "Mumbai"
+    ],
+    "available_from": "2026-06-17",
+    "consent": true
+  },
+  "job": {
+    "job_id": "JOB-0007",
+    "title": "Bakery Assistant",
+    "description": "Assist with bread preparation, baking and kitchen hygiene.",
+    "required_skills": [
+      "baking",
+      "food_preparation"
+    ],
+    "preferred_skills": [
+      "kitchen_hygiene"
+    ],
+    "required_certificates": [
+      "Food Safety"
+    ],
+    "minimum_experience_months": 6,
+    "job_category": "bakery",
+    "district": "Thane",
+    "status": "active"
+  }
+}
