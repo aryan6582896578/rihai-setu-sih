@@ -17,35 +17,21 @@ export default function LegalAidPage() {
   return (
     <div className="space-y-4">
       <div>
-        <Link to={`/jails/${jailId}`} className="text-sm text-slate-500 hover:text-slate-700">
-          ← Jail portal
-        </Link>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
-          Legal aid &amp; surety tracking
-        </h1>
+        <Link to={`/jails/${jailId}`} className="crumb">← Jail portal</Link>
+        <h1 className="page-title">Legal aid &amp; surety tracking</h1>
       </div>
 
-      <div className="border-b border-slate-200">
-        <nav className="-mb-px flex gap-1">
-          {(
-            [
-              ["queue", "Assignment queue"],
-              ["surety", "Bond / surety checklist"],
-            ] as const
-          ).map(([key, label]) => (
-            <button
-              key={key}
-              onClick={() => setTab(key)}
-              className={`whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-medium ${
-                tab === key
-                  ? "border-blue-700 text-blue-800"
-                  : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </nav>
+      <div className="tabbar">
+        {(
+          [
+            ["queue", "Assignment queue"],
+            ["surety", "Bond / surety checklist"],
+          ] as const
+        ).map(([key, label]) => (
+          <button key={key} onClick={() => setTab(key)} className={tab === key ? "active" : ""}>
+            {label}
+          </button>
+        ))}
       </div>
 
       {tab === "queue" ? <AssignmentQueue jailId={jailId} /> : <SuretyChecklist jailId={jailId} />}
@@ -94,39 +80,39 @@ function AssignmentQueue({ jailId }: { jailId: string }) {
   return (
     <div className="space-y-3">
       {error && <ErrorBanner message={error} />}
-      <p className="text-sm text-slate-500">
+      <p className="lede">
         Applications that don't have a DLSA lawyer assigned yet. Round-robin picks the least-loaded active lawyer.
       </p>
       {queue.length === 0 ? (
-        <EmptyState title="Assignment queue is clear" body="Every active application has a legal aid counsel." />
+        <EmptyState icon="🤝" title="Assignment queue is clear" body="Every active application has a legal aid counsel." />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+        <div className="panel-tight overflow-x-auto">
+          <table className="data-table min-w-full">
+            <thead>
               <tr>
-                <th className="px-4 py-3">Prisoner</th>
-                <th className="px-4 py-3">Case no</th>
-                <th className="px-4 py-3">Stage</th>
-                <th className="px-4 py-3">Opened</th>
-                <th className="px-4 py-3">Assign</th>
+                <th>Prisoner</th>
+                <th>Case no</th>
+                <th>Stage</th>
+                <th>Opened</th>
+                <th>Assign</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody>
               {queue.map((r) => (
                 <tr key={r.applicationId}>
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-slate-800">{r.prisonerName}</p>
-                    <p className="font-mono text-[11px] text-slate-400">{r.prisonerRegNo}</p>
+                  <td>
+                    <p className="font-semibold text-navy">{r.prisonerName}</p>
+                    <p className="mono-cell text-[#a7adb6]">{r.prisonerRegNo}</p>
                   </td>
-                  <td className="px-4 py-3 font-mono text-xs text-slate-600">{r.caseNumber}</td>
-                  <td className="px-4 py-3">{STAGE_LABELS[r.stage]}</td>
-                  <td className="px-4 py-3 text-xs text-slate-500">{formatDate(r.openedAt)}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-2">
+                  <td className="mono-cell text-bodytext">{r.caseNumber}</td>
+                  <td><span className="pill pill-neutral">{STAGE_LABELS[r.stage]}</span></td>
+                  <td className="text-xs text-bodytext">{formatDate(r.openedAt)}</td>
+                  <td>
+                    <div className="flex flex-wrap items-center justify-end gap-2">
                       <select
                         value={picked[r.applicationId] ?? ""}
                         onChange={(e) => setPicked((p) => ({ ...p, [r.applicationId]: e.target.value }))}
-                        className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs"
+                        className="input-base w-auto bg-white px-2 py-1.5 text-xs"
                       >
                         <option value="">Manual pick…</option>
                         {lawyers.map((l) => (
@@ -144,7 +130,7 @@ function AssignmentQueue({ jailId }: { jailId: string }) {
                             lawyerId: picked[r.applicationId] || undefined,
                           })
                         }
-                        className="whitespace-nowrap rounded-md bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-800 disabled:opacity-50"
+                        className="btn btn-primary btn-sm whitespace-nowrap"
                       >
                         Round-robin
                       </button>
@@ -157,7 +143,7 @@ function AssignmentQueue({ jailId }: { jailId: string }) {
                             lawyerId: picked[r.applicationId],
                           })
                         }
-                        className="rounded-md border border-blue-300 px-2.5 py-1.5 text-xs font-semibold text-blue-800 hover:bg-blue-50 disabled:opacity-40"
+                        className="btn btn-outline btn-sm disabled:opacity-40"
                       >
                         Assign
                       </button>
@@ -210,12 +196,13 @@ function SuretyChecklist({ jailId }: { jailId: string }) {
   return (
     <div className="space-y-3">
       {error && <ErrorBanner message={error} />}
-      <p className="text-sm text-slate-500">
+      <p className="lede">
         Applications with a <strong>granted</strong> court order. Completing the surety checklist is what unlocks
         advancing the application to “released”.
       </p>
       {rows.length === 0 ? (
         <EmptyState
+          icon="📜"
           title="No granted orders yet"
           body="Sync court statuses on the Court tracking page until an order comes back granted."
         />
@@ -251,31 +238,31 @@ function SuretyRow({
     notes !== (row.notes ?? "");
 
   return (
-    <div className={`rounded-xl border bg-white p-4 shadow-sm ${row.suretyArranged ? "border-emerald-200" : "border-orange-200"}`}>
+    <div className={`card-shadow rounded-card border bg-white p-4 sm:p-5 ${row.suretyArranged ? "border-emerald-200" : "border-saffron/60"}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="font-medium text-slate-800">{row.prisonerName}</p>
-          <p className="text-xs text-slate-400">Stage: {STAGE_LABELS[row.stage]}</p>
+          <p className="display font-bold text-navy">{row.prisonerName}</p>
+          <p className="text-xs text-bodytext">Stage: {STAGE_LABELS[row.stage]}</p>
         </div>
-        <span className="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold uppercase text-emerald-800">
+        <span className={row.suretyArranged ? "pill-ok" : "pill-warn"}>
           Order {row.orderOutcome}
         </span>
       </div>
-      <div className="mt-3 grid gap-3 sm:grid-cols-4">
-        <label className="block">
-          <span className="block text-xs font-medium uppercase tracking-wide text-slate-500 mb-1">Bond amount (₹)</span>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <label className="block field">
+          <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-bodytext">Bond amount (₹)</span>
           <input
             type="number"
             min={0}
             value={bondAmount}
             onChange={(e) => setBondAmount(Number(e.target.value))}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-600 focus:outline-none"
+            className="input-base"
           />
         </label>
-        <label className="flex items-end gap-2 pb-2 text-sm text-slate-700">
+        <label className="flex items-end gap-2 pb-2 text-sm font-semibold text-navy">
           <input type="checkbox" checked={suretyRequired} onChange={(e) => setSuretyRequired(e.target.checked)} /> Surety required
         </label>
-        <label className="flex items-end gap-2 pb-2 text-sm text-slate-700">
+        <label className="flex items-end gap-2 pb-2 text-sm font-semibold text-navy">
           <input type="checkbox" checked={suretyArranged} onChange={(e) => setSuretyArranged(e.target.checked)} /> Surety arranged
         </label>
         <div className="flex items-end">
@@ -289,7 +276,7 @@ function SuretyRow({
               })
             }
             disabled={!dirty || busy}
-            className="w-full rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-40"
+            className="btn btn-primary w-full justify-center disabled:opacity-40"
           >
             {busy ? "Saving…" : "Save checklist"}
           </button>
@@ -298,11 +285,11 @@ function SuretyRow({
           placeholder="Notes (sureties, documents…)"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-600 focus:outline-none sm:col-span-4"
+          className="input-base lg:col-span-4"
         />
       </div>
       {!row.suretyArranged && (
-        <p className="mt-2 text-xs text-orange-700">
+        <p className="mt-2 text-xs font-semibold text-amber-700">
           Pending: mark “surety arranged” once the bond paperwork is complete — this unlocks the release stage.
         </p>
       )}

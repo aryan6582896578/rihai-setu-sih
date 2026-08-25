@@ -1,5 +1,6 @@
-import QRCode from "qrcode";
+﻿import QRCode from "qrcode";
 import { prisma } from "../lib/prisma.js";
+import { piiPublic } from "../lib/pii.js";
 
 /**
  * Certificate builder.
@@ -36,10 +37,12 @@ export async function buildCertificateHtml(enrollmentId: string): Promise<string
     year: "numeric",
   });
 
+  const prisonerName = piiPublic(e.prisoner).fullName;
+
   const qrPayload = [
     "RIHAI SETU - SKILL PASSPORT CERTIFICATE",
     `Certificate ID: ${e.id}`,
-    `Name: ${e.prisoner.fullName}`,
+    `Name: ${prisonerName}`,
     `Reg No: ${e.prisoner.prisonerRegNo}`,
     `Facility: ${e.prisoner.jail.name}, ${e.prisoner.jail.district}`,
     `Program: ${e.program.name} (${e.program.category})`,
@@ -55,7 +58,7 @@ export async function buildCertificateHtml(enrollmentId: string): Promise<string
 
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
-<title>Certificate of Completion - ${e.prisoner.fullName}</title>
+<title>Certificate of Completion - ${prisonerName}</title>
 <style>
  body{font-family:Georgia,'Times New Roman',serif;background:#f1f5f9;margin:0;padding:32px 16px;display:flex;justify-content:center}
  .sheet{background:#fff;border:3px double #1d4ed8;max-width:760px;width:100%;padding:48px 56px;text-align:center;position:relative}
@@ -76,7 +79,7 @@ export async function buildCertificateHtml(enrollmentId: string): Promise<string
  <div class="ribbon">RIHAI SETU &middot; SKILL PASSPORT &middot; VERIFIED RECORD</div>
  <h1>Certificate of Completion</h1>
  <p class="reg">This is to certify that</p>
- <p class="name">${e.prisoner.fullName}</p>
+ <p class="name">${prisonerName}</p>
  <p class="reg">Reg. No. ${e.prisoner.prisonerRegNo} &nbsp;&middot;&nbsp; ${e.prisoner.jail.name}</p>
  <div class="line"></div>
  <p>has successfully completed the training program</p>

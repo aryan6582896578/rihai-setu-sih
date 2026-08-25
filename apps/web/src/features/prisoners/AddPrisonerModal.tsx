@@ -60,19 +60,18 @@ export default function AddPrisonerModal({
     mutation.mutate();
   };
 
-  const inputCls =
-    "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-600 focus:outline-none";
-  const labelCls = "block text-xs font-medium uppercase tracking-wide text-slate-500 mb-1";
+  const inputCls = "input-base";
+  const labelCls = "mb-1.5 block text-xs font-bold text-navy";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 py-10">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[rgba(20,15,10,0.5)] p-4 py-10">
       <form
         onSubmit={submit}
-        className="w-full max-w-2xl space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-xl"
+        className="w-full max-w-2xl space-y-4 rounded-2xl bg-white p-6 shadow-xl sm:p-8"
       >
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-slate-900">Admission intake</h2>
-          <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-700">
+        <div className="mhead flex items-center justify-between">
+          <h2 className="display m-0 text-[1.35rem] font-bold text-navy">Admission intake</h2>
+          <button type="button" onClick={onClose} className="cursor-pointer bg-transparent text-xl text-bodytext hover:text-navy">
             ✕
           </button>
         </div>
@@ -84,7 +83,7 @@ export default function AddPrisonerModal({
         )}
 
         <fieldset className="space-y-3">
-          <legend className="text-sm font-semibold text-slate-700">Personal details</legend>
+          <legend className="subhead-form">Personal details</legend>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <label className={labelCls}>Full name *</label>
@@ -110,7 +109,7 @@ export default function AddPrisonerModal({
         </fieldset>
 
         <fieldset className="space-y-3">
-          <legend className="text-sm font-semibold text-slate-700">Initial case record</legend>
+          <legend className="subhead-form">Initial case record</legend>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <label className={labelCls}>Case number *</label>
@@ -153,18 +152,18 @@ export default function AddPrisonerModal({
           </div>
         </fieldset>
 
-        <p className="rounded-lg bg-blue-50 px-3 py-2 text-xs text-blue-800">
+        <p className="info-note">
           A registration number is generated automatically. §479 eligibility is computed on save — it is never entered manually.
         </p>
 
-        <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium">
+        <div className="modal-actions flex flex-wrap justify-end gap-2.5">
+          <button type="button" onClick={onClose} className="btn btn-outline">
             Cancel
           </button>
           <button
             type="submit"
             disabled={mutation.isPending}
-            className="rounded-lg bg-blue-700 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60"
+            className="btn btn-primary disabled:opacity-60"
           >
             {mutation.isPending ? "Saving…" : "Admit prisoner"}
           </button>

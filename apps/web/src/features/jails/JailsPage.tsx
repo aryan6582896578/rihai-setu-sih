@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import type { Paginated } from "@rihai/shared-types";
 import { api, extractApiError } from "../../lib/api";
 import type { JailListItem } from "@rihai/shared-types";
-import { EmptyState, ErrorBanner, OccupancyBadge, Spinner } from "../../components/ui";
+import { EmptyState, ErrorBanner, occupancyTone, Spinner } from "../../components/ui";
 
 export default function JailsPage() {
   const query = useQuery({
@@ -24,53 +24,52 @@ export default function JailsPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-end justify-between">
+      <div className="page-head-row mb-6 flex flex-wrap items-end justify-between gap-3.5">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Your jails</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Facilities you have access to. Click a jail to open its portal.
-          </p>
+          <h1 className="page-title mb-1.5">Your jails</h1>
+          <p className="lede">Facilities you have access to. Click a jail to open its portal.</p>
         </div>
       </div>
 
       {jails.length === 0 ? (
         <EmptyState
+          icon="🏛️"
           title="No jail access assigned — contact your administrator"
           body="Your account currently has no JailAccess rows, so there is nothing to show here."
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {jails.map((jail) => (
-            <Link
-              key={jail.id}
-              to={`/jails/${jail.id}`}
-              className="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h2 className="font-semibold text-slate-900 group-hover:text-blue-800">{jail.name}</h2>
-                  <p className="text-sm text-slate-500">
-                    {jail.district}, {jail.state}
-                  </p>
+        <div className="grid gap-5 pb-14 sm:grid-cols-2 lg:grid-cols-3">
+          {jails.map((jail) => {
+            const tone = occupancyTone(jail.occupancyPct);
+            const pillCls = tone === "red" ? "pill-full" : tone === "amber" ? "pill-warn" : "pill-ok";
+            return (
+              <Link
+                key={jail.id}
+                to={`/jails/${jail.id}`}
+                className="card-shadow group rounded-card border border-transparent bg-white p-5 transition hover:-translate-y-[3px] hover:border-peach hover:shadow-[0_12px_26px_rgba(27,36,48,0.12)]"
+              >
+                <div className="mb-1.5 flex items-start justify-between gap-3">
+                  <h3 className="display m-0 text-base font-bold text-navy group-hover:text-terracotta sm:text-[16.5px]">
+                    {jail.name}
+                  </h3>
+                  <span className="code-chip shrink-0">{jail.code}</span>
                 </div>
-                <span className="rounded bg-slate-100 px-2 py-0.5 font-mono text-[11px] text-slate-600">
-                  {jail.code}
-                </span>
-              </div>
-
-              <div className="mt-4 flex items-center justify-between">
-                <OccupancyBadge pct={jail.occupancyPct} />
-                <span className="text-xs text-slate-500">
-                  {jail.currentCount}/{jail.sanctionedCapacity} inmates
-                </span>
-              </div>
-
-              <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-sm">
-                <span className="text-slate-500">Undertrials</span>
-                <span className="font-semibold text-blue-800">{jail.undertrialCount}</span>
-              </div>
-            </Link>
-          ))}
+                <p className="mb-4 text-xs text-bodytext">
+                  {jail.district}, {jail.state}
+                </p>
+                <div className="mb-3 flex items-center justify-between">
+                  <span className={pillCls}>{jail.occupancyPct}% capacity</span>
+                  <span className="text-xs text-bodytext">
+                    {jail.currentCount}/{jail.sanctionedCapacity} inmates
+                  </span>
+                </div>
+                <div className="flex items-center justify-between border-t border-[#f1ece1] pt-3 text-[13px]">
+                  <span className="text-bodytext">Undertrials</span>
+                  <b className="display text-[15px] font-bold text-terracotta">{jail.undertrialCount}</b>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

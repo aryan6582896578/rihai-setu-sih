@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import * as XLSX from "xlsx";
 import { PrismaClient } from "@prisma/client";
 import { evaluateSection479 } from "../apps/api/src/domain/section479.js";
+import { piiWriteFragment } from "../apps/api/src/lib/pii.js";
 
 const prisma = new PrismaClient();
 
@@ -215,12 +216,15 @@ async function main() {
     const prisoner = await prisma.prisoner.create({
       data: {
         jailId,
-        fullName,
         prisonerRegNo: t.prisoner_id,
-        dateOfBirth: new Date(new Date().getFullYear() - age, 0, 15),
         gender: (t.gender ?? "male").toLowerCase(),
         admissionDate: parseDate(t.custody_start_date) ?? daysAgo(30),
         createdAt: parseDate(t.custody_start_date) ?? daysAgo(30),
+        // Tier-1 PII is written encrypted (Prompt 8); plaintext columns stay NULL.
+        ...piiWriteFragment({
+          fullName,
+          dateOfBirth: new Date(new Date().getFullYear() - age, 0, 15),
+        }),
       },
     });
 

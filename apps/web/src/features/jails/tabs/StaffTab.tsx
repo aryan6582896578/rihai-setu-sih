@@ -2,17 +2,19 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Role, type CreateStaffResult, type StaffMember } from "@rihai/shared-types";
 import { api, extractApiError } from "../../../lib/api";
+import { useLang } from "../../../lib/i18n";
 import { EmptyState, ErrorBanner, Spinner } from "../../../components/ui";
 
-const ROLE_OPTIONS: { value: Role; label: string }[] = [
-  { value: Role.JailSuperintendent, label: "Jail Superintendent" },
-  { value: Role.JailStaff, label: "Jail Staff" },
-  { value: Role.DlsaLawyer, label: "DLSA Lawyer" },
-  { value: Role.Viewer, label: "Viewer (read-only)" },
+const ROLE_OPTIONS: { value: Role; labelKey: string }[] = [
+  { value: Role.JailSuperintendent, labelKey: "role.jail_superintendent" },
+  { value: Role.JailStaff, labelKey: "role.jail_staff" },
+  { value: Role.DlsaLawyer, labelKey: "role.dlsa_lawyer" },
+  { value: Role.Viewer, labelKey: "role.viewer" },
 ];
 
 export default function StaffTab({ jailId }: { jailId: string }) {
   const queryClient = useQueryClient();
+  const { t } = useLang();
   const [addOpen, setAddOpen] = useState(false);
   const [tempPassword, setTempPassword] = useState<string | null>(null);
 
@@ -59,22 +61,22 @@ export default function StaffTab({ jailId }: { jailId: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-500">People with JailAccess to this facility.</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="lede">{t("emp.lede")}</p>
         <button
           onClick={() => {
             setAddOpen((v) => !v);
             setTempPassword(null);
           }}
-          className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"
+          className="btn btn-primary btn-sm"
         >
-          {addOpen ? "Close" : "+ Add staff"}
+          {addOpen ? t("emp.close") : t("emp.addstaff")}
         </button>
       </div>
 
       {tempPassword && (
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-          <span className="font-semibold">Account created.</span> Temporary password (shown only once):{" "}
+          <span className="font-semibold">{t("emp.created")}</span> {t("emp.temp")}{" "}
           <code className="rounded bg-white px-1.5 py-0.5 font-mono">{tempPassword}</code>
         </div>
       )}
@@ -90,25 +92,25 @@ export default function StaffTab({ jailId }: { jailId: string }) {
       {updateError && <ErrorBanner message={updateError.message} />}
 
       {staff.length === 0 ? (
-        <EmptyState title="No staff assigned yet" body="Use “Add staff” to attach or create accounts." />
+        <EmptyState icon="👥" title={t("staff.none.h")} body={t("staff.none.b")} />
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+        <div className="panel-tight">
+          <table className="data-table min-w-full">
+            <thead>
               <tr>
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Email</th>
-                <th className="px-4 py-3">Role at jail</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+                <th>{t("th.name")}</th>
+                <th>{t("th.email")}</th>
+                <th>{t("th.role")}</th>
+                <th>{t("th.status")}</th>
+                <th className="text-right">{t("th.actions")}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody>
               {staff.map((member) => (
                 <tr key={member.accessId}>
-                  <td className="px-4 py-3 font-medium text-slate-800">{member.name}</td>
-                  <td className="px-4 py-3 text-slate-600">{member.email}</td>
-                  <td className="px-4 py-3">
+                  <td className="font-semibold text-navy">{member.name}</td>
+                  <td className="text-bodytext">{member.email}</td>
+                  <td>
                     <select
                       value={member.roleAtJail}
                       disabled={updateMutation.isPending}
@@ -118,33 +120,29 @@ export default function StaffTab({ jailId }: { jailId: string }) {
                           body: { roleAtJail: e.target.value as Role },
                         })
                       }
-                      className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs focus:border-blue-600 focus:outline-none"
+                      className="input-base px-2 py-1.5 text-xs"
                     >
                       {ROLE_OPTIONS.map((r) => (
                         <option key={r.value} value={r.value}>
-                          {r.label}
+                          {t(r.labelKey)}
                         </option>
                       ))}
                     </select>
                   </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ring-inset ${
-                        member.isActive
-                          ? "bg-emerald-100 text-emerald-800 ring-emerald-600/20"
-                          : "bg-slate-100 text-slate-600 ring-slate-500/20"
-                      }`}
-                    >
-                      {member.isActive ? "Active" : "Inactive"}
-                    </span>
+                  <td>
+                    {member.isActive ? (
+                      <span className="status-active">{t("status.active")}</span>
+                    ) : (
+                      <span className="pill-neutral">{t("status.inactive")}</span>
+                    )}
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="text-right">
                     <button
                       disabled={updateMutation.isPending}
                       onClick={() => updateMutation.mutate({ userId: member.userId, body: { isActive: false } })}
-                      className="rounded-md border border-red-200 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+                      className="link-danger disabled:opacity-50"
                     >
-                      Remove access
+                      {t("action.remove")}
                     </button>
                   </td>
                 </tr>
@@ -170,10 +168,11 @@ function AddStaffForm({
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [roleAtJail, setRoleAtJail] = useState<Role>(Role.JailStaff);
+  const { t } = useLang();
 
   return (
     <form
-      className="grid gap-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-[repeat(2,minmax(0,1fr))_auto]"
+      className="card-shadow grid gap-3 rounded-card bg-white p-5 sm:grid-cols-2 sm:gap-x-4"
       onSubmit={(e) => {
         e.preventDefault();
         if (!email.trim()) return;
@@ -181,17 +180,17 @@ function AddStaffForm({
         onSubmit(mode === "existing" ? { mode, email: email.trim(), roleAtJail } : { mode, email: email.trim(), name: name.trim(), roleAtJail });
       }}
     >
-      <div className="sm:col-span-3 flex gap-2">
+      <div className="flex gap-2 sm:col-span-2">
         {(["existing", "new"] as const).map((m) => (
           <button
             key={m}
             type="button"
             onClick={() => setMode(m)}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
-              mode === m ? "bg-blue-700 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            className={`cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-bold ${
+              mode === m ? "bg-navy text-white" : "bg-slate-200 text-navy hover:bg-[#d8dde3]"
             }`}
           >
-            {m === "existing" ? "Attach existing user" : "Create new user"}
+            {m === "existing" ? t("staff.attach") : t("staff.create")}
           </button>
         ))}
       </div>
@@ -199,44 +198,44 @@ function AddStaffForm({
       {mode === "new" && (
         <input
           required
-          placeholder="Full name"
+          placeholder={t("staff.name.ph")}
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-600 focus:outline-none"
+          className="input-base"
         />
       )}
 
       <input
         required
         type="email"
-        placeholder={mode === "existing" ? "Search by registered email" : "New account email"}
+        placeholder={mode === "existing" ? t("staff.email.existing") : t("staff.email.new")}
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-600 focus:outline-none"
+        className="input-base"
       />
 
       <select
         value={roleAtJail}
         onChange={(e) => setRoleAtJail(e.target.value as Role)}
-        className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-600 focus:outline-none"
+        className="input-base"
       >
         {ROLE_OPTIONS.map((r) => (
           <option key={r.value} value={r.value}>
-            {r.label}
+            {t(r.labelKey)}
           </option>
         ))}
       </select>
 
       {error && (
-        <p className="text-xs text-red-700 sm:col-span-3">{error}</p>
+        <p className="text-xs font-medium text-red-700 sm:col-span-2">{error}</p>
       )}
 
       <button
         type="submit"
         disabled={busy}
-        className="rounded-lg bg-blue-700 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60 sm:col-span-3 sm:w-fit"
+        className="btn btn-primary w-fit disabled:opacity-60 sm:col-span-2"
       >
-        {busy ? "Saving…" : mode === "existing" ? "Attach & assign role" : "Create with temp password"}
+        {busy ? t("staff.saving") : mode === "existing" ? t("staff.submit.attach") : t("staff.submit.create")}
       </button>
     </form>
   );

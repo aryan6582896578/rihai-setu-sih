@@ -239,21 +239,20 @@ Test-Result "Task preview sheet renders (actors+banner)" (
 
 Write-Output ""
 Write-Output ("RESULT: {0} passed, {1} failed" -f $script:passCount, $script:failCount)
-if ($script:failCount -gt 0) {
-    foreach ($f in $script:failures) { Write-Output ("  " + $f) }
-    exit 1
-}
-exit 0
-Write-Output "=== smoke cleanup ==="
-$del = Invoke-Api -Method Delete -Url "$ApiBase/api/v1/prisoners/$newPid" -Headers $superHdr
-Test-Result "Cleanup: smoke prisoner + dependents deleted" ($del.Status -eq 204) ("status=" + $del.Status)
-$gone = Invoke-Api -Method Get -Url "$ApiBase/api/v1/prisoners/$newPid" -Headers $superHdr
-Test-Result "Deleted prisoner no longer fetchable (404)" ($gone.Status -eq 404) ("status=" + $gone.Status)
+# BUGFIX (session 8): this block used to `exit 0` here, making everything below it
+# unreachable -- the entire prompt-4 court/legal-aid suite silently never ran.
 Write-Output "=== prompt 4: court + legal aid ==="
 $ct = Invoke-Api -Method Get -Url "$ApiBase/api/v1/jails/$rampurId/court-tracking" -Headers $superHdr
 Test-Result "Court tracking lists filed app" ($ct.Status -eq 200 -and [bool](@($ct.Data.data) | Where-Object { $_.applicationId -eq $appId })) ("rows=" + @($ct.Data.data).Count)
 
-$sync = Invoke-Api -Method Post -Url "$ApiBase/api/v1/applications/$appId/sync-court-status" -Headers $superHdr
+# Mock court clock runs at ~12 court-days per real second (demo accelerator);
+# poll until the mocked pipeline reaches an outcome rather than racing it once.
+$sync = $null
+for ($i = 0; $i -lt 6; $i++) {
+    Start-Sleep -Seconds 1
+    $sync = Invoke-Api -Method Post -Url "$ApiBase/api/v1/applications/$appId/sync-court-status" -Headers $superHdr
+    if ($sync.Status -eq 200 -and $sync.Data.data.orderOutcome -eq "granted") { break }
+}
 Test-Result "Court sync advances stage + outcome" (
     $sync.Status -eq 200 -and $sync.Data.data.orderOutcome -eq "granted" -and $sync.Data.data.application.stage -eq "order_passed"
 ) ("stage=" + $sync.Data.data.application.stage + " outcome=" + $sync.Data.data.orderOutcome)

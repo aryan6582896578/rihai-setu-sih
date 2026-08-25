@@ -22,13 +22,10 @@ export default function RollupPage() {
   if (user && user.role !== "super_admin") {
     return (
       <EmptyState
+        icon="🔒"
         title="Super admin only"
         body="The cross-jail rollup aggregates every facility and is restricted to system administrators."
-        action={
-          <Link to="/jails" className="text-sm font-medium text-blue-700 hover:underline">
-            ← Back to your jails
-          </Link>
-        }
+        action={<Link to="/jails" className="crumb">← Back to your jails</Link>}
       />
     );
   }
@@ -36,10 +33,8 @@ export default function RollupPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-          Cross-jail overcrowding rollup
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="page-title mb-1.5">Cross-jail overcrowding rollup</h1>
+        <p className="lede">
           State-level view with the forward-projection layer static dashboards lack.
         </p>
       </div>
@@ -65,14 +60,14 @@ export default function RollupPage() {
             />
           </div>
 
-          <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="font-semibold text-slate-900">30-day projection — all jails combined</h2>
-            <div className="mt-2">
+          <section className="panel !mt-0">
+            <h2 className="display m-0 text-base font-bold text-navy">30-day projection — all jails combined</h2>
+            <div className="mt-3">
               <LineChart
                 series={[
                   {
                     label: "Baseline sum",
-                    color: "#f59e0b",
+                    color: "#F5A623",
                     points: Array.from({ length: 31 }, (_, i) =>
                       Math.round(
                         (query.data!.projection30.baselineSum * i) / 30 +
@@ -83,7 +78,7 @@ export default function RollupPage() {
                   },
                   {
                     label: "Projected sum (with pipeline)",
-                    color: "#059669",
+                    color: "#4C7A3B",
                     points: (() => {
                       const start = query.data!.totals.occupancy;
                       const end = query.data!.projection30.projectedSum;
@@ -96,38 +91,36 @@ export default function RollupPage() {
             </div>
           </section>
 
-          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-            <table className="min-w-full divide-y divide-slate-200 text-sm">
-              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+          <div className="panel-tight overflow-x-auto">
+            <table className="data-table min-w-full">
+              <thead>
                 <tr>
-                  <th className="px-4 py-3">Jail</th>
-                  <th className="px-4 py-3">Location</th>
-                  <th className="px-4 py-3">Occupancy</th>
-                  <th className="px-4 py-3">% capacity</th>
-                  <th className="px-4 py-3">Eligible unprocessed</th>
+                  <th>Jail</th>
+                  <th>Location</th>
+                  <th>Occupancy</th>
+                  <th>% capacity</th>
+                  <th>Eligible unprocessed</th>
                   <th></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody>
                 {query.data.jails.map((j) => (
-                  <tr key={j.jailId} className="hover:bg-blue-50/40">
-                    <td className="px-4 py-3 font-medium text-slate-800">{j.name}</td>
-                    <td className="px-4 py-3 text-slate-600">
+                  <tr key={j.jailId} className="clickable">
+                    <td className="font-semibold text-navy">{j.name}</td>
+                    <td className="text-bodytext">
                       {j.district}, {j.state}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="text-bodytext">
                       {j.occupancy}/{j.sanctionedCapacity}
                     </td>
-                    <td className="px-4 py-3 font-semibold">{j.capacityPct}%</td>
-                    <td className="px-4 py-3">
-                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
-                        {j.eligibleButUnprocessed}
-                      </span>
+                    <td className="font-semibold">{j.capacityPct}%</td>
+                    <td>
+                      <span className="pill-warn">{j.eligibleButUnprocessed}</span>
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="text-right">
                       <button
                         onClick={() => navigate(`/jails/${j.jailId}/overcrowding`)}
-                        className="whitespace-nowrap rounded-md border border-slate-300 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                        className="btn btn-outline btn-sm whitespace-nowrap"
                       >
                         Details
                       </button>

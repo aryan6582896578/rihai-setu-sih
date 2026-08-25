@@ -5,9 +5,11 @@
 import { prisma } from "../lib/prisma.js";
 import { logger } from "../lib/logger.js";
 import { courtStatusProvider } from "../lib/court-status-provider.js";
+import { piiPublic } from "../lib/pii.js";
 import { ApiError } from "../middleware/errors.js";
 import { getPrimaryCase } from "./eligibility.service.js";
 import { appendStage, toApplicationDto } from "./applications.service.js";
+import { notifyHearingScheduled } from "./notifications.service.js";
 
 const MS_PER_DAY = 86_400_000;
 
@@ -40,7 +42,7 @@ export async function getCourtTracking(jailId: string): Promise<CourtTrackingRow
     rows.push({
       applicationId: app.id,
       prisonerId: app.prisonerId,
-      prisonerName: app.prisoner.fullName,
+      prisonerName: piiPublic(app.prisoner).fullName,
       caseNumber: primary?.caseNumber ?? "-",
       cnrNumber: primary?.cnrNumber ?? null,
       stage: app.stage,
@@ -103,6 +105,11 @@ export async function syncCourtStatus(
     }
   }
 
+  if (extra.hearingDate) {
+    void notifyHearingScheduled(app.id, extra.hearingDate as Date).catch((err) =>
+      logger.error("[notify] hearing hook failed", err),
+    );
+  }
   const updated = await appendStage(app.id, stage, extra, actorId);
   logger.info(`Court status synced`, {
     applicationId: app.id,
@@ -144,11 +151,13 @@ export interface UnassignedRow {
 }
 
 export async function getUnassignedQueue(jailId: string): Promise<UnassignedRow[]> {
+  // Any application still short of release can need a DLSA lawyer (Prompt 4:
+  // the queue key is "no LegalAidAssignment yet", not a particular stage).
   const apps = await prisma.application.findMany({
     where: {
       prisoner: { jailId },
       legalAidAssignment: { is: null },
-      stage: { in: [ApplicationStage.Flagged, ApplicationStage.Drafted, ApplicationStage.Filed] },
+      stage: { not: ApplicationStage.Released },
     },
     include: { prisoner: true },
     orderBy: { updatedAt: "asc" },
@@ -157,10 +166,11 @@ export async function getUnassignedQueue(jailId: string): Promise<UnassignedRow[
   const rows: UnassignedRow[] = [];
   for (const app of apps) {
     const primary = await getPrimaryCase(app.prisonerId);
+    const pii = piiPublic(app.prisoner);
     rows.push({
       applicationId: app.id,
       prisonerId: app.prisonerId,
-      prisonerName: app.prisoner.fullName,
+      prisonerName: pii.fullName,
       prisonerRegNo: app.prisoner.prisonerRegNo,
       caseNumber: primary?.caseNumber ?? "-",
       stage: app.stage,
@@ -306,7 +316,7 @@ export async function getSuretyGrantedList(jailId: string) {
   });
   return apps.map((a) => ({
     applicationId: a.id,
-    prisonerName: a.prisoner.fullName,
+    prisonerName: piiPublic(a.prisoner).fullName,
     stage: a.stage,
     orderOutcome: a.orderOutcome,
     bondAmount: a.suretyStatus?.bondAmount ?? null,

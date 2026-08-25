@@ -19,9 +19,15 @@ import {
   trainingProgramsRouter,
 } from "./routes/prisoners.routes.js";
 import { superintendentRouter } from "./routes/superintendent.routes.js";
+import {
+  complianceJailRouter,
+  complianceRollupRouter,
+} from "./routes/compliance.routes.js";
+import { notificationsRouter } from "./routes/notifications.routes.js";
 import { courtJailRouter } from "./routes/court.routes.js";
 import { applicationCourtRouter } from "./routes/application-court.routes.js";
-// PARKED: import { verifyRouter } from "./routes/verify.routes.js";
+import { adminRouter } from "./routes/admin.routes.js";
+// PARKED: 
 import {
   overcrowdingJailRouter,
   overcrowdingRollupRouter,
@@ -59,12 +65,16 @@ export function createApp() {
   app.use("/api/v1/jails/:jailId/overcrowding", overcrowdingJailRouter);
   app.use("/api/v1/overcrowding", overcrowdingRollupRouter);
   app.use("/api/v1/applications", applicationCourtRouter);
-  // PARKED: app.use("/api/v1/verify", verifyRouter);
+
   app.use("/api/v1/prisoners", prisonersRouter);
   app.use("/api/v1/enrollments", enrollmentsRouter);
   app.use("/api/v1/training-programs", trainingProgramsRouter);
-  app.use("/api/v1/applications", applicationsRouter);
-  app.use("/api/v1/applications", applicationActionsRouter);
+  app.use("/api/v1/jails/:jailId/compliance-report", complianceJailRouter);
+  app.use("/api/v1/compliance-report", complianceRollupRouter);
+app.use("/api/v1/notifications", notificationsRouter);
+app.use("/api/v1/applications", applicationsRouter);
+app.use("/api/v1/applications", applicationActionsRouter);
+app.use("/api/v1/admin", adminRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
@@ -72,4 +82,3 @@ export function createApp() {
   logger.debug(`Serving uploads from ${uploadsDir}`);
   return app;
 }
-

@@ -43,9 +43,7 @@ export default function PrisonerProfilePage() {
     return (
       <div className="space-y-3">
         <ErrorBanner message={extractApiError(query.error).message} />
-        <Link to=".." className="text-sm text-blue-700 hover:underline">
-          ← Back
-        </Link>
+        <Link to=".." className="crumb">← Back</Link>
       </div>
     );
 
@@ -53,19 +51,20 @@ export default function PrisonerProfilePage() {
   const canEdit = !!user && EDITOR_ROLES.includes(user.role);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
+      <Link to=".." className="crumb">← All prisoners</Link>
       <ProfileHeader detail={detail} canEdit={canEdit} onChanged={refresh} />
 
-      <nav className="flex flex-wrap gap-2 text-xs">
+      <nav className="tabpills">
         {[
-          ["#personal", "Personal"],
+          ["#personal-info", "Personal"],
           ["#case", "Case details"],
           ["#eligibility", "§479 eligibility"],
           ["#application", "Application progress"],
           ["#skills", "Skill Passport"],
           ["#notes", "Notes"],
         ].map(([href, label]) => (
-          <a key={href} href={href} className="rounded-full bg-slate-200/70 px-3 py-1 font-medium text-slate-600 hover:bg-slate-300/70">
+          <a key={href} href={href}>
             {label}
           </a>
         ))}
@@ -109,20 +108,17 @@ function ProfileHeader({
   const badge = eligibilityBadge(detail.eligibility?.status ?? "pending");
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm" id="personal">
-      <Link to=".." className="text-sm text-slate-500 hover:text-slate-700">
-        ← All prisoners
-      </Link>
-      <div className="mt-2 flex flex-wrap items-center gap-4">
+    <div className="panel !mt-0" id="personal">
+      <div className="flex flex-wrap items-center gap-4">
         <label className={canEdit ? "group relative cursor-pointer" : ""}>
           {detail.photoUrl ? (
             <img
               src={apiOriginUrl(detail.photoUrl)!}
               alt={detail.fullName}
-              className="h-20 w-20 rounded-full border border-slate-200 object-cover"
+              className="h-16 w-16 rounded-full border border-[#f1e6d5] object-cover sm:h-[58px] sm:w-[58px]"
             />
           ) : (
-            <span className="flex h-20 w-20 items-center justify-center rounded-full bg-blue-100 text-2xl font-bold text-blue-800">
+            <span className="display flex h-16 w-16 items-center justify-center rounded-full bg-peach text-xl font-extrabold text-terracotta sm:h-[58px] sm:w-[58px] sm:text-[22px]">
               {detail.fullName.slice(0, 1)}
             </span>
           )}
@@ -146,14 +142,14 @@ function ProfileHeader({
           )}
         </label>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">{detail.fullName}</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="display text-xl font-bold text-navy sm:text-[1.4rem]">{detail.fullName}</h1>
+          <p className="mt-0.5 text-[13px] text-bodytext">
             Reg no <span className="font-mono">{detail.prisonerRegNo}</span> ·{" "}
             {formatDate(detail.admissionDate)} admission · {detail.gender}
           </p>
-          {uploadError && <p className="mt-1 text-xs text-red-700">{uploadError}</p>}
+          {uploadError && <p className="mt-1 text-xs font-medium text-red-700">{uploadError}</p>}
         </div>
-        <span className={`ml-auto inline-flex rounded-full px-3 py-1 text-sm font-semibold ring-1 ring-inset ${badge.cls}`}>
+        <span className={`ml-auto ${badge.cls}`}>
           §479: {badge.label}
         </span>
       </div>
@@ -163,18 +159,18 @@ function ProfileHeader({
 
 function PersonalSection({ detail }: { detail: PrisonerDetail; canEdit: boolean; onChanged: () => void }) {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h2 className="font-semibold text-slate-900">Personal information</h2>
-      <dl className="mt-3 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
+    <section className="panel" id="personal-info">
+      <h2 className="display m-0 text-base font-bold text-navy">Personal information</h2>
+      <dl className="mt-4 grid grid-cols-2 gap-x-5 gap-y-4 text-sm sm:grid-cols-4">
         {[
           ["Date of birth", formatDate(detail.dateOfBirth)],
           ["Gender", detail.gender],
           ["Admission date", formatDate(detail.admissionDate)],
           ["Registration no", detail.prisonerRegNo],
         ].map(([k, v]) => (
-          <div key={k}>
-            <dt className="text-xs uppercase tracking-wide text-slate-400">{k}</dt>
-            <dd className="mt-0.5 font-medium text-slate-800">{v}</dd>
+          <div key={k} className="info-field">
+            <dt className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.07em] text-bodytext">{k}</dt>
+            <dd className="font-semibold text-heading">{v}</dd>
           </div>
         ))}
       </dl>
@@ -207,27 +203,25 @@ function EligibilityPanel({
   const badge = eligibilityBadge(a?.status ?? "pending");
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm" id="eligibility">
+    <section className="panel" id="eligibility">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-semibold text-slate-900">Section 479 eligibility</h2>
+        <h2 className="display m-0 text-base font-bold text-navy">Section 479 eligibility</h2>
         {canEdit && (
           <button
             onClick={() => recompute.mutate()}
             disabled={recompute.isPending}
-            className="rounded-md border border-blue-300 px-3 py-1.5 text-xs font-semibold text-blue-800 hover:bg-blue-50 disabled:opacity-50"
+            className="btn btn-outline btn-sm"
           >
             {recompute.isPending ? "Recomputing…" : "Recompute"}
           </button>
         )}
       </div>
-      {error && <p className="mt-2 text-xs text-red-700">{error}</p>}
-      <div className="mt-3 flex flex-wrap items-center gap-3">
-        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset ${badge.cls}`}>
-          {badge.label}
-        </span>
-        <p className="text-sm text-slate-700">{a?.reason ?? "Not yet assessed."}</p>
+      {error && <p className="mt-2 text-xs font-medium text-red-700">{error}</p>}
+      <div className="eligibility-row mt-4 flex flex-wrap items-center gap-3">
+        <span className={`pill ${badge.cls}`}>{badge.label}</span>
+        <p className="text-[13.5px] text-bodytext">{a?.reason ?? "Not yet assessed."}</p>
       </div>
-      <p className="mt-2 text-xs text-slate-400">Last computed: {formatDateTime(a?.computedAt)}</p>
+      <p className="timestamp-note mt-2.5 text-xs text-[#9aa1ab]">Last computed: {formatDateTime(a?.computedAt)}</p>
     </section>
   );
 }
@@ -266,9 +260,9 @@ function CaseSection({ detail, canEdit, onChanged }: { detail: PrisonerDetail; c
 
   if (!primary || !form) {
     return (
-      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm" id="case">
-        <h2 className="font-semibold text-slate-900">Case details</h2>
-        <p className="mt-2 text-sm text-slate-500">No case record on file.</p>
+      <section className="panel" id="case">
+        <h2 className="display m-0 text-base font-bold text-navy">Case details</h2>
+        <p className="mt-2 text-sm text-bodytext">No case record on file.</p>
       </section>
     );
   }
@@ -278,22 +272,20 @@ function CaseSection({ detail, canEdit, onChanged }: { detail: PrisonerDetail; c
     save.mutate();
   };
 
-  const inputCls = "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-600 focus:outline-none";
-  const labelCls = "block text-xs font-medium uppercase tracking-wide text-slate-500 mb-1";
+  const inputCls = "input-base";
+  const labelCls = "mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-bodytext";
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm" id="case">
+    <section className="panel" id="case">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-semibold text-slate-900">Case details</h2>
+        <h2 className="display m-0 text-base font-bold text-navy">Case details</h2>
         {canEdit && !editing && (
-          <button onClick={() => setEditing(true)} className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">
-            Edit
-          </button>
+          <button onClick={() => setEditing(true)} className="btn btn-outline btn-sm">Edit</button>
         )}
       </div>
 
       {!editing ? (
-        <dl className="mt-3 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
+        <dl className="mt-4 grid grid-cols-2 gap-x-5 gap-y-4 text-sm sm:grid-cols-4">
           {[
             ["Case number", primary.caseNumber],
             ["CNR number", primary.cnrNumber ?? "-"],
@@ -312,9 +304,9 @@ function CaseSection({ detail, canEdit, onChanged }: { detail: PrisonerDetail; c
                 .join(", ") || "—",
             ],
           ].map(([k, v]) => (
-            <div key={k}>
-              <dt className="text-xs uppercase tracking-wide text-slate-400">{k}</dt>
-              <dd className="mt-0.5 font-medium text-slate-800">{v}</dd>
+            <div key={k} className="info-field">
+              <dt className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.07em] text-bodytext">{k}</dt>
+              <dd className="font-semibold text-heading">{v}</dd>
             </div>
           ))}
         </dl>
@@ -355,14 +347,12 @@ function CaseSection({ detail, canEdit, onChanged }: { detail: PrisonerDetail; c
               </label>
             </div>
           </div>
-          <p className="text-xs text-slate-500">Saving triggers an automatic §479 eligibility recomputation.</p>
-          <div className="flex gap-2">
-            <button type="submit" disabled={save.isPending} className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-60">
+          <p className="info-note">Saving triggers an automatic §479 eligibility recomputation.</p>
+          <div className="flex flex-wrap gap-2">
+            <button type="submit" disabled={save.isPending} className="btn btn-primary">
               {save.isPending ? "Saving…" : "Save & recompute"}
             </button>
-            <button type="button" onClick={() => setEditing(false)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium">
-              Cancel
-            </button>
+            <button type="button" onClick={() => setEditing(false)} className="btn btn-outline">Cancel</button>
           </div>
         </form>
       )}
@@ -381,8 +371,12 @@ function ApplicationProgressCard({ detail, onChanged }: { detail: PrisonerDetail
     (a) => a.stage !== ApplicationStage.Released,
   ) ?? detail.applications[0];
 
+  // Stage changes reset/shift stall windows, so the jail page stall badge and
+  // stall list must be refetched, not served from cache.
+  const qc = useQueryClient();
   const invalidate = () => {
     setError(null);
+    void qc.invalidateQueries({ queryKey: ["stall-list"] });
     onChanged();
   };
 
@@ -439,22 +433,22 @@ function ApplicationProgressCard({ detail, onChanged }: { detail: PrisonerDetail
   }
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm" id="application">
-      <h2 className="font-semibold text-slate-900">Application progress</h2>
+    <section className="panel" id="application">
+      <h2 className="display m-0 text-base font-bold text-navy">Application progress</h2>
       {error && <div className="mt-2"><ErrorBanner message={error} /></div>}
 
       {!active ? (
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm text-slate-500">No application opened yet.</p>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm text-bodytext">No application opened yet.</p>
           {canAdvance && (
-            <button onClick={() => openApp.mutate()} disabled={openApp.isPending} className="rounded-md border border-blue-300 px-3 py-1.5 text-xs font-semibold text-blue-800 hover:bg-blue-50 disabled:opacity-50">
+            <button onClick={() => openApp.mutate()} disabled={openApp.isPending} className="btn btn-outline btn-sm">
               Open application (flagged)
             </button>
           )}
         </div>
       ) : (
         <>
-          <ol className="mt-4 flex flex-col gap-0 sm:flex-row sm:items-start">
+          <ol className="mt-5 flex flex-col gap-0 sm:flex-row sm:items-start">
             {STAGE_ORDER.map((stage, i) => {
               const date = active.stageHistory?.[stage]?.at;
               const currentIdx = STAGE_ORDER.indexOf(active.stage);
@@ -462,35 +456,35 @@ function ApplicationProgressCard({ detail, onChanged }: { detail: PrisonerDetail
               const isCurrent = i === currentIdx;
               return (
                 <li key={stage} className="flex flex-1 items-center sm:flex-col sm:items-stretch">
-                  <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                    isCurrent ? "bg-blue-700 text-white" : done ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-500"
+                  <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-[3px] border-white text-xs font-extrabold ${
+                    done
+                      ? "bg-terracotta text-white"
+                      : "bg-[#ece2d3] text-bodytext"
                   }`}>
                     {done && !isCurrent ? "✓" : i + 1}
                   </div>
                   {i < STAGE_ORDER.length - 1 && (
-                    <div className={`mx-2 h-0.5 flex-1 ${i < currentIdx ? "bg-emerald-500" : "bg-slate-200"}`} />
+                    <div className={`mx-2 h-0.5 flex-1 ${i < currentIdx ? "bg-terracotta/60" : "bg-[#ece2d3]"}`} />
                   )}
-                  <div className="ml-2 sm:ml-0 sm:mt-1.5 sm:text-center">
-                    <p className={`text-xs font-semibold ${isCurrent ? "text-blue-800" : done ? "text-emerald-700" : "text-slate-400"}`}>
+                  <div className="ml-2 sm:ml-0 sm:mt-2 sm:text-center">
+                    <p className={`text-xs font-bold ${isCurrent || done ? "text-terracotta" : "text-bodytext"}`}>
                       {STAGE_LABELS[stage]}
                     </p>
-                    {date && <p className="text-[10px] text-slate-400">{formatDate(date)}</p>}
+                    {date && <p className="text-[10.5px] text-[#a7adb6]">{formatDate(date)}</p>}
                   </div>
                 </li>
               );
             })}
           </ol>
 
-          <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-slate-100 pt-3">
-            <span className="text-xs text-slate-500">
-              {active.type === "personal_bond" ? "Personal bond" : "Bail"} application · updated {formatDateTime(active.updatedAt)}
+          <div className="app-status-row mt-5 flex flex-wrap items-center gap-3 rounded-[10px] bg-[#FBF9F5] px-4 py-3.5">
+            <span className="text-xs text-bodytext">
+              <b className="font-bold text-navy">{active.type === "personal_bond" ? "Personal bond" : "Bail"} application</b> · updated {formatDateTime(active.updatedAt)}
             </span>
             {active.reviewedByName ? (
-              <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
-                Reviewed by {active.reviewedByName}
-              </span>
+              <span className="status-active">Reviewed by {active.reviewedByName}</span>
             ) : (
-              <span className="inline-flex items-center rounded-full bg-orange-50 px-2 py-0.5 text-xs font-medium text-orange-700 ring-1 ring-inset ring-orange-600/20">
+              <span className="review-pill rounded-full bg-amber-100 px-3 py-1 text-[11.5px] font-bold text-amber-700">
                 Not yet reviewed
               </span>
             )}
@@ -498,7 +492,7 @@ function ApplicationProgressCard({ detail, onChanged }: { detail: PrisonerDetail
               <button
                 onClick={() => void openPreview(active.id)}
                 disabled={previewBusy}
-                className="rounded-md border border-indigo-300 px-3 py-1.5 text-xs font-semibold text-indigo-800 hover:bg-indigo-50 disabled:opacity-60"
+                className="btn btn-outline btn-sm"
               >
                 {previewBusy ? "Opening…" : "Task preview ↗"}
               </button>
@@ -507,14 +501,14 @@ function ApplicationProgressCard({ detail, onChanged }: { detail: PrisonerDetail
                   href={apiOriginUrl(active.generatedDocumentUrl)!}
                   target="_blank"
                   rel="noreferrer"
-                  className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                  className="btn btn-ghost btn-sm"
                 >
-                  Formal draft document ↗
+                  Formal draft ↗
                 </a>
               )}
               {canReview && !active.reviewedByName &&
                 STAGE_ORDER.indexOf(active.stage) < STAGE_ORDER.indexOf(ApplicationStage.Filed) && (
-                  <button onClick={() => review.mutate(active)} disabled={review.isPending} className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60">
+                  <button onClick={() => review.mutate(active)} disabled={review.isPending} className="btn btn-navy btn-sm">
                     Mark reviewed
                   </button>
                 )}
@@ -527,15 +521,15 @@ function ApplicationProgressCard({ detail, onChanged }: { detail: PrisonerDetail
                       ? "Requires review by DLSA lawyer first"
                       : undefined
                   }
-                  className="rounded-md bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-800 disabled:opacity-60"
+                  className="btn btn-primary btn-sm"
                 >
                   Advance to {STAGE_LABELS[nextStage]}
                 </button>
               )}
             </div>
           </div>
-          <div className="mt-4 border-t border-slate-100 pt-3">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Stage log — who did what</p>
+          <div className="mt-4 border-t border-[#f0e4d3] pt-3">
+            <p className="kicker mb-2">Stage log — who did what</p>
             <ul className="space-y-1.5">
               {STAGE_ORDER.map((stage) => {
                 const h = active.stageHistory?.[stage];
@@ -547,25 +541,25 @@ function ApplicationProgressCard({ detail, onChanged }: { detail: PrisonerDetail
                   <li
                     key={stage}
                     className={`flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 rounded-lg px-3 py-2 text-sm ${
-                      isCurrent ? "bg-blue-50/70" : done ? "bg-emerald-50/40" : "bg-slate-50/60"
+                      isCurrent ? "bg-[#FFF6EC]" : done ? "bg-[#FBF9F5]" : "bg-[#f6f4f0]/60"
                     }`}
                   >
-                    <span className={`font-medium ${isCurrent ? "text-blue-900" : done ? "text-emerald-800" : "text-slate-400"}`}>
+                    <span className={`font-semibold ${isCurrent ? "text-terracotta" : done ? "text-navy" : "text-bodytext/70"}`}>
                       {done && !isCurrent ? "✓ " : isCurrent ? "● " : "●‹ "}
                       {STAGE_LABELS[stage]}
-                      {isCurrent && <span className="ml-1 text-[10px] font-bold uppercase text-blue-700">current</span>}
+                      {isCurrent && <span className="ml-1 text-[10px] font-extrabold uppercase text-terracotta/80">current</span>}
                     </span>
-                    <span className="flex flex-wrap items-center gap-x-3 text-xs text-slate-500">
+                    <span className="flex flex-wrap items-center gap-x-3 text-xs text-bodytext">
                       {h?.byName && (
                         <span>
-                          by <strong className="font-semibold text-slate-700">{h.byName}</strong>
+                          by <strong className="font-semibold text-navy">{h.byName}</strong>
                         </span>
                       )}
-                      {h?.note && <span className="italic text-slate-400">{h.note}</span>}
+                      {h?.note && <span className="italic text-bodytext/80">{h.note}</span>}
                       {h ? (
                         <span>{formatDateTime(h.at)}</span>
                       ) : (
-                        <span className="text-slate-300">not yet reached</span>
+                        <span className="text-[#c3c8cf]">not yet reached</span>
                       )}
                     </span>
                   </li>
@@ -575,7 +569,7 @@ function ApplicationProgressCard({ detail, onChanged }: { detail: PrisonerDetail
           </div>
 
           {nextStage === ApplicationStage.Filed && !active.reviewedByName && (
-            <p className="mt-2 text-xs text-orange-700">
+            <p className="mt-2 text-xs font-semibold text-amber-700">
               Filing is blocked until a DLSA lawyer or superintendent marks this draft reviewed.
             </p>
           )}
@@ -624,17 +618,17 @@ function SkillPassportPanel({ detail, canEdit, onChanged }: { detail: PrisonerDe
   });
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm" id="skills">
+    <section className="panel" id="skills">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-semibold text-slate-900">Skill Passport</h2>
-          <p className="text-xs text-slate-400">
+          <h2 className="display m-0 text-base font-bold text-navy">Skill Passport</h2>
+          <p className="text-xs text-bodytext">
             Vocational training record that follows the individual after release
           </p>
         </div>
         {canEdit && programsQuery.data && programsQuery.data.length > 0 && (
-          <div className="flex gap-2">
-            <select value={programId} onChange={(e) => setProgramId(e.target.value)} className="rounded-lg border border-slate-300 px-2 py-1.5 text-xs">
+          <div className="flex flex-wrap gap-2">
+            <select value={programId} onChange={(e) => setProgramId(e.target.value)} className="input-base w-auto bg-white px-2 py-1.5 text-xs">
               <option value="">Pick a program…</option>
               {programsQuery.data.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -645,7 +639,7 @@ function SkillPassportPanel({ detail, canEdit, onChanged }: { detail: PrisonerDe
             <button
               onClick={() => enroll.mutate()}
               disabled={!programId || enroll.isPending}
-              className="rounded-md bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-800 disabled:opacity-40"
+              className="btn btn-primary btn-sm disabled:opacity-40"
             >
               + Enroll
             </button>
@@ -717,26 +711,26 @@ function SkillPassportPanel({ detail, canEdit, onChanged }: { detail: PrisonerDe
     const pct = e.status === "completed" ? 100 : draftPct;
 
     const accent =
-      e.status === "completed" ? "border-l-emerald-500" : e.status === "in_progress" ? "border-l-blue-500" : "border-l-slate-300";
+      e.status === "completed" ? "border-l-emerald-500" : e.status === "in_progress" ? "border-l-terracotta" : "border-l-slate-300";
     const pillCls =
       e.status === "completed"
-        ? "bg-emerald-100 text-emerald-800"
+        ? "pill-ok"
         : e.status === "in_progress"
-          ? "bg-blue-100 text-blue-800"
-          : "bg-slate-100 text-slate-600";
-    const barColor = e.status === "completed" ? "bg-emerald-500" : e.status === "in_progress" ? "bg-blue-600" : "bg-slate-400";
+          ? "pill-warn"
+          : "pill-neutral";
+    const barColor = e.status === "completed" ? "bg-emerald-500" : e.status === "in_progress" ? "bg-terracotta" : "bg-slate-400";
 
     return (
-      <div className={`rounded-xl border border-slate-200 border-l-4 bg-white p-4 shadow-sm transition hover:shadow-md ${accent}`}>
+      <div className={`card-shadow rounded-xl border border-[#f1e6d5] border-l-4 bg-white p-4 transition hover:shadow-md ${accent}`}>
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-slate-900">{e.program.name}</p>
-            <span className="mt-0.5 inline-block rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+            <p className="display truncate text-sm font-bold text-navy">{e.program.name}</p>
+            <span className="mt-0.5 inline-block rounded bg-peach/60 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#8a4a1c]">
               {e.program.category}
             </span>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${pillCls}`}>
+            <span className={pillCls}>
               {e.status.replace("_", " ")}
             </span>
             {e.certificateUrl && (
@@ -744,7 +738,7 @@ function SkillPassportPanel({ detail, canEdit, onChanged }: { detail: PrisonerDe
                 href={apiOriginUrl(e.certificateUrl)!}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-md bg-emerald-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-emerald-700"
+                className="btn btn-primary btn-sm !px-2.5 !py-1 !text-[11px]"
               >
                 Certificate
               </a>
@@ -753,13 +747,13 @@ function SkillPassportPanel({ detail, canEdit, onChanged }: { detail: PrisonerDe
         </div>
 
         <div className="mt-3 flex items-center gap-3">
-          <div className="relative h-2.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+          <div className="relative h-2.5 flex-1 overflow-hidden rounded-full bg-[#f1ece1]">
             <div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${pct}%` }} />
           </div>
-          <span className="w-11 text-right text-sm font-bold tabular-nums text-slate-700">{pct}%</span>
+          <span className="w-11 text-right font-mono text-sm font-bold tabular-nums text-navy">{pct}%</span>
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-50 pt-2.5 text-xs text-slate-400">
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[#f6f1e7] pt-2.5 text-xs text-bodytext">
           <span>
             {e.completedAt ? `Completed ${formatDate(e.completedAt)}` : e.status === "in_progress" ? "Underway" : "Not started yet"}
           </span>
@@ -774,12 +768,12 @@ function SkillPassportPanel({ detail, canEdit, onChanged }: { detail: PrisonerDe
                 onChange={(ev) => setDraftPct(Number(ev.target.value))}
                 onMouseUp={() => draftPct !== e.progressPct && onSave({ id: e.id, progressPct: draftPct })}
                 onTouchEnd={() => draftPct !== e.progressPct && onSave({ id: e.id, progressPct: draftPct })}
-                className="h-1.5 w-32 cursor-pointer accent-blue-600"
+                className="h-1.5 w-32 cursor-pointer accent-terracotta"
               />
               <button
                 onClick={() => onSave({ id: e.id, markComplete: true })}
                 disabled={busy}
-                className="rounded-md border border-emerald-300 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-50 disabled:opacity-50"
+                className="btn btn-outline btn-sm disabled:opacity-50"
               >
                 Mark complete
               </button>
@@ -804,11 +798,11 @@ function NotesPanel({ detail, canEdit, onChanged }: { detail: PrisonerDetail; ca
   });
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm" id="notes">
-      <h2 className="font-semibold text-slate-900">Notes & activity log</h2>
+    <section className="panel" id="notes">
+      <h2 className="display m-0 text-base font-bold text-navy">Notes & activity log</h2>
       {canEdit && (
         <form
-          className="mt-3 flex gap-2"
+          className="notes-add-row mt-4 flex gap-2.5"
           onSubmit={(e) => {
             e.preventDefault();
             if (body.trim()) add.mutate();
@@ -818,21 +812,21 @@ function NotesPanel({ detail, canEdit, onChanged }: { detail: PrisonerDetail; ca
             value={body}
             onChange={(e) => setBody(e.target.value)}
             placeholder="Add an observation…"
-            className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-600 focus:outline-none"
+            className="input-base min-w-0 flex-1"
           />
-          <button type="submit" disabled={add.isPending || !body.trim()} className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-900 disabled:opacity-50">
+          <button type="submit" disabled={add.isPending || !body.trim()} className="btn btn-navy btn-sm disabled:opacity-50">
             Add note
           </button>
         </form>
       )}
       {detail.notes.length === 0 ? (
-        <p className="mt-3 text-sm text-slate-500">No notes recorded.</p>
+        <p className="mt-3 text-sm text-bodytext">No notes recorded.</p>
       ) : (
         <ul className="mt-3 space-y-3">
           {detail.notes.map((n) => (
-            <li key={n.id} className="rounded-lg bg-slate-50 p-3">
-              <p className="text-sm text-slate-800">{n.body}</p>
-              <p className="mt-1 text-[11px] text-slate-400">
+            <li key={n.id} className="note-item rounded-[10px] bg-[#FBF9F5] p-3.5">
+              <p className="text-sm text-heading">{n.body}</p>
+              <p className="mt-1.5 block text-[11.5px] text-bodytext">
                 {n.authorName} · {formatDateTime(n.createdAt)}
               </p>
             </li>

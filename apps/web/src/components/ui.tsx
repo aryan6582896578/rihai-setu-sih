@@ -12,17 +12,17 @@ export function StatCard({
   tone?: "slate" | "blue" | "amber" | "red" | "green";
 }) {
   const tones: Record<string, string> = {
-    slate: "border-slate-200",
-    blue: "border-blue-200 bg-blue-50/50",
-    amber: "border-amber-200 bg-amber-50/50",
-    red: "border-red-200 bg-red-50/50",
-    green: "border-emerald-200 bg-emerald-50/50",
+    slate: "",
+    blue: "",
+    amber: "warn-border",
+    red: "hot-border",
+    green: "",
   };
   return (
-    <div className={`rounded-xl border bg-white p-4 shadow-sm ${tones[tone]}`}>
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-slate-900">{value}</p>
-      {sub && <p className="mt-0.5 text-xs text-slate-500">{sub}</p>}
+    <div className={`mini-stat ${tones[tone]}`}>
+      <p className="k">{label}</p>
+      <p className="v">{value}</p>
+      {sub && <p className="sub">{sub}</p>}
     </div>
   );
 }
@@ -30,18 +30,31 @@ export function StatCard({
 export function Spinner({ label }: { label?: string }) {
   return (
     <div className="flex items-center justify-center gap-3 py-12">
-      <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-200 border-t-blue-700" />
-      {label && <span className="text-sm text-slate-500">{label}</span>}
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-peach border-t-terracotta" />
+      {label && <span className="text-sm text-bodytext">{label}</span>}
     </div>
   );
 }
 
-export function EmptyState({ title, body, action }: { title: string; body?: string; action?: ReactNode }) {
+export function EmptyState({
+  title,
+  body,
+  icon = "📋",
+  action,
+}: {
+  title: string;
+  body?: string;
+  icon?: string;
+  action?: ReactNode;
+}) {
   return (
-    <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center">
-      <p className="text-sm font-medium text-slate-700">{title}</p>
-      {body && <p className="mt-1 text-sm text-slate-500">{body}</p>}
-      {action && <div className="mt-4 flex justify-center">{action}</div>}
+    <div className="panel">
+      <div className="empty-tab">
+        <div className="mb-3 text-4xl">{icon}</div>
+        <p className="display text-base font-bold text-navy">{title}</p>
+        {body && <p className="mt-1 text-sm">{body}</p>}
+        {action && <div className="mt-4 flex justify-center">{action}</div>}
+      </div>
     </div>
   );
 }
@@ -49,7 +62,7 @@ export function EmptyState({ title, body, action }: { title: string; body?: stri
 export function ErrorBanner({ message }: { message?: string }) {
   if (!message) return null;
   return (
-    <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+    <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">
       {message}
     </div>
   );
@@ -63,15 +76,9 @@ export function occupancyTone(pct: number): "green" | "amber" | "red" {
 
 export function OccupancyBadge({ pct }: { pct: number }) {
   const tone = occupancyTone(pct);
-  const styles =
-    tone === "red"
-      ? "bg-red-100 text-red-800 ring-red-600/20"
-      : tone === "amber"
-        ? "bg-amber-100 text-amber-800 ring-amber-600/20"
-        : "bg-emerald-100 text-emerald-800 ring-emerald-600/20";
+  const cls =
+    tone === "red" ? "pill-full" : tone === "amber" ? "pill-warn" : "pill-ok";
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset ${styles}`}>
-      {pct}% capacity
-    </span>
+    <span className={cls}>{pct}% capacity</span>
   );
 }

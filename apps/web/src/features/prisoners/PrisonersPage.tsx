@@ -54,29 +54,24 @@ export default function PrisonersPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <Link to={`/jails/${jailId}`} className="text-sm text-slate-500 hover:text-slate-700">
-            ← Jail portal
-          </Link>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">Prisoners</h1>
+          <Link to={`/jails/${jailId}`} className="crumb">← Jail portal</Link>
+          <h1 className="page-title">Prisoners</h1>
         </div>
         {canAdd && (
-          <button
-            onClick={() => setAddOpen(true)}
-            className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"
-          >
+          <button onClick={() => setAddOpen(true)} className="btn btn-primary">
             + Add prisoner
           </button>
         )}
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="filters-row flex flex-wrap gap-3">
         <input
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           placeholder="Search name, reg no or case number…"
-          className="min-w-[240px] flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-600 focus:outline-none"
+          className="input-base min-w-[200px] flex-1"
         />
         <select
           value={eligibility}
@@ -84,7 +79,7 @@ export default function PrisonersPage() {
             setEligibility(e.target.value);
             setPage(1);
           }}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          className="input-base w-fit bg-white sm:w-auto"
         >
           <option value="">All §479 statuses</option>
           <option value="eligible">Eligible</option>
@@ -98,7 +93,7 @@ export default function PrisonersPage() {
             setStage(e.target.value);
             setPage(1);
           }}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          className="input-base w-fit bg-white sm:w-auto"
         >
           <option value="">All application stages</option>
           <option value="none">No application</option>
@@ -112,45 +107,42 @@ export default function PrisonersPage() {
 
       {(query.data?.data.length ?? 0) === 0 ? (
         <EmptyState
+          icon="🗂️"
           title="No prisoners match"
           body={search || eligibility || stage ? "Try clearing filters." : "Add the first admission to get started."}
         />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+        <div className="panel-tight overflow-x-auto">
+          <table className="data-table min-w-full">
+            <thead>
               <tr>
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Reg no</th>
-                <th className="px-4 py-3">Case no</th>
-                <th className="px-4 py-3">Offence</th>
-                <th className="px-4 py-3">In custody</th>
-                <th className="px-4 py-3">§479 status</th>
-                <th className="px-4 py-3">Application</th>
+                <th>Name</th>
+                <th>Reg no</th>
+                <th>Case no</th>
+                <th>Offence</th>
+                <th>In custody</th>
+                <th>§479 status</th>
+                <th>Application</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody>
               {(data?.data ?? []).map((p) => (
                 <tr
                   key={p.id}
                   onClick={() => navigate(`/jails/${jailId}/prisoners/${p.id}`)}
-                  className="cursor-pointer hover:bg-blue-50/50"
+                  className="clickable"
                 >
-                  <td className="px-4 py-3 font-medium text-slate-800">{p.fullName}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-slate-600">{p.prisonerRegNo}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-slate-600">{p.caseNumber}</td>
-                  <td className="max-w-[220px] truncate px-4 py-3 text-slate-600">{p.offence}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-slate-600">{p.custodyDurationLabel}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ring-inset ${
-                        ELIGIBILITY_BADGE[p.eligibility.status].cls
-                      }`}
-                    >
+                  <td className="font-semibold text-navy">{p.fullName}</td>
+                  <td className="mono-cell text-bodytext">{p.prisonerRegNo}</td>
+                  <td className="mono-cell text-bodytext">{p.caseNumber}</td>
+                  <td className="max-w-[220px] truncate text-bodytext">{p.offence}</td>
+                  <td className="whitespace-nowrap text-bodytext">{p.custodyDurationLabel}</td>
+                  <td>
+                    <span className={`pill ${ELIGIBILITY_BADGE[p.eligibility.status].cls}`}>
                       {ELIGIBILITY_BADGE[p.eligibility.status].label}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="text-bodytext">
                     {p.applicationStage ? STAGE_LABELS[p.applicationStage as ApplicationStage] : "—"}
                   </td>
                 </tr>
@@ -161,7 +153,7 @@ export default function PrisonersPage() {
       )}
 
       {data && data.total > pageSize && (
-        <div className="flex items-center justify-between text-sm text-slate-600">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-bodytext">
           <span>
             Page {page} of {totalPages} — {data.total} prisoners
           </span>
@@ -169,14 +161,14 @@ export default function PrisonersPage() {
             <button
               disabled={page <= 1}
               onClick={() => setPage((p) => p - 1)}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 disabled:opacity-40"
+              className="btn btn-outline btn-sm disabled:opacity-40"
             >
               Prev
             </button>
             <button
               disabled={page >= totalPages}
               onClick={() => setPage((p) => p + 1)}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 disabled:opacity-40"
+              className="btn btn-outline btn-sm disabled:opacity-40"
             >
               Next
             </button>

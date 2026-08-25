@@ -17,6 +17,8 @@ import {
 import { prisma } from "../lib/prisma.js";
 import { logger } from "../lib/logger.js";
 import { storage } from "../lib/storage.js";
+import { blindIndex, decryptField, piiPublic, piiWriteFragment } from "../lib/pii.js";
+import { audit } from "../lib/audit.js";
 import { ApiError } from "../middleware/errors.js";
 import { getPrimaryCase, recomputeForPrisoner } from "./eligibility.service.js";
 import { buildCertificateHtml } from "./certificates.service.js";
@@ -63,7 +65,8 @@ function toCaseDto(c: {
 
 interface ListRowRaw {
   id: string;
-  full_name: string;
+  full_name_enc: string | null;
+  full_name: string | null;
   prisoner_reg_no: string;
   case_number: string | null;
   offence: string | null;
@@ -85,8 +88,11 @@ export async function listPrisoners(
   jailId: string,
   q: ListPrisonersQuery,
 ): Promise<Paginated<PrisonerListItem>> {
+  // Tier-1 names are encrypted at rest; exact-name search goes through the HMAC
+  // blind index. Reg-no and case-number (Tier-2) stay ILIKE-searchable.
+  const nameIdx = blindIndex(q.search);
   const searchClause = q.search
-    ? Prisma.sql` AND (p.full_name ILIKE ${"%" + q.search + "%"} OR p.prisoner_reg_no ILIKE ${"%" + q.search + "%"} OR c.case_number ILIKE ${"%" + q.search + "%"})`
+    ? Prisma.sql` AND (p.name_idx = ${nameIdx} OR p.prisoner_reg_no ILIKE ${"%" + q.search + "%"} OR c.case_number ILIKE ${"%" + q.search + "%"})`
     : Prisma.empty;
 
   const eligibilityClause =
@@ -123,12 +129,12 @@ export async function listPrisoners(
 
   const [rowsRaw, countRows] = await Promise.all([
     prisma.$queryRaw<ListRowRaw[]>(Prisma.sql`
-      SELECT p.id, p.full_name, p.prisoner_reg_no,
+      SELECT p.id, p.full_name_enc, p.full_name, p.prisoner_reg_no,
              c.case_number, c.offence, c.custody_start_date,
              ea.status AS elig_status, ea.reason AS elig_reason,
              a.stage AS app_stage
       ${whereBase}
-      ORDER BY p.full_name ASC
+      ORDER BY p.name_idx ASC NULLS LAST, p.prisoner_reg_no ASC
       LIMIT ${q.pageSize} OFFSET ${(q.page - 1) * q.pageSize}
     `),
     prisma.$queryRaw<{ n: bigint }[]>(Prisma.sql`SELECT COUNT(*) AS n ${whereBase}`),
@@ -141,7 +147,7 @@ export async function listPrisoners(
       : 0;
     return {
       id: r.id,
-      fullName: r.full_name,
+      fullName: decryptField(r.full_name_enc) ?? r.full_name ?? "",
       prisonerRegNo: r.prisoner_reg_no,
       caseNumber: r.case_number ?? "-",
       offence: r.offence ?? "-",
@@ -158,7 +164,7 @@ export async function listPrisoners(
   return { data, page: q.page, pageSize: q.pageSize, total: Number(countRows[0]?.n ?? 0n) };
 }
 
-export async function getPrisonerDetail(prisonerId: string): Promise<PrisonerDetail> {
+export async function getPrisonerDetail(prisonerId: string, auditCtx?: { actorId?: string; actorName?: string; ip?: string }): Promise<PrisonerDetail> {
   const prisoner = await prisma.prisoner.findUnique({
     where: { id: prisonerId },
     include: {
@@ -175,6 +181,17 @@ export async function getPrisonerDetail(prisonerId: string): Promise<PrisonerDet
     },
   });
   if (!prisoner) throw ApiError.notFound("Prisoner not found");
+  const pii = piiPublic(prisoner);
+
+  audit({
+    actorId: auditCtx?.actorId,
+    actorName: auditCtx?.actorName,
+    action: "prisoner.read",
+    entityType: "Prisoner",
+    entityId: prisoner.id,
+    fieldsTouched: ["full_name", "date_of_birth", "photo_url"],
+    ipAddress: auditCtx?.ip,
+  });
 
   const primaryCase = await getPrimaryCase(prisonerId);
   const latestAssessment = await prisma.eligibilityAssessment.findFirst({
@@ -229,12 +246,12 @@ export async function getPrisonerDetail(prisonerId: string): Promise<PrisonerDet
   return {
     id: prisoner.id,
     jailId: prisoner.jailId,
-    fullName: prisoner.fullName,
+    fullName: pii.fullName,
     prisonerRegNo: prisoner.prisonerRegNo,
-    dateOfBirth: prisoner.dateOfBirth.toISOString(),
+    dateOfBirth: pii.dateOfBirth ?? new Date(0).toISOString(),
     gender: prisoner.gender,
     admissionDate: prisoner.admissionDate.toISOString(),
-    photoUrl: prisoner.photoUrl,
+    photoUrl: pii.photoUrl,
     cases: prisoner.cases.map(toCaseDto),
     primaryCaseId: primaryCase?.id ?? null,
     eligibility,
@@ -305,11 +322,10 @@ export async function createPrisoner(
     const prisoner = await tx.prisoner.create({
       data: {
         jailId,
-        fullName: input.fullName.trim(),
         prisonerRegNo: regNo,
-        dateOfBirth: new Date(input.dateOfBirth),
         gender: input.gender,
         admissionDate: input.admissionDate ? new Date(input.admissionDate) : new Date(),
+        ...piiWriteFragment({ fullName: input.fullName.trim(), dateOfBirth: input.dateOfBirth }),
       },
     });
     await tx.caseRecord.create({
@@ -331,6 +347,13 @@ export async function createPrisoner(
   });
 
   await recomputeForPrisoner(created.id, { force: true, actor: actorId });
+  audit({
+    actorId,
+    action: "prisoner.write",
+    entityType: "Prisoner",
+    entityId: created.id,
+    fieldsTouched: ["full_name", "date_of_birth", "case_record.create"],
+  });
   logger.info(`New prisoner admitted`, { prisonerId: created.id, regNo, byUser: actorId });
   return getPrisonerDetail(created.id);
 }
@@ -400,20 +423,50 @@ export async function updateCaseRecord(
 export async function updatePersonalInfo(
   prisonerId: string,
   input: { fullName?: string; dateOfBirth?: Date | string; gender?: string; admissionDate?: Date | string },
+  auditCtx?: { actorId?: string },
 ): Promise<void> {
   await prisma.prisoner.update({
     where: { id: prisonerId },
     data: {
-      ...(input.fullName !== undefined ? { fullName: input.fullName.trim() } : {}),
-      ...(input.dateOfBirth !== undefined ? { dateOfBirth: new Date(input.dateOfBirth) } : {}),
       ...(input.gender !== undefined ? { gender: input.gender } : {}),
       ...(input.admissionDate !== undefined ? { admissionDate: new Date(input.admissionDate) } : {}),
+      ...piiWriteFragment({
+        ...(input.fullName !== undefined ? { fullName: input.fullName.trim() } : {}),
+        ...(input.dateOfBirth !== undefined ? { dateOfBirth: input.dateOfBirth } : {}),
+      }),
     },
+  });
+  const touched = [
+    ...(input.fullName !== undefined ? ["full_name"] : []),
+    ...(input.dateOfBirth !== undefined ? ["date_of_birth"] : []),
+    ...(input.gender !== undefined ? ["gender"] : []),
+    ...(input.admissionDate !== undefined ? ["admission_date"] : []),
+  ];
+  audit({
+    actorId: auditCtx?.actorId,
+    action: "prisoner.write",
+    entityType: "Prisoner",
+    entityId: prisonerId,
+    fieldsTouched: touched,
   });
 }
 
-export async function setPhotoUrl(prisonerId: string, photoUrl: string): Promise<void> {
-  await prisma.prisoner.update({ where: { id: prisonerId }, data: { photoUrl } });
+export async function setPhotoUrl(
+  prisonerId: string,
+  photoUrl: string,
+  auditCtx?: { actorId?: string },
+): Promise<void> {
+  await prisma.prisoner.update({
+    where: { id: prisonerId },
+    data: piiWriteFragment({ photoUrl }),
+  });
+  audit({
+    actorId: auditCtx?.actorId,
+    action: "prisoner.write",
+    entityType: "Prisoner",
+    entityId: prisonerId,
+    fieldsTouched: ["photo_url"],
+  });
 }
 
 export async function addNote(prisonerId: string, authorId: string, body: string): Promise<NoteDto> {
@@ -453,7 +506,7 @@ export async function enrollInProgram(prisonerId: string, programId: string): Pr
 
 export async function updateEnrollment(
   enrollmentId: string,
-  input: { progressPct?: number; markComplete?: boolean },
+  input: { progressPct?: number; markComplete?: boolean; regenerate?: boolean },
 ): Promise<EnrollmentDto> {
   const existing = await prisma.enrollment.findUnique({ where: { id: enrollmentId } });
   if (!existing) throw ApiError.notFound("Enrollment not found");
@@ -468,15 +521,15 @@ export async function updateEnrollment(
   let certificateUrl = existing.certificateUrl;
   let completedAt = existing.completedAt;
 
-  if (complete && !certificateUrl) {
+  if (complete && (!certificateUrl || input.regenerate === true)) {
     await prisma.enrollment.update({
       where: { id: enrollmentId },
-      data: { progressPct: progress, status, completedAt: new Date() },
+      data: { progressPct: progress, status, completedAt: completedAt ?? new Date() },
     });
     const certHtml = await buildCertificateHtml(enrollmentId);
     const stored = await storage.save(`certificates/certificate-${enrollmentId}.html`, certHtml);
     certificateUrl = stored.url;
-    completedAt = existing.completedAt ?? null;
+    completedAt = existing.completedAt ?? new Date();
   }
 
   const e = await prisma.enrollment.update({

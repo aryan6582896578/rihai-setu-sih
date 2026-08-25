@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RIHAI SETU — रिहाई सेतु</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,800&family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&family=Noto+Serif+Devanagari:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --terracotta:#D9531E;
+  --peach:#F7DFC8;
+  --saffron:#F5A623;
+  --cream:#FDF6EE;
+  --white:#FFFFFF;
+  --navy:#1B2430;
+  --navy-soft:#28323F;
+  --green-accent:#4C7A3B;
+  --heading:#1F2937;
+  --body:#6B7280;
+  --success:#16A34A; --success-bg:#DCFCE7;
+  --warn:#DC2626; --warn-bg:#FEE2E2;
+  --neutral:#1B2430; --neutral-bg:#E5E7EB;
+  --gold-border:#F5A623;
+  --radius:14px;
+  --shadow: 0 4px 18px rgba(27,36,48,0.08);
+  --font-display:'Fraunces', 'Noto Serif Devanagari', serif;
+  --font-body:'Manrope', 'Noto Sans Devanagari', sans-serif;
+  --font-mono:'JetBrains Mono', monospace;
+}
+[data-lang="hi"]{ --font-display:'Noto Serif Devanagari','Fraunces',serif; --font-body:'Noto Sans Devanagari','Manrope',sans-serif; }
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0; background:var(--cream); color:var(--heading);
+  font-family:var(--font-body); line-height:1.55; -webkit-font-smoothing:antialiased;
+}
+a{color:inherit; text-decoration:none;}
+button{font-family:inherit; cursor:pointer;}
+img{max-width:100%; display:block;}
+.wrap{max-width:1180px; margin:0 auto; padding:0 28px;}
+.hidden{display:none !important;}
+
+/* ---------- Top utility strip ---------- */
+.util-bar{background:var(--navy); color:#cfd6e0; font-size:12.5px;}
+.util-bar .wrap{display:flex; justify-content:space-between; align-items:center; padding-top:6px; padding-bottom:6px;}
+.util-bar a{color:#cfd6e0; opacity:.9;}
+.lang-toggle{display:flex; gap:2px; background:rgba(255,255,255,.08); border-radius:999px; padding:3px;}
+.lang-toggle button{background:transparent; border:none; color:#cfd6e0; font-size:12px; font-weight:700; padding:4px 12px; border-radius:999px; letter-spacing:.03em;}
+.lang-toggle button.active{background:var(--saffron); color:var(--navy);}
+
+/* ---------- Header ---------- */
+header.site{background:var(--white); border-bottom:1px solid #eee4d6; position:sticky; top:0; z-index:40;}
+.nav-row{display:flex; align-items:center; justify-content:space-between; padding:14px 0;}
+.brand{display:flex; align-items:center; gap:12px;}
+.brand .mark{width:44px; height:44px; border-radius:10px; background:linear-gradient(135deg,var(--terracotta),var(--saffron)); color:#fff; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:800; font-size:17px;}
+.brand .name{font-family:var(--font-display); font-weight:800; font-size:19px; letter-spacing:.02em; color:var(--navy);}
+.brand .tag{font-size:10.5px; text-transform:uppercase; letter-spacing:.11em; color:var(--body); margin-top:1px;}
+nav.main-links{display:flex; gap:28px; font-weight:600; font-size:14.5px; color:var(--navy);}
+nav.main-links a{padding:6px 2px; border-bottom:2px solid transparent;}
+nav.main-links a.current, nav.main-links a:hover{border-bottom-color:var(--terracotta); color:var(--terracotta);}
+.header-actions{display:flex; align-items:center; gap:14px;}
+.btn{display:inline-flex; align-items:center; gap:8px; padding:11px 20px; border-radius:999px; font-weight:700; font-size:14px; border:none; transition:transform .12s ease, box-shadow .12s ease;}
+.btn:active{transform:translateY(1px);}
+.btn-primary{background:var(--terracotta); color:#fff; box-shadow:0 6px 16px rgba(217,83,30,.28);}
+.btn-primary:hover{background:#c24717;}
+.btn-outline{background:transparent; color:var(--navy); border:1.5px solid #d8dde3;}
+.btn-outline:hover{border-color:var(--terracotta); color:var(--terracotta);}
+.btn-ghost{background:transparent; color:var(--navy); border:1.5px solid #d8dde3; padding:9px 16px; font-size:13.5px;}
+.btn-navy{background:var(--navy); color:#fff;}
+.btn-navy:hover{background:#0f151d;}
+.btn-sm{padding:8px 14px; font-size:12.5px;}
+.user-chip{text-align:right; font-size:13px;}
+.user-chip .who{font-weight:700; color:var(--navy);}
+.user-chip .role{color:var(--body); font-size:11.5px;}
+
+/* ---------- HERO ---------- */
+.hero{position:relative; overflow:hidden; background:linear-gradient(120deg, var(--terracotta) 0%, var(--terracotta) 32%, #E88A4C 55%, var(--peach) 100%);}
+.hero::after{content:""; position:absolute; inset:0; background:radial-gradient(circle at 82% 20%, rgba(255,255,255,.18), transparent 55%);}
+.hero-inner{position:relative; z-index:2; display:grid; grid-template-columns:1.15fr .85fr; gap:40px; align-items:center; padding:78px 0 64px;}
+.eyebrow-pill{display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.35); color:#fff; font-size:12.5px; font-weight:700; letter-spacing:.04em; padding:7px 16px; border-radius:999px; margin-bottom:22px;}
+.hero h1.wordmark{
+  font-family:var(--font-display); font-weight:800; letter-spacing:.01em;
+  font-size:clamp(3.4rem, 7vw, 6.2rem); line-height:.98; color:#fff; margin:0 0 18px;
+  text-shadow:0 6px 30px rgba(90,30,0,.25);
+}
+.hero .sub{font-family:var(--font-display); font-weight:600; font-size:1.5rem; color:#FFF3E4; margin:0 0 16px; max-width:560px;}
+.hero p.desc{font-size:15.5px; color:#FFE9D4; max-width:560px; margin:0 0 30px;}
+.hero .cta-row{display:flex; gap:14px; flex-wrap:wrap;}
+.hero .cta-row .btn-outline{background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.55); color:#fff;}
+.hero .cta-row .btn-outline:hover{background:rgba(255,255,255,.2);}
+.hero-art{position:relative; display:flex; align-items:center; justify-content:center;}
+.hero-art svg{width:100%; height:auto; filter:drop-shadow(0 18px 30px rgba(60,20,0,.28));}
+
+/* ---------- Mission strip ---------- */
+.mission-strip{background:var(--cream); border-bottom:1px solid #f0e4d3;}
+.mission-strip .wrap{display:flex; align-items:center; justify-content:center; gap:16px; padding:18px 0; text-align:center; flex-wrap:wrap;}
+.mission-strip .dot{width:8px; height:8px; border-radius:50%; background:var(--saffron);}
+.mission-strip strong{color:var(--navy); font-family:var(--font-display); font-weight:700; font-size:15.5px;}
+.mission-strip span.note{color:var(--body); font-size:13.5px;}
+
+/* ---------- Stats ---------- */
+.stats-strip{background:var(--white);}
+.stats-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:0; padding:52px 0;}
+.stats-grid .stat{padding:0 22px; border-left:1px solid #eee4d6;}
+.stats-grid .stat:first-child{border-left:none;}
+.stat .num{font-family:var(--font-display); font-weight:800; font-size:2.5rem; color:var(--terracotta); line-height:1;}
+.stat .label{margin-top:10px; font-size:13.5px; color:var(--heading); font-weight:600;}
+.stat .src{margin-top:6px; font-size:11px; color:#a7adb6;}
+
+/* ---------- Section shell ---------- */
+section.page-section{padding:72px 0;}
+section.alt{background:var(--white);}
+.section-head{text-align:center; max-width:640px; margin:0 auto 44px;}
+.section-head .kicker{text-transform:uppercase; letter-spacing:.14em; font-size:12px; font-weight:700; color:var(--terracotta); margin-bottom:10px;}
+.section-head h2{font-family:var(--font-display); font-size:2.1rem; font-weight:700; color:var(--navy); margin:0 0 12px;}
+.section-head p{color:var(--body); font-size:15px; margin:0;}
+
+/* About two-col */
+.about-grid{display:grid; grid-template-columns:1.1fr .9fr; gap:48px; align-items:start;}
+.about-grid h2{font-family:var(--font-display); font-size:2rem; color:var(--navy); margin:0 0 14px;}
+.about-grid p{color:var(--body); font-size:15px; margin:0 0 20px;}
+.quick-links{list-style:none; padding:0; margin:0; display:grid; grid-template-columns:1fr 1fr; gap:10px 20px;}
+.quick-links li a{display:flex; align-items:center; gap:8px; font-weight:600; font-size:14px; color:var(--navy); padding:8px 0; border-bottom:1px dashed #eadfcd;}
+.quick-links li a::before{content:"→"; color:var(--terracotta); font-weight:800;}
+.info-card{background:var(--white); border:1px solid #f1e6d5; border-radius:var(--radius); padding:26px; box-shadow:var(--shadow);}
+.info-card h4{margin:0 0 10px; font-family:var(--font-display); color:var(--navy); font-size:16px;}
+.info-card p{color:var(--body); font-size:14px; margin:0 0 8px;}
+
+/* Feature grid */
+.feature-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:20px;}
+.feature-card{background:var(--white); border-radius:var(--radius); padding:26px 22px; box-shadow:var(--shadow); border-top:3px solid var(--saffron);}
+.feature-card .icon{width:46px; height:46px; border-radius:12px; background:var(--peach); display:flex; align-items:center; justify-content:center; margin-bottom:16px;}
+.feature-card .icon svg{width:24px; height:24px; stroke:var(--terracotta);}
+.feature-card h4{margin:0 0 8px; font-size:15.5px; color:var(--navy); font-family:var(--font-display); font-weight:700;}
+.feature-card p{margin:0 0 14px; font-size:13.5px; color:var(--body);}
+.feature-card a.know-more{font-size:12.5px; font-weight:700; color:var(--terracotta);}
+
+/* Banner strip */
+.banner-strip{padding:0 0 72px;}
+.gold-frame{border:6px solid var(--saffron); border-radius:18px; overflow:hidden; padding:2px; background:var(--white);}
+.banner-inner{background:linear-gradient(115deg,#2c1a10,#5a2c14 45%, var(--terracotta) 100%); border-radius:14px; padding:52px 48px; display:flex; align-items:center; justify-content:space-between; gap:30px; flex-wrap:wrap; color:#fff;}
+.banner-inner h3{font-family:var(--font-display); font-size:1.7rem; margin:0 0 8px; max-width:520px;}
+.banner-inner p{color:#ffdfc2; font-size:14px; max-width:480px; margin:0;}
+
+/* three column updates */
+.updates-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:22px;}
+.update-card{background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden;}
+.update-card .head{background:var(--navy); color:#fff; padding:14px 18px; font-family:var(--font-display); font-weight:700; font-size:14.5px;}
+.update-card ul{list-style:none; margin:0; padding:14px 18px;}
+.update-card li{padding:10px 0; border-bottom:1px solid #f2ece2; font-size:13.5px; color:var(--heading);}
+.update-card li:last-child{border-bottom:none;}
+.update-card li time{display:block; font-size:11.5px; color:var(--body); margin-top:3px;}
+
+/* resources panel */
+.resources-grid{display:grid; grid-template-columns:1fr .8fr; gap:34px; align-items:center; background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); padding:36px;}
+.resources-grid h3{font-family:var(--font-display); color:var(--navy); font-size:1.4rem; margin:0 0 14px;}
+.resources-grid ul{margin:0; padding:0; list-style:none; columns:2; gap:8px;}
+.resources-grid li{font-size:13.5px; padding:7px 0; color:var(--body); break-inside:avoid;}
+.resources-grid li a{color:var(--heading); font-weight:600;}
+.resources-grid li a:hover{color:var(--terracotta);}
+
+/* partner strip */
+.partners-strip{padding:44px 0; background:var(--cream); border-top:1px solid #f0e4d3; border-bottom:1px solid #f0e4d3;}
+.partners-row{display:flex; justify-content:center; gap:26px; flex-wrap:wrap;}
+.badge-circle{width:78px; height:78px; border-radius:50%; background:var(--white); box-shadow:var(--shadow); display:flex; align-items:center; justify-content:center; text-align:center; font-size:10px; font-weight:800; color:var(--navy); padding:6px; line-height:1.2;}
+
+/* CTA navy strip */
+.cta-strip{background:var(--navy); color:#fff; padding:64px 0; text-align:center;}
+.cta-strip h3{font-family:var(--font-display); font-size:1.9rem; margin:0 0 10px;}
+.cta-strip p{color:#c3cad5; max-width:560px; margin:0 auto 26px; font-size:14.5px;}
+
+/* Footer */
+footer.site{background:var(--navy); color:#c3cad5; padding-top:52px;}
+.footer-grid{display:grid; grid-template-columns:1.3fr 1fr 1fr 1fr; gap:36px; padding-bottom:40px; border-bottom:1px solid rgba(255,255,255,.08);}
+.footer-brand .brand .name{color:#fff;}
+.footer-brand p{font-size:13px; color:#9aa4b2; margin:14px 0;}
+.footer-hours{font-size:12.5px; color:#9aa4b2; margin-top:14px;}
+.footer-col h5{font-size:12.5px; text-transform:uppercase; letter-spacing:.1em; color:#8993a3; margin:0 0 14px;}
+.footer-col ul{list-style:none; margin:0; padding:0;}
+.footer-col li{margin-bottom:10px; font-size:13.5px;}
+.footer-col a:hover{color:var(--saffron);}
+.footer-bottom{padding:20px 0; display:flex; justify-content:space-between; font-size:12px; color:#7c8595; flex-wrap:wrap; gap:8px;}
+.disclaimer-line{text-align:center; font-size:11.5px; color:#7c8595; padding:14px 0; border-top:1px solid rgba(255,255,255,.06);}
+
+/* ================= Steps page ================= */
+.steps-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:20px;}
+.step-card{background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); padding:26px 22px; border-bottom:4px solid var(--terracotta);}
+.step-num{width:34px; height:34px; border-radius:50%; background:var(--peach); color:var(--terracotta); font-weight:800; font-family:var(--font-display); display:flex; align-items:center; justify-content:center; margin-bottom:16px; font-size:15px;}
+.step-card h4{margin:0 0 8px; font-family:var(--font-display); font-size:16px; color:var(--navy);}
+.step-card p{font-size:13.5px; color:var(--body); margin:0;}
+.sources-block{max-width:760px; margin:0 auto; padding:56px 0;}
+.sources-block h5{font-family:var(--font-display); color:var(--navy); font-size:15px; margin:0 0 14px;}
+.sources-block ul{margin:0 0 16px; padding-left:20px; color:var(--body); font-size:13.5px;}
+.sources-block .note{font-size:12.5px; color:#9aa1ab; border-top:1px solid #eee4d6; padding-top:16px;}
+
+/* ================= Login page ================= */
+.login-shell{padding:60px 0 90px;}
+.back-link{display:inline-flex; align-items:center; gap:6px; font-weight:700; font-size:13.5px; color:var(--navy); margin-bottom:26px;}
+.login-grid{display:grid; grid-template-columns:1.1fr .9fr; gap:28px; align-items:start;}
+.card{background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); padding:34px;}
+.card h2{font-family:var(--font-display); font-size:1.5rem; margin:0 0 6px; color:var(--navy);}
+.card .lede{color:var(--body); font-size:13.5px; margin:0 0 26px;}
+.field{margin-bottom:18px;}
+.field label{display:block; font-size:12.5px; font-weight:700; color:var(--navy); margin-bottom:6px;}
+.field input, .field select{width:100%; padding:11px 14px; border-radius:9px; border:1.5px solid #e2e6ea; font-size:14px; font-family:inherit; background:#fbfbfc;}
+.field input:focus, .field select:focus{outline:2px solid var(--terracotta); outline-offset:1px; border-color:var(--terracotta);}
+.forgot{display:block; text-align:center; margin-top:16px; font-size:13px; font-weight:600; color:var(--terracotta);}
+.demo-card{background:#FFF6EC; border:1px solid var(--peach); border-radius:var(--radius); padding:24px;}
+.demo-card h4{margin:0 0 4px; color:var(--navy); font-size:14px; font-family:var(--font-display);}
+.demo-card .lede{font-size:12.5px; color:var(--body); margin:0 0 16px;}
+.demo-card code{background:var(--navy); color:#ffe3c2; padding:2px 8px; border-radius:5px; font-family:var(--font-mono); font-size:12px;}
+.demo-account{background:var(--white); border-radius:10px; padding:12px 14px; margin-bottom:10px; border:1px solid #f1e6d5;}
+.demo-account:last-child{margin-bottom:0;}
+.demo-account .role{font-weight:700; font-size:13.5px; color:var(--navy);}
+.demo-account .mail{font-size:12px; color:var(--body); font-family:var(--font-mono);}
+
+/* ================= Jails list ================= */
+.app-shell{min-height:60vh;}
+.page-head-row{display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:26px; flex-wrap:wrap; gap:14px;}
+.page-head-row h1{font-family:var(--font-display); font-size:1.9rem; margin:0 0 6px; color:var(--navy);}
+.page-head-row .lede{color:var(--body); font-size:14px; margin:0;}
+.crumb{font-size:13px; font-weight:700; color:var(--terracotta); margin-bottom:14px; display:inline-block;}
+.jail-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:20px; padding-bottom:60px;}
+.jail-card{background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); padding:22px; cursor:pointer; transition:transform .12s ease, box-shadow .12s ease; border:1px solid transparent;}
+.jail-card:hover{transform:translateY(-3px); box-shadow:0 12px 26px rgba(27,36,48,.12); border-color:var(--peach);}
+.jail-card .top-row{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;}
+.jail-card h3{margin:0; font-size:16.5px; color:var(--navy); font-family:var(--font-display);}
+.jail-card .loc{font-size:12.5px; color:var(--body); margin:2px 0 14px;}
+.code-chip{background:var(--neutral-bg); color:var(--navy); font-family:var(--font-mono); font-size:11px; padding:3px 8px; border-radius:6px; font-weight:700;}
+.pill{display:inline-block; padding:4px 12px; border-radius:999px; font-size:11.5px; font-weight:700;}
+.pill-ok{background:var(--success-bg); color:var(--success);}
+.pill-warn{background:#FEF3C7; color:#B45309;}
+.pill-full{background:var(--warn-bg); color:var(--warn);}
+.jail-card .cap-row{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;}
+.jail-card .inmates-count{font-size:12.5px; color:var(--body);}
+.jail-card .ut-row{display:flex; justify-content:space-between; font-size:13px; padding-top:12px; border-top:1px solid #f1ece1;}
+.jail-card .ut-row b{color:var(--terracotta); font-family:var(--font-display); font-size:15px;}
+
+/* ================= Jail detail ================= */
+.detail-head{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:24px; flex-wrap:wrap; gap:16px;}
+.detail-head h1{font-family:var(--font-display); font-size:1.8rem; margin:0 0 4px; color:var(--navy);}
+.detail-head .loc{color:var(--body); font-size:13.5px;}
+.detail-actions{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+.tabbar{display:flex; gap:26px; border-bottom:1.5px solid #ece2d3; margin-bottom:28px;}
+.tabbar button{background:none; border:none; padding:12px 2px; font-weight:700; font-size:14.5px; color:var(--body); border-bottom:2.5px solid transparent; display:flex; align-items:center; gap:6px;}
+.tabbar button.active{color:var(--terracotta); border-color:var(--terracotta);}
+.tabbar .badge-count{background:var(--warn); color:#fff; font-size:10.5px; padding:1px 6px; border-radius:999px;}
+.stat-cards{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:16px;}
+.stat-cards.second-row{grid-template-columns:repeat(3,1fr); margin-top:16px;}
+.mini-stat{background:var(--white); border-radius:12px; box-shadow:var(--shadow); padding:20px; border-top:3px solid var(--peach);}
+.mini-stat.warn-border{border-top-color:var(--saffron);}
+.mini-stat .k{font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--body); margin-bottom:8px;}
+.mini-stat .v{font-family:var(--font-display); font-size:1.9rem; color:var(--navy); font-weight:700;}
+.mini-stat .sub{font-size:11.5px; color:#9aa1ab; margin-top:4px;}
+.panel{background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); padding:26px; margin-top:24px;}
+.panel h3{margin:0 0 4px; font-family:var(--font-display); font-size:16px; color:var(--navy);}
+.panel .sub{color:var(--body); font-size:13px; margin:0 0 18px;}
+.activity-item{display:flex; gap:12px; padding:12px 0; border-bottom:1px solid #f2ece2;}
+.activity-item:last-child{border-bottom:none;}
+.dot-blue{width:8px; height:8px; border-radius:50%; background:#3B82F6; margin-top:7px; flex-shrink:0;}
+.dot-green{width:8px; height:8px; border-radius:50%; background:var(--success); margin-top:7px; flex-shrink:0;}
+.activity-item .txt{font-size:13.5px; color:var(--heading);}
+.activity-item time{display:block; font-size:11.5px; color:var(--body); margin-top:2px;}
+
+table.data-table{width:100%; border-collapse:collapse; font-size:13.5px;}
+table.data-table th{text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--body); padding:10px 12px; border-bottom:1.5px solid #ece2d3;}
+table.data-table td{padding:14px 12px; border-bottom:1px solid #f2ece2; color:var(--heading);}
+table.data-table tr:last-child td{border-bottom:none;}
+table.data-table tr.clickable:hover{background:#FFF9F2; cursor:pointer;}
+select.role-select{padding:7px 10px; border-radius:8px; border:1.5px solid #e2e6ea; font-size:13px; font-family:inherit;}
+.status-active{background:var(--success-bg); color:var(--success); padding:4px 12px; border-radius:999px; font-size:11.5px; font-weight:700;}
+.link-danger{color:var(--warn); font-weight:700; font-size:12.5px;}
+.empty-tab{padding:60px 20px; text-align:center; color:var(--body);}
+.empty-tab .ic{font-size:40px; margin-bottom:12px;}
+
+/* ================= Prisoners list ================= */
+.filters-row{display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap;}
+.filters-row input[type=text]{flex:1; min-width:220px; padding:11px 16px; border-radius:9px; border:1.5px solid #e2e6ea; font-size:13.5px; font-family:inherit;}
+.filters-row select{padding:11px 14px; border-radius:9px; border:1.5px solid #e2e6ea; font-size:13.5px; font-family:inherit; background:#fff;}
+.status-pill{display:inline-block; padding:4px 11px; border-radius:999px; font-size:11.5px; font-weight:700;}
+.status-eligible{background:var(--success-bg); color:var(--success);}
+.status-noteligible{background:#FEF3C7; color:#B45309;}
+.status-excluded{background:var(--warn-bg); color:var(--warn);}
+.status-pending{background:var(--neutral-bg); color:var(--navy);}
+
+/* ================= Modal ================= */
+.modal-overlay{position:fixed; inset:0; background:rgba(20,15,10,.5); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px;}
+.modal-box{background:#fff; border-radius:16px; width:100%; max-width:680px; max-height:88vh; overflow-y:auto; padding:32px;}
+.modal-box .mhead{display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;}
+.modal-box h2{font-family:var(--font-display); font-size:1.35rem; margin:0; color:var(--navy);}
+.modal-close{background:none; border:none; font-size:20px; color:var(--body); cursor:pointer;}
+.subhead-form{font-size:12.5px; text-transform:uppercase; letter-spacing:.08em; font-weight:800; color:var(--terracotta); margin:22px 0 12px;}
+.form-grid2{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+.form-grid3{display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:end;}
+.checkbox-row{display:flex; gap:20px; align-items:center; font-size:13.5px; color:var(--heading); margin-bottom:18px;}
+.checkbox-row label{display:flex; align-items:center; gap:7px;}
+.info-note{background:#FFF6EC; border:1px solid var(--peach); border-radius:10px; padding:12px 14px; font-size:12.5px; color:#8a4a1c; margin-bottom:20px;}
+.modal-actions{display:flex; justify-content:flex-end; gap:10px; margin-top:8px;}
+
+/* ================= Prisoner profile ================= */
+.profile-head{background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); padding:26px; display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; flex-wrap:wrap; gap:16px;}
+.profile-id{display:flex; align-items:center; gap:16px;}
+.avatar-circle{width:58px; height:58px; border-radius:50%; background:var(--peach); color:var(--terracotta); font-family:var(--font-display); font-weight:800; font-size:22px; display:flex; align-items:center; justify-content:center;}
+.profile-id h2{margin:0; font-family:var(--font-display); font-size:1.4rem; color:var(--navy);}
+.profile-id .meta{font-size:13px; color:var(--body); margin-top:3px;}
+.tabpills{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:22px;}
+.tabpills button{background:var(--white); border:1.5px solid #e9e0d1; padding:9px 16px; border-radius:999px; font-weight:700; font-size:13px; color:var(--navy);}
+.tabpills button.active{background:var(--terracotta); border-color:var(--terracotta); color:#fff;}
+.info-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:24px;}
+.info-grid.three{grid-template-columns:repeat(3,1fr);}
+.info-field .k{font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--body); font-weight:700; margin-bottom:6px;}
+.info-field .v{font-size:14.5px; color:var(--heading); font-weight:600;}
+.eligibility-row{display:flex; align-items:center; gap:12px;}
+.eligibility-row .reason{color:var(--body); font-size:13.5px;}
+.timestamp-note{font-size:11.5px; color:#9aa1ab; margin-top:10px;}
+
+.stepper{display:flex; justify-content:space-between; position:relative; margin:10px 0 20px;}
+.stepper::before{content:""; position:absolute; top:16px; left:5%; right:5%; height:2px; background:#ece2d3; z-index:0;}
+.step-node{position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; text-align:center; width:16%;}
+.step-circle{width:34px; height:34px; border-radius:50%; background:#ece2d3; color:var(--body); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px; margin-bottom:8px; border:3px solid var(--white);}
+.step-node.done .step-circle{background:var(--terracotta); color:#fff;}
+.step-node .lbl{font-size:12.5px; font-weight:700; color:var(--body);}
+.step-node.done .lbl{color:var(--terracotta);}
+.step-node .dt{font-size:10.5px; color:#a7adb6; margin-top:2px;}
+.app-status-row{display:flex; justify-content:space-between; align-items:center; background:#FBF9F5; border-radius:10px; padding:14px 18px; margin-top:6px; flex-wrap:wrap; gap:10px;}
+.review-pill{background:#FEF3C7; color:#B45309; font-size:11.5px; font-weight:700; padding:4px 12px; border-radius:999px;}
+.skillpassport-row{display:flex; align-items:center; justify-content:space-between; gap:14px;}
+.notes-add-row{display:flex; gap:10px; margin-bottom:16px;}
+.notes-add-row input{flex:1; padding:11px 14px; border-radius:9px; border:1.5px solid #e2e6ea; font-size:13.5px; font-family:inherit;}
+.note-item{background:#FBF9F5; border-radius:10px; padding:14px 16px; font-size:13.5px; color:var(--heading);}
+.note-item .who{display:block; font-size:11.5px; color:var(--body); margin-top:6px;}
+
+/* Responsive */
+@media (max-width:980px){
+  nav.main-links{display:none;}
+  .hero-inner{grid-template-columns:1fr; text-align:center;}
+  .hero .cta-row, .mission-strip .wrap{justify-content:center;}
+  .hero-art{order:-1; max-width:320px; margin:0 auto;}
+  .stats-grid, .feature-grid, .updates-grid, .jail-grid, .steps-grid{grid-template-columns:repeat(2,1fr);}
+  .stats-grid .stat:nth-child(3){border-left:none;}
+  .about-grid, .resources-grid, .login-grid{grid-template-columns:1fr;}
+  .footer-grid{grid-template-columns:1fr 1fr;}
+  .stat-cards{grid-template-columns:repeat(2,1fr);}
+  .info-grid, .info-grid.three{grid-template-columns:repeat(2,1fr);}
+}
+@media (max-width:600px){
+  .stats-grid, .feature-grid, .updates-grid, .jail-grid, .steps-grid, .footer-grid, .form-grid2, .stat-cards, .info-grid, .info-grid.three{grid-template-columns:1fr;}
+  .stats-grid .stat, .stat-cards .mini-stat{border-left:none !important;}
+  .hero h1.wordmark{font-size:3rem;}
+}
+</style>
+</head>
+<body data-lang="en">
+
+<div class="util-bar">
+  <div class="wrap">
+    <span data-i18n="util.contact">you.guarantee@rihai.gov.in · +812 1080-4941</span>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <button id="btn-lang-en" class="active" onclick="setLang('en')">EN</button>
+      <button id="btn-lang-hi" onclick="setLang('hi')">हिंदी</button>
+    </div>
+  </div>
+</div>
+
+<header class="site">
+  <div class="wrap nav-row">
+    <a href="#/" class="brand" onclick="go('home')">
+      <div class="mark">RS</div>
+      <div>
+        <div class="name" data-i18n="brand.name">RIHAI SETU</div>
+        <div class="tag" data-i18n="brand.tag">Rehabilitation Bridge</div>
+      </div>
+    </a>
+    <nav class="main-links">
+      <a href="#/" onclick="go('home')" data-i18n="nav.home">Home</a>
+      <a href="#/how-it-works" onclick="go('how')" data-i18n="nav.how">How it works</a>
+      <a href="#/jails" onclick="go('jails')" data-i18n="nav.admin">Jails admin</a>
+      <a href="#/login" onclick="go('login')" data-i18n="nav.reports">Reports</a>
+    </nav>
+    <div class="header-actions" id="header-actions"></div>
+  </div>
+</header>
+
+<main id="app"></main>
+
+<div id="modal-root"></div>
+
+<script>
+/* ============================= i18n ============================= */
+const T = {
+  en:{
+    "util.contact":"you.guarantee@rihai.gov.in · +812 1080-4941",
+    "brand.name":"RIHAI SETU",
+    "brand.tag":"Rehabilitation Bridge",
+    "nav.home":"Home","nav.how":"How it works","nav.admin":"Jails admin","nav.reports":"Reports",
+    "cta.stafflogin":"Staff login","cta.logout":"Logout",
+    "hero.eyebrow":"Section 479 BNSS · Undertrial release · Reintegration",
+    "hero.sub":"The digital bridge from undertrial release to rehabilitation and reintegration.",
+    "hero.desc":"Lakhs of undertrial prisoners languish in overcrowded jails even when the law already allows their release. RIHAI SETU identifies who qualifies, accelerates the paperwork, tracks every case through court, and connects skills learnt in custody to jobs outside it.",
+    "hero.cta1":"Log in to your portal","hero.cta2":"How it works",
+    "mission.title":"Built with District Legal Services Authorities",
+    "mission.note":"Piloted alongside NALSA, state DLSAs and prison administrations",
+    "stat1.label":"of India's prison inmates are undertrials","stat1.src":"NCRB Prison Statistics India 2022",
+    "stat2.num":"5.73 lakh","stat2.label":"undertrials behind bars awaiting trial outcomes","stat2.src":"NCRB Prison Statistics India 2022",
+    "stat3.label":"average occupancy across Indian prisons","stat3.src":"NCRB Prison Statistics India 2022",
+    "stat4.num":"1/3rd","stat4.label":"of max sentence served → first-time offenders can seek release on bond under §479 BNSS","stat4.src":"BNSS, 2023",
+    "about.kicker":"About the platform","about.h2":"One workflow, from custody to reintegration",
+    "about.p":"RIHAI SETU was built after the Bharatiya Nagarik Suraksha Sanhita (BNSS), 2023 introduced Section 479 — a statutory right to bond for undertrials who have served a third of their maximum sentence. The law already exists; what was missing was a system that surfaces who qualifies, keeps paperwork moving, and follows a person after release. RIHAI SETU closes that gap with role-based jail portals, automated eligibility screening, and a skill-to-livelihood pipeline for people leaving custody.",
+    "about.links.1":"About RIHAI SETU","about.links.2":"Roles & access","about.links.3":"How it works","about.links.4":"Reports & data sources",
+    "about.card.h":"At a glance","about.card.p1":"Deterministic §479 eligibility rules — never entered manually, always recomputed from case facts.","about.card.p2":"Every stage of a bail application tracked from flagged to released, with stalls auto-escalated.","about.card.p3":"Skill Passport links in-custody training to verified employers after release.",
+    "feat.kicker":"What the portal does","feat.h2":"Four systems, one pipeline",
+    "feat1.h":"Eligibility screening","feat1.p":"Deterministic rules screen every undertrial against Section 479 BNSS criteria — custody duration, offence class, first-offender status.",
+    "feat2.h":"Fast-tracked paperwork","feat2.p":"Bail and personal-bond applications are drafted with AI-assisted grounds narratives for a lawyer's review — never auto-filed.",
+    "feat3.h":"Court tracking","feat3.p":"Every application is tracked through filing, hearings and orders. Stalled cases are flagged and escalated automatically.",
+    "feat4.h":"Rehabilitation & reintegration","feat4.p":"In-custody skill training feeds a Skill Passport that connects released individuals to employers and livelihoods.",
+    "know.more":"Know more →",
+    "banner.h":"From an undertrial's cell to a livelihood outside it",
+    "banner.p":"Skill Passport records vocational training completed in custody and matches it against verified employer openings once release is confirmed by the court.",
+    "banner.cta":"See the Skill Passport",
+    "updates.kicker":"Latest across the network",
+    "upd1.h":"Recent activity","upd1.i1":"Central Correctional Facility, Rampur — 3 applications advanced to Drafted","upd1.i2":"Special Sub-Jail, Kolar — eligibility recomputed for 12 undertrials","upd1.i3":"District Holding Home, Solapur — 1 stalled case escalated to DLSA",
+    "upd2.h":"Case updates","upd2.i1":"Chandan Naik — bail application flagged for §479 review","upd2.i2":"Meena Mirza — court order passed, release pending surety","upd2.i3":"Dinesh Sahu — released, enrolled in tailoring skill program",
+    "upd3.h":"Announcements","upd3.i1":"New sanctioned-capacity data uploaded for 5 facilities","upd3.i2":"DLSA lawyer onboarding session — 2 September 2026","upd3.i3":"Skill Passport now supports 6 vocational training tracks",
+    "res.h":"Useful links","res.l1":"National Legal Services Authority (NALSA)","res.l2":"District Legal Services Authorities directory","res.l3":"eCourts Mission Mode Project","res.l4":"National Crime Records Bureau — Prison Statistics","res.l5":"Bharatiya Nagarik Suraksha Sanhita, 2023 — full text","res.l6":"Model Prisons Act, 2023",
+    "res.card.h":"Need a document?","res.card.p":"Sample bail-application templates, §479 eligibility worksheets and skill-training MOUs are available to onboarded DLSA lawyers and jail staff.",
+    "partners.kicker":"Working alongside",
+    "cta.h":"Working inside the system?","cta.p":"Superintendents, jail staff, DLSA lawyers and auditors access the portal through secure role-based accounts.","cta.btn":"Go to staff login",
+    "footer.hours.k":"Working hours","footer.hours.v":"9:00am to 5:30pm (Monday to Friday)",
+    "footer.about.h":"About","footer.about.1":"About RIHAI SETU","footer.about.2":"How it works","footer.about.3":"Sources & data","footer.about.4":"Contact us",
+    "footer.legal.h":"Legal","footer.legal.1":"Copy Right Policy","footer.legal.2":"Terms & Conditions","footer.legal.3":"Privacy Policy","footer.legal.4":"Accessibility statement",
+    "footer.access.h":"Access","footer.access.1":"Staff login","footer.access.2":"Jails admin","footer.access.3":"Demo accounts","footer.access.4":"Report an issue",
+    "footer.copyright":"© Content by RIHAI SETU · All Rights Reserved",
+    "disclaimer":"RIHAI SETU — synthetic demonstration data only. Human decision-makers make all release calls.",
+
+    "how.kicker":"The pipeline","how.h1":"How it works","how.sub":"A transparent pipeline that keeps a human decision-maker — judge, DLSA lawyer, superintendent — at every gate.",
+    "s1.h":"Eligibility screening","s1.p":"Deterministic rules screen every undertrial against Section 479 BNSS criteria — custody duration, offence class, first-offender status.",
+    "s2.h":"Fast-tracked paperwork","s2.p":"Bail and personal-bond applications are drafted with AI-assisted grounds narratives for a lawyer's review — never auto-filed.",
+    "s3.h":"Court tracking","s3.p":"Every application is tracked through filing, hearings and orders. Stalled cases are flagged and escalated automatically.",
+    "s4.h":"Rehabilitation & reintegration","s4.p":"In-custody skill training feeds a Skill Passport that connects released individuals to employers and livelihoods.",
+    "how.cta.h":"Working inside the system?","how.cta.p":"Superintendents, jail staff, DLSA lawyers and auditors access the portal through secure role-based accounts.","how.cta.btn":"Go to staff login",
+    "src.h":"Sources & references",
+    "src.1":"National Crime Records Bureau — Prison Statistics India 2022 (undertrial share, occupancy, counts)",
+    "src.2":"Bharatiya Nagarik Suraksha Sanhita, 2023 — Section 479 (maximum period for detention of undertrial prisoners)",
+    "src.3":"Department of Justice — eCourts Mission Mode Project",
+    "src.note":"RIHAI SETU displays synthetic demonstration data only. It never auto-files or auto-approves anything; all release decisions rest with courts and designated human authorities.",
+
+    "back.home":"← Back to home",
+    "login.h":"Staff login","login.lede":"Access is role-based and jail-scoped. Contact your superintendent if you lack access.",
+    "login.email":"Email","login.pass":"Password","login.signin":"Sign in","login.forgot":"Forgot password?",
+    "demo.h":"Demo accounts","demo.lede":"Seeded synthetic data for development. Password for all demo accounts:",
+    "demo.super.role":"Superintendent — Rampur","demo.staff.role":"Jail staff — Rampur","demo.admin.role":"Super admin (all jails)","demo.dlsa.role":"DLSA lawyer",
+
+    "jails.h":"Your jails","jails.lede":"Facilities you have access to. Click a jail to open its portal.",
+    "jail.undertrials":"Undertrials","jail.inmates":"inmates","jail.capacity":"capacity",
+
+    "back.alljails":"← All jails","back.jailportal":"← Jail portal","back.allprisoners":"← All prisoners",
+    "jailtab.overview":"Overview","jailtab.employees":"Employee Management","jailtab.stall":"Stall List",
+    "btn.prisoners":"Prisoners","btn.superportal":"Superintendent portal","stalled.count":"stalled",
+    "kpi.occupancy":"Occupancy","kpi.sanctioned":"Sanctioned capacity","kpi.pctcap":"% Capacity","kpi.total":"Total prisoners","kpi.undertrials":"Undertrials","kpi.convicts":"Convicts","kpi.staff":"Active staff",
+    "kpi.ofsanctioned":"of sanctioned capacity",
+    "recent.h":"Recent activity","recent.sub":"Latest application stage changes and admissions",
+    "emp.lede":"People with jail access to this facility.","emp.addstaff":"+ Add staff",
+    "th.name":"Name","th.email":"Email","th.role":"Role at jail","th.status":"Status","th.actions":"Actions",
+    "action.remove":"Remove access","status.active":"Active",
+    "stall.empty.h":"Nothing stalled right now","stall.empty.p":"Cases that stop moving for more than 14 days at any stage will surface here automatically.",
+
+    "prisoners.h":"Prisoners","prisoners.search":"Search name, reg no or case number…","prisoners.addbtn":"+ Add prisoner",
+    "filter.allstatus":"All §479 statuses","filter.allstage":"All application stages",
+    "th.regno":"Reg no","th.caseno":"Case no","th.offence":"Offence","th.custody":"In custody","th.479":"§479 status","th.app":"Application",
+
+    "modal.h":"Admission intake",
+    "modal.personal":"Personal details","modal.fullname":"Full name *","modal.gender":"Gender *","modal.dob":"Date of birth *","modal.admdate":"Admission date",
+    "modal.caserecord":"Initial case record","modal.caseno":"Case number *","modal.cnr":"CNR number","modal.court":"Court *","modal.offence":"Offence *",
+    "modal.maxsent":"Max sentence (years) *","modal.otherpending":"Other pending cases *","modal.custodystart":"Custody start date *",
+    "modal.deathlife":"Death / life","modal.firsttime":"First-time offender",
+    "modal.note":"A registration number is generated automatically. §479 eligibility is computed on save — it is never entered manually.",
+    "modal.cancel":"Cancel","modal.admit":"Admit prisoner",
+    "gender.male":"Male","gender.female":"Female","gender.other":"Other",
+
+    "prof.tab.personal":"Personal","prof.tab.case":"Case details","prof.tab.elig":"§479 eligibility","prof.tab.progress":"Application progress","prof.tab.skill":"Skill Passport","prof.tab.notes":"Notes",
+    "prof.regno":"Reg no","prof.admission":"admission",
+    "personalinfo.h":"Personal information","f.dob":"Date of birth","f.gender":"Gender","f.admdate":"Admission date","f.regno":"Registration no",
+    "elig.h":"Section 479 eligibility","elig.recompute":"Recompute","elig.lastcomputed":"Last computed:",
+    "casedet.h":"Case details","casedet.edit":"Edit","f.caseno":"Case number","f.cnr":"CNR number","f.court":"Court","f.offence":"Offence","f.maxsentence":"Max sentence","f.otherpending":"Other pending cases","f.custodystart":"Custody start","f.flags":"Flags",
+    "appprog.h":"Application progress",
+    "stage1":"Flagged","stage2":"Drafted","stage3":"Filed","stage4":"Hearing Scheduled","stage5":"Order Passed","stage6":"Released",
+    "app.baillabel":"Bail application - updated","review.notyet":"Not yet reviewed","btn.markreviewed":"Mark reviewed","btn.advance":"Advance to Drafted",
+    "skill.h":"Skill Passport","skill.pick":"Pick a program…","skill.enroll":"Enroll","skill.none":"No training enrollments yet.",
+    "notes.h":"Notes & activity log","notes.placeholder":"Add an observation…","notes.add":"Add note",
+    "elig.reason.custody":"Custody period has not yet reached the statutory threshold",
+    "elig.reason.eligible":"Custody period exceeds one-third of maximum sentence; recommend bond review",
+    "elig.reason.excluded":"Offence class excluded from §479 relief",
+
+    "prisoner.smoke":"Smoke Admit Test",
+    "act.released":"Application moved to \"released\"","act.filed":"Application moved to \"filed\"","act.admitted":"New admission recorded",
+    "note.sample":"Family visit recorded last week; morale improved.",
+
+    "gender.m":"male", "years":"yr", "mo":"mo", "d":"d"
+  },
+  hi:{
+    "util.contact":"you.guarantee@rihai.gov.in · +812 1080-4941",
+    "brand.name":"रिहाई सेतु",
+    "brand.tag":"पुनर्वास सेतु",
+    "nav.home":"मुखपृष्ठ","nav.how":"यह कैसे काम करता है","nav.admin":"जेल प्रशासन","nav.reports":"रिपोर्ट",
+    "cta.stafflogin":"स्टाफ लॉगिन","cta.logout":"लॉगआउट",
+    "hero.eyebrow":"धारा 479 बीएनएसएस · विचाराधीन रिहाई · पुनर्एकीकरण",
+    "hero.sub":"विचाराधीन कैदियों की रिहाई से पुनर्वास और पुनर्एकीकरण तक का डिजिटल सेतु।",
+    "hero.desc":"लाखों विचाराधीन कैदी भीड़भाड़ वाली जेलों में तब भी बंद रहते हैं जब कानून पहले से ही उनकी रिहाई की अनुमति देता है। रिहाई सेतु यह पहचानता है कि कौन पात्र है, कागज़ी कार्रवाई तेज़ करता है, हर मामले को अदालत में ट्रैक करता है, और हिरासत में सीखे गए कौशल को बाहर की नौकरियों से जोड़ता है।",
+    "hero.cta1":"अपने पोर्टल में लॉग इन करें","hero.cta2":"यह कैसे काम करता है",
+    "mission.title":"जिला विधिक सेवा प्राधिकरणों के सहयोग से निर्मित",
+    "mission.note":"नालसा, राज्य डीएलएसए और जेल प्रशासन के साथ प्रायोगिक रूप से लागू",
+    "stat1.label":"भारत के जेल कैदियों में विचाराधीन कैदियों का हिस्सा","stat1.src":"एनसीआरबी जेल सांख्यिकी भारत 2022",
+    "stat2.num":"5.73 लाख","stat2.label":"विचाराधीन कैदी सुनवाई के परिणाम की प्रतीक्षा में","stat2.src":"एनसीआरबी जेल सांख्यिकी भारत 2022",
+    "stat3.label":"भारतीय जेलों में औसत क्षमता उपयोग","stat3.src":"एनसीआरबी जेल सांख्यिकी भारत 2022",
+    "stat4.num":"1/3rd","stat4.label":"अधिकतम सजा की अवधि पूरी होने पर → प्रथम बार अपराधी धारा 479 बीएनएसएस के तहत बॉन्ड पर रिहाई मांग सकते हैं","stat4.src":"बीएनएसएस, 2023",
+    "about.kicker":"प्लेटफ़ॉर्म के बारे में","about.h2":"हिरासत से पुनर्एकीकरण तक, एक ही वर्कफ़्लो",
+    "about.p":"भारतीय नागरिक सुरक्षा संहिता (बीएनएसएस), 2023 द्वारा धारा 479 लागू किए जाने के बाद रिहाई सेतु बनाया गया — यह उन विचाराधीन कैदियों के लिए बॉन्ड का वैधानिक अधिकार है जिन्होंने अपनी अधिकतम सजा का एक-तिहाई हिस्सा पूरा कर लिया है। कानून पहले से मौजूद है; जो कमी थी वह एक ऐसी प्रणाली की जो यह उजागर करे कि कौन पात्र है, कागज़ी कार्रवाई को गतिशील रखे, और रिहाई के बाद व्यक्ति का अनुसरण करे। रिहाई सेतु इस अंतर को भूमिका-आधारित जेल पोर्टल, स्वचालित पात्रता जांच और रिहाई पाने वालों के लिए कौशल-से-आजीविका पाइपलाइन से पूरा करता है।",
+    "about.links.1":"रिहाई सेतु के बारे में","about.links.2":"भूमिकाएँ व पहुँच","about.links.3":"यह कैसे काम करता है","about.links.4":"रिपोर्ट व स्रोत",
+    "about.card.h":"एक नज़र में","about.card.p1":"निश्चयात्मक §479 पात्रता नियम — कभी मैन्युअल रूप से दर्ज नहीं, हमेशा मामले के तथ्यों से पुनर्गणना।","about.card.p2":"जमानत आवेदन के हर चरण को फ़्लैग से रिहाई तक ट्रैक किया जाता है, रुकावटों को स्वतः आगे बढ़ाया जाता है।","about.card.p3":"स्किल पासपोर्ट हिरासत में मिले प्रशिक्षण को रिहाई के बाद सत्यापित नियोक्ताओं से जोड़ता है।",
+    "feat.kicker":"पोर्टल क्या करता है","feat.h2":"चार प्रणालियाँ, एक पाइपलाइन",
+    "feat1.h":"पात्रता जांच","feat1.p":"निश्चयात्मक नियम हर विचाराधीन कैदी की जांच धारा 479 बीएनएसएस मानदंडों — हिरासत अवधि, अपराध वर्ग, प्रथम-अपराधी स्थिति — के आधार पर करते हैं।",
+    "feat2.h":"त्वरित कागज़ी कार्रवाई","feat2.p":"जमानत व निजी-बॉन्ड आवेदन एआई-सहायता प्राप्त आधार विवरण के साथ तैयार किए जाते हैं, वकील की समीक्षा हेतु — कभी स्वतः दाखिल नहीं होते।",
+    "feat3.h":"अदालत ट्रैकिंग","feat3.p":"हर आवेदन को दाखिल करने, सुनवाई और आदेशों के दौरान ट्रैक किया जाता है। रुके हुए मामलों को स्वतः चिह्नित व आगे बढ़ाया जाता है।",
+    "feat4.h":"पुनर्वास व पुनर्एकीकरण","feat4.p":"हिरासत में मिला कौशल प्रशिक्षण एक स्किल पासपोर्ट में दर्ज होता है जो रिहा व्यक्तियों को नियोक्ताओं व आजीविका से जोड़ता है।",
+    "know.more":"अधिक जानें →",
+    "banner.h":"विचाराधीन कैदी की कोठरी से बाहर आजीविका तक",
+    "banner.p":"स्किल पासपोर्ट हिरासत में पूरे किए गए व्यावसायिक प्रशिक्षण को दर्ज करता है और अदालत से रिहाई की पुष्टि होते ही सत्यापित नियोक्ता रिक्तियों से मिलान करता है।",
+    "banner.cta":"स्किल पासपोर्ट देखें",
+    "updates.kicker":"नेटवर्क भर की ताज़ा जानकारी",
+    "upd1.h":"हाल की गतिविधि","upd1.i1":"केंद्रीय सुधार गृह, रामपुर — 3 आवेदन 'ड्राफ्टेड' चरण में आगे बढ़े","upd1.i2":"विशेष उप-कारागार, कोलार — 12 विचाराधीन कैदियों की पात्रता पुनर्गणना","upd1.i3":"जिला होल्डिंग होम, सोलापुर — 1 रुका हुआ मामला डीएलएसए को भेजा गया",
+    "upd2.h":"केस अपडेट","upd2.i1":"चंदन नाइक — जमानत आवेदन §479 समीक्षा हेतु चिह्नित","upd2.i2":"मीना मिर्ज़ा — अदालत का आदेश पारित, ज़मानतदार लंबित","upd2.i3":"दिनेश साहू — रिहा, दर्ज़ी प्रशिक्षण कार्यक्रम में नामांकित",
+    "upd3.h":"घोषणाएँ","upd3.i1":"5 सुविधाओं के लिए नई स्वीकृत-क्षमता डेटा अपलोड की गई","upd3.i2":"डीएलएसए वकील ऑनबोर्डिंग सत्र — 2 सितंबर 2026","upd3.i3":"स्किल पासपोर्ट अब 6 व्यावसायिक प्रशिक्षण ट्रैक का समर्थन करता है",
+    "res.h":"उपयोगी लिंक","res.l1":"राष्ट्रीय विधिक सेवा प्राधिकरण (नालसा)","res.l2":"जिला विधिक सेवा प्राधिकरण निर्देशिका","res.l3":"ई-कोर्ट मिशन मोड परियोजना","res.l4":"राष्ट्रीय अपराध रिकॉर्ड ब्यूरो — जेल सांख्यिकी","res.l5":"भारतीय नागरिक सुरक्षा संहिता, 2023 — पूर्ण पाठ","res.l6":"मॉडल जेल अधिनियम, 2023",
+    "res.card.h":"दस्तावेज़ चाहिए?","res.card.p":"नमूना जमानत-आवेदन टेम्पलेट, §479 पात्रता वर्कशीट और कौशल-प्रशिक्षण एमओयू ऑनबोर्ड किए गए डीएलएसए वकीलों व जेल स्टाफ के लिए उपलब्ध हैं।",
+    "partners.kicker":"सहयोगी संस्थाएँ",
+    "cta.h":"सिस्टम के भीतर काम कर रहे हैं?","cta.p":"अधीक्षक, जेल स्टाफ, डीएलएसए वकील व लेखा परीक्षक सुरक्षित भूमिका-आधारित खातों से पोर्टल तक पहुँचते हैं।","cta.btn":"स्टाफ लॉगिन पर जाएँ",
+    "footer.hours.k":"कार्य समय","footer.hours.v":"सुबह 9:00 से शाम 5:30 बजे तक (सोमवार से शुक्रवार)",
+    "footer.about.h":"परिचय","footer.about.1":"रिहाई सेतु के बारे में","footer.about.2":"यह कैसे काम करता है","footer.about.3":"स्रोत व डेटा","footer.about.4":"संपर्क करें",
+    "footer.legal.h":"कानूनी","footer.legal.1":"कॉपीराइट नीति","footer.legal.2":"नियम व शर्तें","footer.legal.3":"गोपनीयता नीति","footer.legal.4":"सुगम्यता विवरण",
+    "footer.access.h":"पहुँच","footer.access.1":"स्टाफ लॉगिन","footer.access.2":"जेल प्रशासन","footer.access.3":"डेमो खाते","footer.access.4":"समस्या दर्ज करें",
+    "footer.copyright":"© सामग्री रिहाई सेतु द्वारा · सर्वाधिकार सुरक्षित",
+    "disclaimer":"रिहाई सेतु — केवल सिंथेटिक प्रदर्शन डेटा। सभी रिहाई निर्णय मानव निर्णयकर्ता ही लेते हैं।",
+
+    "how.kicker":"पाइपलाइन","how.h1":"यह कैसे काम करता है","how.sub":"एक पारदर्शी पाइपलाइन जो हर चरण पर मानव निर्णयकर्ता — न्यायाधीश, डीएलएसए वकील, अधीक्षक — को बनाए रखती है।",
+    "s1.h":"पात्रता जांच","s1.p":"निश्चयात्मक नियम हर विचाराधीन कैदी की जांच धारा 479 बीएनएसएस मानदंडों — हिरासत अवधि, अपराध वर्ग, प्रथम-अपराधी स्थिति — के आधार पर करते हैं।",
+    "s2.h":"त्वरित कागज़ी कार्रवाई","s2.p":"जमानत व निजी-बॉन्ड आवेदन एआई-सहायता प्राप्त आधार विवरण के साथ तैयार किए जाते हैं, वकील की समीक्षा हेतु — कभी स्वतः दाखिल नहीं होते।",
+    "s3.h":"अदालत ट्रैकिंग","s3.p":"हर आवेदन को दाखिल करने, सुनवाई और आदेशों के दौरान ट्रैक किया जाता है। रुके हुए मामलों को स्वतः चिह्नित व आगे बढ़ाया जाता है।",
+    "s4.h":"पुनर्वास व पुनर्एकीकरण","s4.p":"हिरासत में मिला कौशल प्रशिक्षण एक स्किल पासपोर्ट में दर्ज होता है जो रिहा व्यक्तियों को नियोक्ताओं व आजीविका से जोड़ता है।",
+    "how.cta.h":"सिस्टम के भीतर काम कर रहे हैं?","how.cta.p":"अधीक्षक, जेल स्टाफ, डीएलएसए वकील व लेखा परीक्षक सुरक्षित भूमिका-आधारित खातों से पोर्टल तक पहुँचते हैं।","how.cta.btn":"स्टाफ लॉगिन पर जाएँ",
+    "src.h":"स्रोत व संदर्भ",
+    "src.1":"राष्ट्रीय अपराध रिकॉर्ड ब्यूरो — जेल सांख्यिकी भारत 2022 (विचाराधीन हिस्सा, क्षमता, गणना)",
+    "src.2":"भारतीय नागरिक सुरक्षा संहिता, 2023 — धारा 479 (विचाराधीन कैदियों की हिरासत की अधिकतम अवधि)",
+    "src.3":"न्याय विभाग — ई-कोर्ट मिशन मोड परियोजना",
+    "src.note":"रिहाई सेतु केवल सिंथेटिक प्रदर्शन डेटा दिखाता है। यह कभी भी स्वतः दाखिल या स्वतः स्वीकृत नहीं करता; सभी रिहाई निर्णय अदालतों और नामित मानव प्राधिकरणों पर निर्भर हैं।",
+
+    "back.home":"← मुखपृष्ठ पर वापस",
+    "login.h":"स्टाफ लॉगिन","login.lede":"पहुँच भूमिका-आधारित और जेल-सीमित है। यदि आपके पास पहुँच नहीं है तो अपने अधीक्षक से संपर्क करें।",
+    "login.email":"ईमेल","login.pass":"पासवर्ड","login.signin":"साइन इन करें","login.forgot":"पासवर्ड भूल गए?",
+    "demo.h":"डेमो खाते","demo.lede":"विकास हेतु सिंथेटिक डेटा। सभी डेमो खातों का पासवर्ड:",
+    "demo.super.role":"अधीक्षक — रामपुर","demo.staff.role":"जेल स्टाफ — रामपुर","demo.admin.role":"सुपर एडमिन (सभी जेलें)","demo.dlsa.role":"डीएलएसए वकील",
+
+    "jails.h":"आपकी जेलें","jails.lede":"वे सुविधाएँ जिन तक आपकी पहुँच है। पोर्टल खोलने के लिए किसी जेल पर क्लिक करें।",
+    "jail.undertrials":"विचाराधीन कैदी","jail.inmates":"कैदी","jail.capacity":"क्षमता",
+
+    "back.alljails":"← सभी जेलें","back.jailportal":"← जेल पोर्टल","back.allprisoners":"← सभी कैदी",
+    "jailtab.overview":"अवलोकन","jailtab.employees":"कर्मचारी प्रबंधन","jailtab.stall":"रुके मामलों की सूची",
+    "btn.prisoners":"कैदी","btn.superportal":"अधीक्षक पोर्टल","stalled.count":"रुका हुआ",
+    "kpi.occupancy":"अधिभोग","kpi.sanctioned":"स्वीकृत क्षमता","kpi.pctcap":"% क्षमता","kpi.total":"कुल कैदी","kpi.undertrials":"विचाराधीन कैदी","kpi.convicts":"दोषसिद्ध कैदी","kpi.staff":"सक्रिय स्टाफ",
+    "kpi.ofsanctioned":"स्वीकृत क्षमता का",
+    "recent.h":"हाल की गतिविधि","recent.sub":"नवीनतम आवेदन चरण परिवर्तन व प्रवेश",
+    "emp.lede":"इस सुविधा तक जेल-पहुँच रखने वाले लोग।","emp.addstaff":"+ स्टाफ जोड़ें",
+    "th.name":"नाम","th.email":"ईमेल","th.role":"जेल में भूमिका","th.status":"स्थिति","th.actions":"कार्रवाई",
+    "action.remove":"पहुँच हटाएँ","status.active":"सक्रिय",
+    "stall.empty.h":"फ़िलहाल कुछ भी रुका नहीं है","stall.empty.p":"जो मामले किसी भी चरण में 14 दिनों से अधिक समय तक नहीं बढ़ते, वे यहाँ स्वतः दिखाई देंगे।",
+
+    "prisoners.h":"कैदी","prisoners.search":"नाम, रजिस्ट्रेशन नंबर या केस नंबर खोजें…","prisoners.addbtn":"+ कैदी जोड़ें",
+    "filter.allstatus":"सभी §479 स्थितियाँ","filter.allstage":"सभी आवेदन चरण",
+    "th.regno":"रजि. नं.","th.caseno":"केस नं.","th.offence":"अपराध","th.custody":"हिरासत में","th.479":"§479 स्थिति","th.app":"आवेदन",
+
+    "modal.h":"प्रवेश विवरण",
+    "modal.personal":"व्यक्तिगत विवरण","modal.fullname":"पूरा नाम *","modal.gender":"लिंग *","modal.dob":"जन्म तिथि *","modal.admdate":"प्रवेश तिथि",
+    "modal.caserecord":"प्रारंभिक केस रिकॉर्ड","modal.caseno":"केस नंबर *","modal.cnr":"सीएनआर नंबर","modal.court":"न्यायालय *","modal.offence":"अपराध *",
+    "modal.maxsent":"अधिकतम सजा (वर्ष) *","modal.otherpending":"अन्य लंबित मामले *","modal.custodystart":"हिरासत प्रारंभ तिथि *",
+    "modal.deathlife":"मृत्युदंड / आजीवन कारावास","modal.firsttime":"प्रथम बार अपराधी",
+    "modal.note":"पंजीकरण संख्या स्वतः उत्पन्न होती है। §479 पात्रता सेव करने पर गणना की जाती है — यह कभी मैन्युअल रूप से दर्ज नहीं होती।",
+    "modal.cancel":"रद्द करें","modal.admit":"कैदी को प्रवेश दें",
+    "gender.male":"पुरुष","gender.female":"महिला","gender.other":"अन्य",
+
+    "prof.tab.personal":"व्यक्तिगत","prof.tab.case":"केस विवरण","prof.tab.elig":"§479 पात्रता","prof.tab.progress":"आवेदन प्रगति","prof.tab.skill":"स्किल पासपोर्ट","prof.tab.notes":"टिप्पणियाँ",
+    "prof.regno":"रजि. नं.","prof.admission":"प्रवेश",
+    "personalinfo.h":"व्यक्तिगत जानकारी","f.dob":"जन्म तिथि","f.gender":"लिंग","f.admdate":"प्रवेश तिथि","f.regno":"पंजीकरण संख्या",
+    "elig.h":"धारा 479 पात्रता","elig.recompute":"पुनर्गणना करें","elig.lastcomputed":"अंतिम गणना:",
+    "casedet.h":"केस विवरण","casedet.edit":"संपादित करें","f.caseno":"केस नंबर","f.cnr":"सीएनआर नंबर","f.court":"न्यायालय","f.offence":"अपराध","f.maxsentence":"अधिकतम सजा","f.otherpending":"अन्य लंबित मामले","f.custodystart":"हिरासत प्रारंभ","f.flags":"फ्लैग",
+    "appprog.h":"आवेदन प्रगति",
+    "stage1":"चिह्नित","stage2":"ड्राफ्टेड","stage3":"दाखिल","stage4":"सुनवाई नियत","stage5":"आदेश पारित","stage6":"रिहा",
+    "app.baillabel":"जमानत आवेदन - अद्यतन","review.notyet":"अभी समीक्षा नहीं हुई","btn.markreviewed":"समीक्षित चिह्नित करें","btn.advance":"ड्राफ्टेड तक आगे बढ़ाएँ",
+    "skill.h":"स्किल पासपोर्ट","skill.pick":"एक कार्यक्रम चुनें…","skill.enroll":"नामांकन करें","skill.none":"अभी तक कोई प्रशिक्षण नामांकन नहीं।",
+    "notes.h":"टिप्पणियाँ व गतिविधि लॉग","notes.placeholder":"एक अवलोकन जोड़ें…","notes.add":"टिप्पणी जोड़ें",
+    "elig.reason.custody":"हिरासत अवधि अभी वैधानिक सीमा तक नहीं पहुँची है",
+    "elig.reason.eligible":"हिरासत अवधि अधिकतम सजा के एक-तिहाई से अधिक है; बॉन्ड समीक्षा की सिफारिश",
+    "elig.reason.excluded":"अपराध वर्ग §479 राहत से बाहर रखा गया है",
+
+    "prisoner.smoke":"स्मोक एडमिट टेस्ट",
+    "act.released":"आवेदन \"रिहा\" में स्थानांतरित","act.filed":"आवेदन \"दाखिल\" में स्थानांतरित","act.admitted":"नया प्रवेश दर्ज किया गया",
+    "note.sample":"पिछले सप्ताह पारिवारिक मुलाकात दर्ज हुई; मनोबल में सुधार।",
+
+    "gender.m":"पुरुष", "years":"वर्ष", "mo":"मा", "d":"दि"
+  }
+};
+let lang = 'en';
+function t(k){ return (T[lang] && T[lang][k]) || T.en[k] || k; }
+
+/* ============================= Data ============================= */
+const JAILS = [
+  {id:'j1', name:'Central Correctional Facility', loc:'Rampur, Uttar Pradesh', code:'UP-CF-RMP', cap:14, occ:14, undertrials:13, convicts:1, staff:5},
+  {id:'j2', name:'District Holding Home', loc:'Solapur, Maharashtra', code:'MH-DH-SLP', cap:9, occ:8, undertrials:6, convicts:2, staff:4},
+  {id:'j3', name:'Open Correctional Camp', loc:'Bilaspur, Chhattisgarh', code:'CG-OC-BSP', cap:7, occ:7, undertrials:6, convicts:1, staff:3},
+  {id:'j4', name:'Special Sub-Jail', loc:'Kolar, Karnataka', code:'KA-SJ-KLR', cap:12, occ:9, undertrials:8, convicts:1, staff:4},
+  {id:'j5', name:"Women's Correctional Home", loc:'Nagaon, Assam', code:'AS-WC-NGN', cap:8, occ:8, undertrials:5, convicts:3, staff:3},
+];
+const STAFF = [
+  {name:'Meena Yadav', email:'superintendent1@rihai.gov.in', role:'Jail Superintendent'},
+  {name:'Devendra Gupta', email:'staff1@rihai.gov.in', role:'Jail Staff'},
+  {name:'Kiran Joshi', email:'staff1b@rihai.gov.in', role:'Jail Staff'},
+  {name:'Adv. Neha Srivastava', email:'dlsa@rihai.gov.in', role:'DLSA Lawyer'},
+  {name:'Ananya Deshpande', email:'superadmin@rihai.gov.in', role:'Jail Superintendent'},
+];
+const PRISONERS = [
+  {id:'p1', name:'Chandan Naik', reg:'UP-CF-RMP-P0003', caseno:'ST/CASE/2026/1004', offence:'Attempt to murder (IPC 307)', custody:'4 mo 23 d', status:'noteligible', stage:'flagged',
+    dob:'20 Jan 1990', gender:'male', admdate:'31 Mar 2026', cnr:'UTPB01010032025', court:'Special NDPS Court', maxSentence:'10 yr', otherPending:0, custodyStart:'31 Mar 2026', flags:'—', eligReason:'custody', lastComputed:'31 Mar 2026, 1:18 pm', stageDate:'21 Aug 2026'},
+  {id:'p2', name:'Chandan Sahu', reg:'UP-CF-RMP-P0004', caseno:'ST/CASE/2026/1005', offence:'Causing hurt (IPC 323)', custody:'3 mo 18 d', status:'noteligible', stage:'drafted'},
+  {id:'p3', name:'Dinesh Sahu', reg:'UP-CF-RMP-P0009', caseno:'ST/CASE/2026/1011', offence:'Criminal breach of trust (IPC 406)', custody:'2 mo 21 d', status:'excluded', stage:'released'},
+  {id:'p4', name:'Dinesh Singh', reg:'UP-CF-RMP-P0005', caseno:'ST/CASE/2026/1006', offence:'Dowry harassment (498A)', custody:'1 mo 20 d', status:'noteligible', stage:'none'},
+  {id:'p5', name:'Meena Mirza', reg:'UP-CF-RMP-P0010', caseno:'ST/CASE/2026/1013', offence:'Cheating (IPC 420)', custody:'2 mo 13 d', status:'noteligible', stage:'orderpassed'},
+  {id:'p6', name:'Meena Patel', reg:'UP-CF-RMP-P0006', caseno:'ST/CASE/2026/1007', offence:'Attempt to murder (IPC 307)', custody:'2 mo 17 d', status:'noteligible', stage:'released'},
+  {id:'p7', name:'Mohan Boundary Crosser', reg:'UP-CF-RMP-PBC01', caseno:'ST/CASE/2026/BCROSS', offence:'Cheating (IPC 420)', custody:'11 mo 30 d', status:'noteligible', stage:'none'},
+  {id:'p8', name:'Pooja Das', reg:'UP-CF-RMP-P0001', caseno:'ST/CASE/2026/1002', offence:'Dowry harassment (498A)', custody:'1 mo 15 d', status:'noteligible', stage:'flagged'},
+  {id:'p9', name:'Pooja Prasad', reg:'UP-CF-RMP-P0008', caseno:'ST/CASE/2026/1010', offence:'Attempt to murder (IPC 307)', custody:'3 mo 13 d', status:'noteligible', stage:'none'},
+  {id:'p10', name:'Sanjay Singh', reg:'UP-CF-RMP-P0002', caseno:'ST/CASE/2026/1003', offence:'Attempt to murder (IPC 307)', custody:'1 mo 15 d', status:'pending', stage:'none'},
+  {id:'p11', name:'Smoke Admit Test', reg:'UP-CF-RMP-PD5EB8F', caseno:'ST/CASE/SMOKE/001', offence:'Cheating (IPC 420)', custody:'13 mo 5 d', status:'eligible', stage:'released'},
+  {id:'p12', name:'Smoke Admit Test', reg:'UP-CF-RMP-P5ED5E4', caseno:'ST/CASE/SMOKE/001', offence:'Cheating (IPC 420)', custody:'13 mo 5 d', status:'eligible', stage:'released'},
+  {id:'p13', name:'Smoke Admit Test', reg:'UP-CF-RMP-P58E6E0', caseno:'ST/CASE/SMOKE/001', offence:'Cheating (IPC 420)', custody:'13 mo 5 d', status:'eligible', stage:'filed'},
+  {id:'p14', name:'Suresh Mirza', reg:'UP-CF-RMP-P0007', caseno:'ST/CASE/2026/1009', offence:'Murder (IPC 302)', custody:'4 mo 16 d', status:'excluded', stage:'hearing'},
+];
+const STAGES = ['stage1','stage2','stage3','stage4','stage5','stage6'];
+const STAGE_KEY = {flagged:0, drafted:1, filed:2, hearing:3, orderpassed:4, released:5, none:-1};
+const STAGE_LABEL = {flagged:'Flagged',drafted:'Drafted',filed:'Filed',hearing:'Hearing Scheduled',orderpassed:'Order Passed',released:'Released',none:'—'};
+
+/* ============================= State/router ============================= */
+let state = { route:'home', jailId:null, prisonerId:null, jailTab:'overview', prisonerTab:'personal', loggedIn:false };
+
+function setLang(l){
+  lang = l;
+  document.body.setAttribute('data-lang', l);
+  document.getElementById('btn-lang-en').classList.toggle('active', l==='en');
+  document.getElementById('btn-lang-hi').classList.toggle('active', l==='hi');
+  render();
+}
+function go(route, params){
+  state.route = route;
+  if(params) Object.assign(state, params);
+  window.scrollTo({top:0, behavior:'instant'});
+  render();
+}
+function openJail(id){ go('jail', {jailId:id, jailTab:'overview'}); }
+function openPrisoners(id){ go('prisoners', {jailId:id}); }
+function openPrisoner(jid, pid){ go('prisoner', {jailId:jid, prisonerId:pid, prisonerTab:'personal'}); }
+function setJailTab(tab){ state.jailTab = tab; render(); }
+function setPrisonerTab(tab){ state.prisonerTab = tab; render(); }
+function doLogin(e){ e.preventDefault(); state.loggedIn = true; go('jails'); }
+function doLogout(){ state.loggedIn = false; go('home'); }
+
+function initial(letter){ return letter.charAt(0).toUpperCase(); }
+
+function svgHero(){
+  return `<svg viewBox="0 0 420 420" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="210" cy="210" r="185" fill="rgba(255,255,255,0.14)"/>
+    <circle cx="210" cy="210" r="150" fill="rgba(255,255,255,0.10)"/>
+    <g transform="translate(90,90)">
+      <rect x="0" y="90" width="46" height="110" rx="6" fill="#FFF3E4"/>
+      <rect x="60" y="60" width="46" height="140" rx="6" fill="#FFDDB0"/>
+      <rect x="120" y="20" width="46" height="180" rx="6" fill="#FFFFFF"/>
+      <rect x="180" y="70" width="46" height="130" rx="6" fill="#FFDDB0"/>
+      <path d="M0 210 Q113 240 240 210" stroke="#fff" stroke-width="3" fill="none" opacity=".6"/>
+      <circle cx="20" cy="80" r="9" fill="#4C7A3B"/>
+      <circle cx="143" cy="10" r="9" fill="#4C7A3B"/>
+      <circle cx="200" cy="60" r="9" fill="#4C7A3B"/>
+    </g>
+  </svg>`;
+}
+
+/* ============================= Header actions ============================= */
+function renderHeaderActions(){
+  const el = document.getElementById('header-actions');
+  if(state.loggedIn){
+    el.innerHTML = `
+      <div class="user-chip">
+        <div class="who">Ananya Deshpande</div>
+        <div class="role">Super Admin</div>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="doLogout()">${t('cta.logout')}</button>`;
+  } else {
+    el.innerHTML = `<button class="btn btn-primary" onclick="go('login')">${t('cta.stafflogin')}</button>`;
+  }
+}
+
+/* ============================= Page renderers ============================= */
+function pageHome(){
+  return `
+  <section class="hero">
+    <div class="wrap hero-inner">
+      <div>
+        <span class="eyebrow-pill">${t('hero.eyebrow')}</span>
+        <h1 class="wordmark">${t('brand.name')}</h1>
+        <p class="sub">${t('hero.sub')}</p>
+        <p class="desc">${t('hero.desc')}</p>
+        <div class="cta-row">
+          <button class="btn btn-primary" onclick="go('login')">${t('hero.cta1')}</button>
+          <button class="btn btn-outline" onclick="go('how')">${t('hero.cta2')}</button>
+        </div>
+      </div>
+      <div class="hero-art">${svgHero()}</div>
+    </div>
+  </section>
+
+  <div class="mission-strip"><div class="wrap">
+    <span class="dot"></span><strong>${t('mission.title')}</strong><span class="note">${t('mission.note')}</span>
+  </div></div>
+
+  <div class="stats-strip"><div class="wrap stats-grid">
+    <div class="stat"><div class="num">75.8%</div><div class="label">${t('stat1.label')}</div><div class="src">${t('stat1.src')}</div></div>
+    <div class="stat"><div class="num">${t('stat2.num')}</div><div class="label">${t('stat2.label')}</div><div class="src">${t('stat2.src')}</div></div>
+    <div class="stat"><div class="num">131%</div><div class="label">${t('stat3.label')}</div><div class="src">${t('stat3.src')}</div></div>
+    <div class="stat"><div class="num">${t('stat4.num')}</div><div class="label">${t('stat4.label')}</div><div class="src">${t('stat4.src')}</div></div>
+  </div></div>
+
+  <section class="page-section">
+    <div class="wrap about-grid">
+      <div>
+        <div class="section-head" style="text-align:left; margin:0 0 20px;"><div class="kicker">${t('about.kicker')}</div></div>
+        <h2>${t('about.h2')}</h2>
+        <p>${t('about.p')}</p>
+        <ul class="quick-links">
+          <li><a href="#/" onclick="go('home')">${t('about.links.1')}</a></li>
+          <li><a href="#/login" onclick="go('login')">${t('about.links.2')}</a></li>
+          <li><a href="#/how-it-works" onclick="go('how')">${t('about.links.3')}</a></li>
+          <li><a href="#/how-it-works" onclick="go('how')">${t('about.links.4')}</a></li>
+        </ul>
+      </div>
+      <div class="info-card">
+        <h4>${t('about.card.h')}</h4>
+        <p>• ${t('about.card.p1')}</p>
+        <p>• ${t('about.card.p2')}</p>
+        <p>• ${t('about.card.p3')}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="page-section alt">
+    <div class="wrap">
+      <div class="section-head"><div class="kicker">${t('feat.kicker')}</div><h2>${t('feat.h2')}</h2></div>
+      <div class="feature-grid">
+        ${featureIcon('search')}<div class="feature-card"><div class="icon">${iconSvg('search')}</div><h4>${t('feat1.h')}</h4><p>${t('feat1.p')}</p><a class="know-more" href="#/how-it-works" onclick="go('how')">${t('know.more')}</a></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="banner-strip"><div class="wrap">
+    <div class="gold-frame"><div class="banner-inner">
+      <div><h3>${t('banner.h')}</h3><p>${t('banner.p')}</p></div>
+      <button class="btn btn-primary" onclick="go('how')">${t('banner.cta')}</button>
+    </div></div>
+  </div></section>
+
+  <section class="page-section alt">
+    <div class="wrap">
+      <div class="section-head"><div class="kicker">${t('updates.kicker')}</div></div>
+      <div class="updates-grid">
+        <div class="update-card"><div class="head">${t('upd1.h')}</div><ul>
+          <li>${t('upd1.i1')}<time>22 Aug 2026</time></li>
+          <li>${t('upd1.i2')}<time>21 Aug 2026</time></li>
+          <li>${t('upd1.i3')}<time>19 Aug 2026</time></li>
+        </ul></div>
+        <div class="update-card"><div class="head">${t('upd2.h')}</div><ul>
+          <li>${t('upd2.i1')}<time>21 Aug 2026</time></li>
+          <li>${t('upd2.i2')}<time>18 Aug 2026</time></li>
+          <li>${t('upd2.i3')}<time>15 Aug 2026</time></li>
+        </ul></div>
+        <div class="update-card"><div class="head">${t('upd3.h')}</div><ul>
+          <li>${t('upd3.i1')}<time>20 Aug 2026</time></li>
+          <li>${t('upd3.i2')}<time>17 Aug 2026</time></li>
+          <li>${t('upd3.i3')}<time>12 Aug 2026</time></li>
+        </ul></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="page-section">
+    <div class="wrap">
+      <div class="resources-grid">
+        <div>
+          <h3>${t('res.h')}</h3>
+          <ul>
+            <li><a>${t('res.l1')}</a></li><li><a>${t('res.l2')}</a></li>
+            <li><a>${t('res.l3')}</a></li><li><a>${t('res.l4')}</a></li>
+            <li><a>${t('res.l5')}</a></li><li><a>${t('res.l6')}</a></li>
+          </ul>
+        </div>
+        <div class="info-card" style="box-shadow:none; border:1px dashed var(--peach);">
+          <h4>${t('res.card.h')}</h4>
+          <p>${t('res.card.p')}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="partners-strip"><div class="wrap">
+    <div class="section-head" style="margin-bottom:24px;"><div class="kicker">${t('partners.kicker')}</div></div>
+    <div class="partners-row">
+      <div class="badge-circle">NALSA</div><div class="badge-circle">DLSA</div><div class="badge-circle">eCourts</div>
+      <div class="badge-circle">NCRB</div><div class="badge-circle">Digital India</div><div class="badge-circle">Ministry of Law &amp; Justice</div>
+    </div>
+  </div></div>
+
+  <div class="cta-strip"><div class="wrap">
+    <h3>${t('cta.h')}</h3><p>${t('cta.p')}</p>
+    <button class="btn btn-primary" onclick="go('login')">${t('cta.btn')}</button>
+  </div></div>
+  `;
+}
+function featureIcon(){ return ''; }
+function iconSvg(kind){
+  const icons = {
+    search:'<path d="M11 4a7 7 0 100 14 7 7 0 000-14z" fill="none" stroke-width="2"/><path d="M21 21l-4.35-4.35" stroke-width="2" stroke-linecap="round"/>',
+    doc:'<path d="M6 2h9l5 5v15H6z" fill="none" stroke-width="2"/><path d="M9 12h8M9 16h8M9 8h4" stroke-width="2" stroke-linecap="round"/>',
+    gavel:'<path d="M3 21h8" stroke-width="2" stroke-linecap="round"/><path d="M13 3l8 8-3 3-8-8z" fill="none" stroke-width="2"/><path d="M8 8l8 8-3 3-8-8z" fill="none" stroke-width="2"/>',
+    heart:'<path d="M12 21s-7-4.5-9.5-9C.9 8.5 2.5 4 6.5 4c2 0 3.5 1.2 4.5 2.6C12 5.2 13.5 4 15.5 4c4 0 5.6 4.5 4 8-2.5 4.5-9.5 9-9.5 9z" fill="none" stroke-width="2"/>'
+  };
+  return `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor">${icons[kind]||icons.search}</svg>`;
+}
+/* rebuild feature grid properly (4 cards) */
+function featureGrid(){
+  const items = [
+    {icon:'search', h:t('feat1.h'), p:t('feat1.p')},
+    {icon:'doc', h:t('feat2.h'), p:t('feat2.p')},
+    {icon:'gavel', h:t('feat3.h'), p:t('feat3.p')},
+    {icon:'heart', h:t('feat4.h'), p:t('feat4.p')},
+  ];
+  return items.map(i=>`<div class="feature-card"><div class="icon">${iconSvg(i.icon)}</div><h4>${i.h}</h4><p>${i.p}</p><a class="know-more" href="#/how-it-works" onclick="go('how')">${t('know.more')}</a></div>`).join('');
+}
+
+function pageHow(){
+  return `
+  <section class="page-section" style="padding-top:56px;">
+    <div class="wrap section-head" style="max-width:720px;">
+      <div class="kicker">${t('how.kicker')}</div>
+      <h2 style="font-size:2.4rem;">${t('how.h1')}</h2>
+      <p>${t('how.sub')}</p>
+    </div>
+    <div class="wrap steps-grid">
+      <div class="step-card"><div class="step-num">1</div><h4>${t('s1.h')}</h4><p>${t('s1.p')}</p></div>
+      <div class="step-card"><div class="step-num">2</div><h4>${t('s2.h')}</h4><p>${t('s2.p')}</p></div>
+      <div class="step-card"><div class="step-num">3</div><h4>${t('s3.h')}</h4><p>${t('s3.p')}</p></div>
+      <div class="step-card"><div class="step-num">4</div><h4>${t('s4.h')}</h4><p>${t('s4.p')}</p></div>
+    </div>
+  </section>
+  <div class="cta-strip"><div class="wrap">
+    <h3>${t('how.cta.h')}</h3><p>${t('how.cta.p')}</p>
+    <button class="btn btn-primary" onclick="go('login')">${t('how.cta.btn')}</button>
+  </div></div>
+  <div class="wrap sources-block">
+    <h5>${t('src.h')}</h5>
+    <ul>
+      <li>${t('src.1')}</li>
+      <li>${t('src.2')}</li>
+      <li>${t('src.3')}</li>
+    </ul>
+    <div class="note">${t('src.note')}</div>
+  </div>
+  `;
+}
+
+function pageLogin(){
+  return `
+  <div class="wrap login-shell">
+    <a class="back-link" href="#/" onclick="go('home')">${t('back.home')}</a>
+    <div class="login-grid">
+      <div class="card">
+        <h2>${t('login.h')}</h2>
+        <p class="lede">${t('login.lede')}</p>
+        <form onsubmit="doLogin(event)">
+          <div class="field"><label>${t('login.email')}</label><input type="email" placeholder="you@rihai.gov.in"></div>
+          <div class="field"><label>${t('login.pass')}</label><input type="password" value="Passw0rd123"></div>
+          <button class="btn btn-primary" style="width:100%; justify-content:center;" type="submit">${t('login.signin')}</button>
+        </form>
+        <a class="forgot" href="#">${t('login.forgot')}</a>
+      </div>
+      <div class="demo-card">
+        <h4>${t('demo.h')}</h4>
+        <p class="lede">${t('demo.lede')} <code>Passw0rd123</code></p>
+        <div class="demo-account"><div class="role">${t('demo.super.role')}</div><div class="mail">superintendent1@rihai.gov.in</div></div>
+        <div class="demo-account"><div class="role">${t('demo.staff.role')}</div><div class="mail">staff1@rihai.gov.in</div></div>
+        <div class="demo-account"><div class="role">${t('demo.admin.role')}</div><div class="mail">superadmin@rihai.gov.in</div></div>
+        <div class="demo-account"><div class="role">${t('demo.dlsa.role')}</div><div class="mail">dlsa@rihai.gov.in</div></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function capPill(pct){
+  if(pct>=100) return `<span class="pill pill-full">100% ${t('jail.capacity')}</span>`;
+  if(pct>=90) return `<span class="pill pill-warn">${pct}% ${t('jail.capacity')}</span>`;
+  return `<span class="pill pill-ok">${pct}% ${t('jail.capacity')}</span>`;
+}
+
+function pageJails(){
+  const cards = JAILS.map(j=>{
+    const pct = Math.round((j.occ/j.cap)*100);
+    return `<div class="jail-card" onclick="openJail('${j.id}')">
+      <div class="top-row"><h3>${j.name}</h3><span class="code-chip">${j.code}</span></div>
+      <div class="loc">${j.loc}</div>
+      <div class="cap-row">${capPill(pct)}<span class="inmates-count">${j.occ}/${j.cap} ${t('jail.inmates')}</span></div>
+      <div class="ut-row"><span>${t('jail.undertrials')}</span><b>${j.undertrials}</b></div>
+    </div>`;
+  }).join('');
+  return `<div class="wrap app-shell" style="padding-top:34px;">
+    <div class="page-head-row"><div><h1>${t('jails.h')}</h1><p class="lede">${t('jails.lede')}</p></div></div>
+    <div class="jail-grid">${cards}</div>
+  </div>`;
+}
+
+function findJail(id){ return JAILS.find(j=>j.id===id) || JAILS[0]; }
+
+function pageJail(){
+  const j = findJail(state.jailId);
+  const pct = Math.round((j.occ/j.cap)*100);
+  let body='';
+  if(state.jailTab==='overview'){
+    body = `
+      <div class="stat-cards">
+        <div class="mini-stat"><div class="k">${t('kpi.occupancy')}</div><div class="v">${j.occ}/${j.cap}</div><div class="sub">${pct}% ${t('kpi.ofsanctioned')}</div></div>
+        <div class="mini-stat"><div class="k">${t('kpi.sanctioned')}</div><div class="v">${j.cap}</div></div>
+        <div class="mini-stat warn-border"><div class="k">${t('kpi.pctcap')}</div><div class="v">${pct}%</div></div>
+        <div class="mini-stat"><div class="k">${t('kpi.total')}</div><div class="v">${j.occ}</div></div>
+      </div>
+      <div class="stat-cards second-row">
+        <div class="mini-stat"><div class="k">${t('kpi.undertrials')}</div><div class="v">${j.undertrials}</div></div>
+        <div class="mini-stat"><div class="k">${t('kpi.convicts')}</div><div class="v">${j.convicts}</div></div>
+        <div class="mini-stat"><div class="k">${t('kpi.staff')}</div><div class="v">${j.staff}</div></div>
+      </div>
+      <div class="panel">
+        <h3>${t('recent.h')}</h3><p class="sub">${t('recent.sub')}</p>
+        ${activityFeed()}
+      </div>`;
+  } else if(state.jailTab==='employees'){
+    const rows = STAFF.map(s=>`<tr>
+      <td>${s.name}</td><td>${s.email}</td>
+      <td><select class="role-select"><option ${s.role==='Jail Superintendent'?'selected':''}>Jail Superintendent</option><option ${s.role==='Jail Staff'?'selected':''}>Jail Staff</option><option ${s.role==='DLSA Lawyer'?'selected':''}>DLSA Lawyer</option></select></td>
+      <td><span class="status-active">${t('status.active')}</span></td>
+      <td><a class="link-danger" href="#">${t('action.remove')}</a></td>
+    </tr>`).join('');
+    body = `<div class="panel">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <p class="sub" style="margin:0;">${t('emp.lede')}</p>
+        <button class="btn btn-primary btn-sm">${t('emp.addstaff')}</button>
+      </div>
+      <table class="data-table"><thead><tr>
+        <th>${t('th.name')}</th><th>${t('th.email')}</th><th>${t('th.role')}</th><th>${t('th.status')}</th><th>${t('th.actions')}</th>
+      </tr></thead><tbody>${rows}</tbody></table>
+    </div>`;
+  } else {
+    body = `<div class="panel"><div class="empty-tab"><div class="ic">✅</div><h3>${t('stall.empty.h')}</h3><p>${t('stall.empty.p')}</p></div></div>`;
+  }
+  return `<div class="wrap app-shell" style="padding-top:34px; padding-bottom:70px;">
+    <a class="crumb" href="#/jails" onclick="go('jails')">${t('back.alljails')}</a>
+    <div class="detail-head">
+      <div><h1>${j.name}</h1><div class="loc">${j.loc} · ${j.code}</div></div>
+      <div class="detail-actions">
+        <button class="btn btn-outline btn-sm" onclick="openPrisoners('${j.id}')">${t('btn.prisoners')} (${j.occ})</button>
+        <button class="btn btn-ghost btn-sm">${t('btn.superportal')} · 1 ${t('stalled.count')}</button>
+        ${capPill(pct)}
+      </div>
+    </div>
+    <div class="tabbar">
+      <button class="${state.jailTab==='overview'?'active':''}" onclick="setJailTab('overview')">${t('jailtab.overview')}</button>
+      <button class="${state.jailTab==='employees'?'active':''}" onclick="setJailTab('employees')">${t('jailtab.employees')}</button>
+      <button class="${state.jailTab==='stall'?'active':''}" onclick="setJailTab('stall')">${t('jailtab.stall')} <span class="badge-count">1</span></button>
+    </div>
+    ${body}
+  </div>`;
+}
+
+function activityFeed(){
+  const items = [
+    {dot:'blue', txt: `Smoke Admit Test — ${t('act.released')}`, time:'22 Aug 2026, 3:05 pm'},
+    {dot:'blue', txt: `Smoke Admit Test — ${t('act.released')}`, time:'22 Aug 2026, 3:02 pm'},
+    {dot:'blue', txt: `Smoke Admit Test — ${t('act.filed')}`, time:'22 Aug 2026, 1:47 pm'},
+    {dot:'green', txt: `Smoke Admit Test — ${t('act.admitted')}`, time:'22 Aug 2026, 1:47 pm'},
+    {dot:'green', txt: `Smoke Admit Test — ${t('act.admitted')}`, time:'22 Aug 2026, 1:46 pm'},
+    {dot:'green', txt: `Smoke Admit Test — ${t('act.admitted')}`, time:'22 Aug 2026, 1:45 pm'},
+  ];
+  return items.map(i=>`<div class="activity-item"><div class="dot-${i.dot}"></div><div><div class="txt">${i.txt}</div><time>${i.time}</time></div></div>`).join('');
+}
+
+function statusPillHtml(status){
+  const map = {
+    eligible:['status-eligible','Eligible','पात्र'],
+    noteligible:['status-noteligible','Not Eligible','अपात्र'],
+    excluded:['status-excluded','Excluded','बहिष्कृत'],
+    pending:['status-pending','Pending','लंबित']
+  };
+  const m = map[status]||map.pending;
+  return `<span class="status-pill ${m[0]}">${lang==='hi'?m[2]:m[1]}</span>`;
+}
+function stageLabel(stage){
+  const map = {flagged:'stage1', drafted:'stage2', filed:'stage3', hearing:'stage4', orderpassed:'stage5', released:'stage6', none:null};
+  const key = map[stage];
+  return key ? t(key) : '—';
+}
+
+function pagePrisoners(){
+  const j = findJail(state.jailId);
+  const list = PRISONERS;
+  const rows = list.map(p=>`<tr class="clickable" onclick="openPrisoner('${j.id}','${p.id}')">
+    <td>${p.name}</td><td style="font-family:var(--font-mono); font-size:12px;">${p.reg}</td>
+    <td style="font-family:var(--font-mono); font-size:12px;">${p.caseno}</td>
+    <td>${p.offence}</td><td>${p.custody}</td><td>${statusPillHtml(p.status)}</td><td>${stageLabel(p.stage)}</td>
+  </tr>`).join('');
+  return `<div class="wrap app-shell" style="padding-top:34px; padding-bottom:70px;">
+    <a class="crumb" href="#" onclick="openJail('${j.id}')">${t('back.jailportal')}</a>
+    <div class="page-head-row"><div><h1>${t('prisoners.h')}</h1></div>
+      <button class="btn btn-primary" onclick="openModal()">${t('prisoners.addbtn')}</button>
+    </div>
+    <div class="filters-row">
+      <input type="text" placeholder="${t('prisoners.search')}">
+      <select><option>${t('filter.allstatus')}</option></select>
+      <select><option>${t('filter.allstage')}</option></select>
+    </div>
+    <div class="panel" style="padding:0;">
+      <table class="data-table"><thead><tr>
+        <th>${t('th.name')}</th><th>${t('th.regno')}</th><th>${t('th.caseno')}</th><th>${t('th.offence')}</th><th>${t('th.custody')}</th><th>${t('th.479')}</th><th>${t('th.app')}</th>
+      </tr></thead><tbody>${rows}</tbody></table>
+    </div>
+  </div>`;
+}
+
+function findPrisoner(id){ return PRISONERS.find(p=>p.id===id) || PRISONERS[0]; }
+
+function pagePrisoner(){
+  const j = findJail(state.jailId);
+  const p = findPrisoner(state.prisonerId);
+  const hasDetail = !!p.dob;
+  const tabs = [
+    ['personal', t('prof.tab.personal')],
+    ['case', t('prof.tab.case')],
+    ['elig', t('prof.tab.elig')],
+    ['progress', t('prof.tab.progress')],
+    ['skill', t('prof.tab.skill')],
+    ['notes', t('prof.tab.notes')],
+  ];
+  const tabBtns = tabs.map(([k,l])=>`<button class="${state.prisonerTab===k?'active':''}" onclick="setPrisonerTab('${k}')">${l}</button>`).join('');
+
+  let body = '';
+  if(!hasDetail){
+    body = `<div class="panel"><div class="empty-tab"><div class="ic">📄</div><p>${t('elig.reason.custody')}</p></div></div>`;
+  } else {
+    const elig = p.status==='eligible' ? 'status-eligible' : (p.status==='excluded'?'status-excluded':'status-noteligible');
+    const eligReasonKey = p.status==='eligible' ? 'elig.reason.eligible' : (p.status==='excluded' ? 'elig.reason.excluded' : 'elig.reason.custody');
+    if(state.prisonerTab==='personal'){
+      body = `<div class="panel"><h3>${t('personalinfo.h')}</h3>
+        <div class="info-grid" style="margin-top:14px;">
+          <div class="info-field"><div class="k">${t('f.dob')}</div><div class="v">${p.dob}</div></div>
+          <div class="info-field"><div class="k">${t('f.gender')}</div><div class="v">${t('gender.m')}</div></div>
+          <div class="info-field"><div class="k">${t('f.admdate')}</div><div class="v">${p.admdate}</div></div>
+          <div class="info-field"><div class="k">${t('f.regno')}</div><div class="v" style="font-family:var(--font-mono); font-size:13px;">${p.reg}</div></div>
+        </div></div>`;
+    } else if(state.prisonerTab==='case'){
+      body = `<div class="panel">
+        <div style="display:flex; justify-content:space-between; align-items:center;"><h3>${t('casedet.h')}</h3><button class="btn btn-outline btn-sm">${t('casedet.edit')}</button></div>
+        <div class="info-grid" style="margin-top:14px;">
+          <div class="info-field"><div class="k">${t('f.caseno')}</div><div class="v" style="font-family:var(--font-mono); font-size:13px;">${p.caseno}</div></div>
+          <div class="info-field"><div class="k">${t('f.cnr')}</div><div class="v" style="font-family:var(--font-mono); font-size:13px;">${p.cnr}</div></div>
+          <div class="info-field"><div class="k">${t('f.court')}</div><div class="v">${p.court}</div></div>
+          <div class="info-field"><div class="k">${t('f.offence')}</div><div class="v">${p.offence}</div></div>
+        </div>
+        <div class="info-grid" style="margin-top:22px;">
+          <div class="info-field"><div class="k">${t('f.maxsentence')}</div><div class="v">${p.maxSentence}</div></div>
+          <div class="info-field"><div class="k">${t('f.otherpending')}</div><div class="v">${p.otherPending}</div></div>
+          <div class="info-field"><div class="k">${t('f.custodystart')}</div><div class="v">${p.custodyStart}</div></div>
+          <div class="info-field"><div class="k">${t('f.flags')}</div><div class="v">${p.flags}</div></div>
+        </div>
+      </div>`;
+    } else if(state.prisonerTab==='elig'){
+      body = `<div class="panel">
+        <div style="display:flex; justify-content:space-between; align-items:center;"><h3>${t('elig.h')}</h3><button class="btn btn-outline btn-sm">${t('elig.recompute')}</button></div>
+        <div class="eligibility-row" style="margin-top:14px;">${statusPillHtml(p.status)}<span class="reason">${t(eligReasonKey)}</span></div>
+        <div class="timestamp-note">${t('elig.lastcomputed')} ${p.lastComputed}</div>
+      </div>`;
+    } else if(state.prisonerTab==='progress'){
+      const curIdx = STAGE_KEY[p.stage] ?? -1;
+      const nodes = STAGES.map((sk,i)=>`<div class="step-node ${i<=curIdx?'done':''}">
+        <div class="step-circle">${i+1}</div><div class="lbl">${t(sk)}</div>${i===curIdx?`<div class="dt">${p.stageDate||''}</div>`:''}
+      </div>`).join('');
+      body = `<div class="panel"><h3>${t('appprog.h')}</h3>
+        <div class="stepper" style="margin-top:22px;">${nodes}</div>
+        <div class="app-status-row">
+          <div><b>${t('app.baillabel')} ${p.stageDate||''}</b></div>
+          <span class="review-pill">${t('review.notyet')}</span>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-outline btn-sm">${t('btn.markreviewed')}</button>
+            <button class="btn btn-primary btn-sm">${t('btn.advance')}</button>
+          </div>
+        </div>
+      </div>`;
+    } else if(state.prisonerTab==='skill'){
+      body = `<div class="panel"><h3>${t('skill.h')}</h3>
+        <div class="skillpassport-row" style="margin-top:14px;">
+          <p style="margin:0; color:var(--body); font-size:13.5px;">${t('skill.none')}</p>
+          <div style="display:flex; gap:8px;">
+            <select class="role-select"><option>${t('skill.pick')}</option><option>Tailoring</option><option>Electrical wiring</option><option>Carpentry</option></select>
+            <button class="btn btn-primary btn-sm">${t('skill.enroll')}</button>
+          </div>
+        </div>
+      </div>`;
+    } else if(state.prisonerTab==='notes'){
+      body = `<div class="panel"><h3>${t('notes.h')}</h3>
+        <div class="notes-add-row" style="margin-top:14px;">
+          <input type="text" placeholder="${t('notes.placeholder')}">
+          <button class="btn btn-navy btn-sm">${t('notes.add')}</button>
+        </div>
+        <div class="note-item">${t('note.sample')}<span class="who">Kiran Joshi · 7 Aug 2026, 1:18 pm</span></div>
+      </div>`;
+    }
+  }
+
+  return `<div class="wrap app-shell" style="padding-top:34px; padding-bottom:70px;">
+    <a class="crumb" href="#" onclick="openPrisoners('${j.id}')">${t('back.allprisoners')}</a>
+    <div class="profile-head">
+      <div class="profile-id">
+        <div class="avatar-circle">${initial(p.name)}</div>
+        <div><h2>${p.name}</h2><div class="meta">${t('prof.regno')} ${p.reg} · ${p.admdate||''} ${t('prof.admission')} · ${t('gender.m')}</div></div>
+      </div>
+      ${statusPillHtml(p.status)}
+    </div>
+    <div class="tabpills">${tabBtns}</div>
+    ${body}
+  </div>`;
+}
+
+/* ============================= Modal ============================= */
+function openModal(){
+  document.getElementById('modal-root').innerHTML = `
+  <div class="modal-overlay" onclick="if(event.target===this) closeModal()">
+    <div class="modal-box">
+      <div class="mhead"><h2>${t('modal.h')}</h2><button class="modal-close" onclick="closeModal()">✕</button></div>
+      <div class="subhead-form">${t('modal.personal')}</div>
+      <div class="field"><label>${t('modal.fullname')}</label><input type="text"></div>
+      <div class="form-grid2">
+        <div class="field"><label>${t('modal.gender')}</label><select><option>${t('gender.male')}</option><option>${t('gender.female')}</option><option>${t('gender.other')}</option></select></div>
+        <div class="field"><label>${t('modal.dob')}</label><input type="date"></div>
+      </div>
+      <div class="field" style="max-width:260px;"><label>${t('modal.admdate')}</label><input type="date" value="2026-08-22"></div>
+
+      <div class="subhead-form">${t('modal.caserecord')}</div>
+      <div class="form-grid2">
+        <div class="field"><label>${t('modal.caseno')}</label><input type="text"></div>
+        <div class="field"><label>${t('modal.cnr')}</label><input type="text"></div>
+      </div>
+      <div class="form-grid2">
+        <div class="field"><label>${t('modal.court')}</label><input type="text"></div>
+        <div class="field"><label>${t('modal.offence')}</label><input type="text"></div>
+      </div>
+      <div class="form-grid2">
+        <div class="field"><label>${t('modal.maxsent')}</label><input type="number" value="3"></div>
+        <div class="field"><label>${t('modal.otherpending')}</label><input type="number" value="0"></div>
+      </div>
+      <div class="field" style="max-width:260px;"><label>${t('modal.custodystart')}</label><input type="date" value="2026-08-22"></div>
+      <div class="checkbox-row">
+        <label><input type="checkbox"> ${t('modal.deathlife')}</label>
+        <label><input type="checkbox" checked> ${t('modal.firsttime')}</label>
+      </div>
+      <div class="info-note">ℹ️ ${t('modal.note')}</div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeModal()">${t('modal.cancel')}</button>
+        <button class="btn btn-primary" onclick="closeModal()">${t('modal.admit')}</button>
+      </div>
+    </div>
+  </div>`;
+}
+function closeModal(){ document.getElementById('modal-root').innerHTML=''; }
+
+/* ============================= Footer ============================= */
+function siteFooter(){
+  return `
+  <footer class="site">
+    <div class="wrap footer-grid">
+      <div class="footer-brand">
+        <div class="brand"><div class="mark">RS</div><div class="name">${t('brand.name')}</div></div>
+        <p>${t('hero.sub')}</p>
+        <div class="footer-hours"><strong style="color:#fff;">${t('footer.hours.k')}:</strong> ${t('footer.hours.v')}</div>
+      </div>
+      <div class="footer-col"><h5>${t('footer.about.h')}</h5><ul>
+        <li><a href="#/" onclick="go('home')">${t('footer.about.1')}</a></li>
+        <li><a href="#/how-it-works" onclick="go('how')">${t('footer.about.2')}</a></li>
+        <li><a href="#/how-it-works" onclick="go('how')">${t('footer.about.3')}</a></li>
+        <li><a href="#">${t('footer.about.4')}</a></li>
+      </ul></div>
+      <div class="footer-col"><h5>${t('footer.legal.h')}</h5><ul>
+        <li><a href="#">${t('footer.legal.1')}</a></li><li><a href="#">${t('footer.legal.2')}</a></li>
+        <li><a href="#">${t('footer.legal.3')}</a></li><li><a href="#">${t('footer.legal.4')}</a></li>
+      </ul></div>
+      <div class="footer-col"><h5>${t('footer.access.h')}</h5><ul>
+        <li><a href="#/login" onclick="go('login')">${t('footer.access.1')}</a></li>
+        <li><a href="#/jails" onclick="go('jails')">${t('footer.access.2')}</a></li>
+        <li><a href="#/login" onclick="go('login')">${t('footer.access.3')}</a></li>
+        <li><a href="#">${t('footer.access.4')}</a></li>
+      </ul></div>
+    </div>
+    <div class="wrap footer-bottom"><span>${t('footer.copyright')}</span></div>
+    <div class="disclaimer-line">${t('disclaimer')}</div>
+  </footer>`;
+}
+
+/* ============================= Master render ============================= */
+function render(){
+  document.querySelectorAll('nav.main-links a').forEach(a=>a.classList.remove('current'));
+  renderHeaderActions();
+  let html='';
+  if(state.route==='home'){ html = pageHome(); document.querySelector('nav.main-links a[onclick*="home"]').classList.add('current'); }
+  else if(state.route==='how'){ html = pageHow(); document.querySelector('nav.main-links a[onclick*="how"]').classList.add('current'); }
+  else if(state.route==='login'){ html = pageLogin(); }
+  else if(state.route==='jails'){ html = pageJails(); document.querySelector('nav.main-links a[onclick*="jails"]').classList.add('current'); }
+  else if(state.route==='jail'){ html = pageJail(); }
+  else if(state.route==='prisoners'){ html = pagePrisoners(); }
+  else if(state.route==='prisoner'){ html = pagePrisoner(); }
+  html += siteFooter();
+  document.getElementById('app').innerHTML = html;
+  // patch feature grid placeholder on home page (built after render for dynamic icons)
+  const fg = document.querySelector('.feature-grid');
+  if(fg) fg.innerHTML = featureGrid();
+}
+
+render();
+</script>
+</body>
+</html>

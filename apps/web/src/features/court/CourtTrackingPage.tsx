@@ -52,13 +52,11 @@ export default function CourtTrackingPage() {
   return (
     <div className="space-y-4">
       <div>
-        <Link to={`/jails/${jailId}`} className="text-sm text-slate-500 hover:text-slate-700">
-          ← Jail portal
-        </Link>
-        <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
+        <Link to={`/jails/${jailId}`} className="crumb">← Jail portal</Link>
+        <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Court tracking</h1>
-            <p className="mt-1 max-w-2xl text-sm text-slate-500">
+            <h1 className="page-title mb-1.5">Court tracking</h1>
+            <p className="lede max-w-2xl">
               Filed and in-hearing applications. Syncing pulls in the court's own hearing date / outcome —
               <strong> it never decides bail</strong>; only the court does.
             </p>
@@ -66,7 +64,7 @@ export default function CourtTrackingPage() {
           <button
             onClick={() => syncAll.mutate(rows)}
             disabled={rows.length === 0 || syncAll.isPending}
-            className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-40"
+            className="btn btn-primary disabled:opacity-40"
           >
             {syncAll.isPending ? "Syncing all…" : `Sync all (${rows.length})`}
           </button>
@@ -77,63 +75,64 @@ export default function CourtTrackingPage() {
 
       {rows.length === 0 ? (
         <EmptyState
+          icon="⚖️"
           title="Nothing filed yet"
           body="Applications appear here once they reach the “filed” stage."
         />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+        <div className="panel-tight overflow-x-auto">
+          <table className="data-table min-w-full">
+            <thead>
               <tr>
-                <th className="px-4 py-3">Prisoner</th>
-                <th className="px-4 py-3">Case no</th>
-                <th className="px-4 py-3">CNR</th>
-                <th className="px-4 py-3">Stage</th>
-                <th className="px-4 py-3">Hearing date</th>
-                <th className="px-4 py-3">Order outcome</th>
-                <th className="px-4 py-3">Days since filed</th>
-                <th className="px-4 py-3"></th>
+                <th>Prisoner</th>
+                <th>Case no</th>
+                <th>CNR</th>
+                <th>Stage</th>
+                <th>Hearing date</th>
+                <th>Order outcome</th>
+                <th>Days since filed</th>
+                <th></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody>
               {rows.map((r) => (
                 <tr key={r.applicationId}>
-                  <td className="px-4 py-3 font-medium text-slate-800">{r.prisonerName}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-slate-600">{r.caseNumber}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-slate-600">{r.cnrNumber ?? "-"}</td>
-                  <td className="px-4 py-3">{STAGE_LABELS[r.stage]}</td>
-                  <td className="px-4 py-3 text-slate-600">{formatDate(r.hearingDate)}</td>
-                  <td className="px-4 py-3">
+                  <td className="font-semibold text-navy">{r.prisonerName}</td>
+                  <td className="mono-cell text-bodytext">{r.caseNumber}</td>
+                  <td className="mono-cell text-bodytext">{r.cnrNumber ?? "-"}</td>
+                  <td><span className="pill pill-neutral">{STAGE_LABELS[r.stage]}</span></td>
+                  <td className="text-bodytext">{formatDate(r.hearingDate)}</td>
+                  <td>
                     {r.orderOutcome ? (
                       <span
-                        className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                        className={`pill ${
                           r.orderOutcome === "granted"
-                            ? "bg-emerald-100 text-emerald-800"
+                            ? "pill-ok"
                             : r.orderOutcome === "denied"
-                              ? "bg-red-100 text-red-800"
-                              : "bg-slate-100 text-slate-600"
+                              ? "pill-full"
+                              : "pill-neutral"
                         }`}
                       >
                         {r.orderOutcome}
                       </span>
                     ) : (
-                      <span className="text-slate-400">pending</span>
+                      <span className="text-[#a7adb6]">pending</span>
                     )}
                     {r.orderOutcome === "granted" && (
                       <Link
                         to={`/jails/${jailId}/legal-aid`}
-                        className="ml-2 whitespace-nowrap text-[11px] font-semibold text-emerald-700 hover:underline"
+                        className="ml-2 whitespace-nowrap text-[11px] font-bold text-emerald-700 hover:underline"
                       >
                         Surety checklist →
                       </Link>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{r.daysSinceFiled ?? "-"}</td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="text-bodytext">{r.daysSinceFiled ?? "-"}</td>
+                  <td className="text-right">
                     <button
                       onClick={() => syncOne.mutate(r.applicationId)}
                       disabled={syncOne.isPending}
-                      className="whitespace-nowrap rounded-md border border-blue-300 px-2.5 py-1.5 text-xs font-semibold text-blue-800 hover:bg-blue-50 disabled:opacity-50"
+                      className="btn btn-outline btn-sm whitespace-nowrap"
                     >
                       {syncOne.isPending && syncOne.variables === r.applicationId ? "Syncing…" : "Sync from eCourts (mock)"}
                     </button>

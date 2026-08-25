@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import {
   ApplicationStage,
   ApplicationType,
@@ -9,6 +10,8 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { logger } from "../lib/logger.js";
 import { storage } from "../lib/storage.js";
+import { decryptField } from "../lib/pii.js";
+import { audit } from "../lib/audit.js";
 import { draftGroundsNarrative, type GroundsFacts } from "../lib/llm.js";
 import { ApiError } from "../middleware/errors.js";
 import { assertJailMembership, type JailMembership } from "../middleware/auth.js";
@@ -22,7 +25,8 @@ export async function listEligiblePrisoners(jailId: string): Promise<EligiblePri
   const rows = await prisma.$queryRaw<
     {
       id: string;
-      full_name: string;
+      full_name_enc: string | null;
+      full_name: string | null;
       prisoner_reg_no: string;
       case_number: string | null;
       offence: string | null;
@@ -34,7 +38,7 @@ export async function listEligiblePrisoners(jailId: string): Promise<EligiblePri
       pending_case_count: number | null;
     }[]
   >(Prisma.sql`
-    SELECT p.id, p.full_name, p.prisoner_reg_no,
+    SELECT p.id, p.full_name_enc, p.full_name, p.prisoner_reg_no,
            c.case_number, c.offence, c.custody_start_date,
            ea.reason AS elig_reason,
            c.max_sentence_years, c.carries_death_or_life,
@@ -61,7 +65,7 @@ export async function listEligiblePrisoners(jailId: string): Promise<EligiblePri
   const now = new Date();
   return rows.map((r) => ({
     prisonerId: r.id,
-    fullName: r.full_name,
+    fullName: decryptField(r.full_name_enc) ?? r.full_name ?? "",
     prisonerRegNo: r.prisoner_reg_no,
     caseNumber: r.case_number ?? "-",
     offence: r.offence ?? "-",
@@ -158,8 +162,10 @@ export async function autoDraftApplication(
     const custodyDays = Math.floor(
       (Date.now() - primaryCase.custodyStartDate.getTime()) / MS_PER_DAY,
     );
+    // LLM minimization (Prompt 8): only the case facts needed for the narrative
+    // are sent — never next-of-kin contact, address, or unrelated history.
     const facts: GroundsFacts = {
-      prisonerName: prisoner.fullName,
+      prisonerName: decryptField(prisoner.fullNameEnc) ?? prisoner.fullName ?? "",
       prisonerRegNo: prisoner.prisonerRegNo,
       jailName: membership.jail.name,
       caseNumber: primaryCase.caseNumber,
@@ -172,6 +178,21 @@ export async function autoDraftApplication(
     };
 
     const narrative = await draftGroundsNarrative(facts);
+
+    // Audit the LLM call's input/output pairing like any other Tier-1/2 access.
+    // Only SHA-256 digests are stored so the log never becomes a secondary PII store.
+    audit({
+      actorId: actor.id,
+      action: "llm.invoke",
+      entityType: "Prisoner",
+      entityId: prisonerId,
+      fieldsTouched: [
+        `llm.input_sha256:${crypto.createHash("sha256").update(JSON.stringify(facts)).digest("hex").slice(0, 16)}`,
+        `llm.output_sha256:${crypto.createHash("sha256").update(narrative.text).digest("hex").slice(0, 16)}`,
+        `llm.source:${narrative.source}`,
+      ],
+      ipAddress: null,
+    });
 
     let flaggedApp = await prisma.application.findFirst({
       where: { prisonerId, stage: ApplicationStage.Flagged },
@@ -291,6 +312,7 @@ export async function renderApplicationStatusSheet(applicationId: string): Promi
   });
 
   const history = normalizeStageHistory(app.stageHistory);
+  const prisonerName = decryptField(app.prisoner.fullNameEnc) ?? app.prisoner.fullName ?? "";
   const currentIdx = stageIndexLocal(app.stage);
   const rows = Object.entries(SHEET_STAGE_LABELS)
     .map(([stage, label], i) => {
@@ -309,7 +331,7 @@ export async function renderApplicationStatusSheet(applicationId: string): Promi
     .join("");
 
   return `<!doctype html><html><head><meta charset="utf-8">
-<title>Application status sheet - ${app.prisoner.fullName}</title>
+<title>Application status sheet - ${prisonerName}</title>
 <style>
  body{font-family:'Segoe UI',Arial,sans-serif;max-width:860px;margin:32px auto;padding:0 24px;color:#0f172a}
  .banner{background:#fff7ed;border:2px solid #ea580c;color:#9a3412;font-weight:bold;padding:10px 14px;margin-bottom:20px}
@@ -321,7 +343,7 @@ export async function renderApplicationStatusSheet(applicationId: string): Promi
  <div class="banner">Lawyer review pending</div>
  <h1>APPLICATION STATUS SHEET &mdash; TASK PREVIEW</h1>
  <div class="meta">
-  <p><strong>Applicant:</strong> ${app.prisoner.fullName} (${app.prisoner.prisonerRegNo})</p>
+  <p><strong>Applicant:</strong> ${prisonerName} (${app.prisoner.prisonerRegNo})</p>
   <p><strong>Jail:</strong> ${app.prisoner.jail.name}, ${app.prisoner.jail.district}</p>
   ${primaryCase ? `<p><strong>Case:</strong> ${primaryCase.caseNumber} &mdash; ${primaryCase.offence} &mdash; ${primaryCase.courtName}</p>` : ""}
   <p><strong>Application type:</strong> ${app.type === "personal_bond" ? "Personal bond" : "Regular bail"}</p>

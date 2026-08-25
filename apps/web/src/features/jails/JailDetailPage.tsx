@@ -4,7 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Role } from "@rihai/shared-types";
 import { api, extractApiError } from "../../lib/api";
 import { useAuthStore } from "../../state/authStore";
-import { EmptyState, ErrorBanner, OccupancyBadge, Spinner, StatCard } from "../../components/ui";
+import { useLang } from "../../lib/i18n";
+import { EmptyState, ErrorBanner, occupancyTone, Spinner } from "../../components/ui";
 import OverviewTab from "./tabs/OverviewTab";
 import StaffTab from "./tabs/StaffTab";
 import StallTab from "./tabs/StallTab";
@@ -15,6 +16,7 @@ type TabKey = "overview" | "staff" | "stalls";
 export default function JailDetailPage() {
   const { jailId = "" } = useParams();
   const user = useAuthStore((s) => s.user);
+  const { t } = useLang();
   const [tab, setTab] = useState<TabKey>("overview");
 
   const statsQuery = useQuery({
@@ -35,6 +37,11 @@ export default function JailDetailPage() {
       const res = await api.get<{ data: StallRow[] }>(`/jails/${jailId}/stall-list`);
       return res.data.data;
     },
+    // The badge must track reality: recompute whenever the page mounts and poll
+    // gently instead of serving a stale cache after updates happen elsewhere.
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchInterval: 45_000,
   });
 
   if (statsQuery.isLoading) return <Spinner label="Loading jail portal…" />;
@@ -43,9 +50,7 @@ export default function JailDetailPage() {
     return (
       <div className="space-y-4">
         <ErrorBanner message={statsQuery.error.message} />
-        <Link to="/jails" className="text-sm font-medium text-blue-700 hover:underline">
-          ← Back to jails
-        </Link>
+        <Link to="/jails" className="crumb">← All jails</Link>
       </div>
     );
   }
@@ -54,94 +59,53 @@ export default function JailDetailPage() {
   const canManageStaff =
     user?.role === Role.SuperAdmin || user?.role === Role.JailSuperintendent;
   const stalledCount = stallCountQuery.data?.length ?? 0;
+  const tone = occupancyTone(stats.capacityPct);
+  const capPillCls =
+    tone === "red" ? "pill-full" : tone === "amber" ? "pill-warn" : "pill-ok";
 
   const tabs: { key: TabKey; label: string; badge?: number; visible: boolean }[] = [
-    { key: "overview", label: "Overview", visible: true },
-    { key: "staff", label: "Employee Management", visible: canManageStaff },
-    { key: "stalls", label: "Stall List", badge: stalledCount, visible: true },
+    { key: "overview", label: t("jailtab.overview"), visible: true },
+    { key: "staff", label: t("jailtab.staff"), visible: canManageStaff },
+    { key: "stalls", label: t("jailtab.stalls"), badge: stalledCount, visible: true },
   ];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <Link to="/jails" className="text-sm text-slate-500 hover:text-slate-700">
-          ← All jails
-        </Link>
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">{stats.jail.name}</h1>
-            <p className="text-sm text-slate-500">
-              {stats.jail.district}, {stats.jail.state} · <span className="font-mono">{stats.jail.code}</span>
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link
-              to={`/jails/${jailId}/prisoners`}
-              className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"
-            >
-              Prisoners ({stats.totalPrisoners})
+    <div>
+      <Link to="/jails" className="crumb">{t("back.alljails")}</Link>
+
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="display mb-1 text-2xl font-bold text-navy sm:text-[1.8rem]">{stats.jail.name}</h1>
+          <p className="text-[13.5px] text-bodytext">
+            {stats.jail.district}, {stats.jail.state} · <span className="font-mono">{stats.jail.code}</span>
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link to={`/jails/${jailId}/prisoners`} className="btn btn-outline btn-sm">
+            {t("btn.prisoners")} ({stats.totalPrisoners})
+          </Link>
+          <Link to={`/jails/${jailId}/court-tracking`} className="btn btn-ghost btn-sm">{t("link.court")}</Link>
+          <Link to={`/jails/${jailId}/legal-aid`} className="btn btn-ghost btn-sm">{t("link.legalaid")}</Link>
+          <Link to={`/jails/${jailId}/overcrowding`} className="btn btn-ghost btn-sm">{t("link.overcrowding")}</Link>
+          <Link to={`/jails/${jailId}/compliance-report`} className="btn btn-ghost btn-sm">{t("link.compliance")}</Link>
+          {canManageStaff && (
+            <Link to={`/jails/${jailId}/superintendent`} className="btn btn-ghost btn-sm">
+              {t("btn.superportal")}{stalledCount > 0 ? ` · ${stalledCount} ${t("stalled.count")}` : ""}
             </Link>
-            <Link
-              to={`/jails/${jailId}/court-tracking`}
-              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              Court tracking
-            </Link>
-            <Link
-              to={`/jails/${jailId}/legal-aid`}
-              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              Legal aid
-            </Link>
-            <Link
-              to={`/jails/${jailId}/overcrowding`}
-              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              Overcrowding
-            </Link>
-            {canManageStaff && (
-              <Link
-                to={`/jails/${jailId}/superintendent`}
-                className="rounded-lg border border-blue-300 bg-white px-4 py-2 text-sm font-semibold text-blue-800 hover:bg-blue-50"
-              >
-                Superintendent portal
-                {stalledCount > 0 ? ` · ${stalledCount} stalled` : ""}
-              </Link>
-            )}
-            <OccupancyBadge pct={stats.capacityPct} />
-          </div>
+          )}
+          <span className={capPillCls}>{stats.capacityPct}% capacity</span>
         </div>
       </div>
 
-      <div className="border-b border-slate-200">
-        <nav className="-mb-px flex gap-1 overflow-x-auto">
-          {tabs
-            .filter((t) => t.visible)
-            .map((t) => (
-              <button
-                key={t.key}
-                onClick={() => setTab(t.key)}
-                className={`flex items-center gap-2 whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-medium ${
-                  tab === t.key
-                    ? "border-blue-700 text-blue-800"
-                    : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700"
-                }`}
-              >
-                {t.label}
-                {!!t.badge && (
-                  <span
-                    className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
-                      t.badge > 0 && t.key === "stalls" && stalledCount > 0
-                        ? "bg-red-100 text-red-700"
-                        : "bg-slate-100 text-slate-600"
-                    }`}
-                  >
-                    {t.badge}
-                  </span>
-                )}
-              </button>
-            ))}
-        </nav>
+      <div className="tabbar">
+        {tabs
+          .filter((t) => t.visible)
+          .map((t) => (
+            <button key={t.key} className={tab === t.key ? "active" : ""} onClick={() => setTab(t.key)}>
+              {t.label}
+              {!!t.badge && <span className="badge-count">{t.badge}</span>}
+            </button>
+          ))}
       </div>
 
       {tab === "overview" &&
@@ -149,19 +113,40 @@ export default function JailDetailPage() {
           <Spinner />
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-6">
-              <StatCard
-                label="Occupancy"
-                value={`${stats.currentOccupancy}/${stats.sanctionedCapacity}`}
-                sub={<OccupancyBadgeInline pct={stats.capacityPct} />}
-                tone={stats.capacityPct > 120 ? "red" : stats.capacityPct >= 100 ? "amber" : "green"}
-              />
-              <StatCard label="Sanctioned capacity" value={stats.sanctionedCapacity} />
-              <StatCard label="% capacity" value={`${stats.capacityPct}%`} />
-              <StatCard label="Total prisoners" value={stats.totalPrisoners} tone="blue" />
-              <StatCard label="Undertrials" value={stats.undertrialCount} tone="amber" />
-              <StatCard label="Convicts" value={stats.convictCount} />
-              <StatCard label="Active staff" value={stats.staffCount} />
+            <div className="grid grid-cols-2 gap-3.5 sm:gap-4 lg:grid-cols-4">
+              <div className={`mini-stat ${stats.capacityPct > 100 ? "warn-border" : ""}`}>
+                <p className="k">{t("kpi.occupancy")}</p>
+                <p className="v">
+                  {stats.currentOccupancy}/{stats.sanctionedCapacity}
+                </p>
+                <p className="sub">{stats.capacityPct}% {t("kpi.ofsanctioned")}</p>
+              </div>
+              <div className="mini-stat">
+                <p className="k">{t("kpi.sanctioned")}</p>
+                <p className="v">{stats.sanctionedCapacity}</p>
+              </div>
+              <div className="mini-stat warn-border">
+                <p className="k">{t("kpi.pctcap")}</p>
+                <p className="v">{stats.capacityPct}%</p>
+              </div>
+              <div className="mini-stat">
+                <p className="k">{t("kpi.total")}</p>
+                <p className="v">{stats.totalPrisoners}</p>
+              </div>
+            </div>
+            <div className="mt-4 grid grid-cols-1 gap-3.5 sm:grid-cols-3 sm:gap-4">
+              <div className="mini-stat">
+                <p className="k">{t("kpi.undertrials")}</p>
+                <p className="v">{stats.undertrialCount}</p>
+              </div>
+              <div className="mini-stat">
+                <p className="k">{t("kpi.convicts")}</p>
+                <p className="v">{stats.convictCount}</p>
+              </div>
+              <div className="mini-stat">
+                <p className="k">{t("kpi.staff")}</p>
+                <p className="v">{stats.staffCount}</p>
+              </div>
             </div>
             <OverviewTab activity={stats.recentActivity} />
           </>
@@ -172,12 +157,8 @@ export default function JailDetailPage() {
 
       {!canManageStaff && tab !== "staff" && null}
       {tab === "overview" && stats.recentActivity.length === 0 && !stallCountQuery.isLoading && (
-        <EmptyState title="No recent activity" body="Stage changes and admissions will appear here." />
+        <EmptyState icon="🕐" title={t("recent.none")} />
       )}
     </div>
   );
-}
-
-function OccupancyBadgeInline({ pct }: { pct: number }) {
-  return <span>{pct}% of sanctioned capacity</span>;
 }

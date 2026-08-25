@@ -2,6 +2,7 @@
 import { prisma } from "../lib/prisma.js";
 import { logger } from "../lib/logger.js";
 import { notificationProvider } from "../lib/notification-provider.js";
+import { piiPublic } from "../lib/pii.js";
 
 type RecipientType = "next_of_kin" | "jail_staff" | "dlsa_lawyer";
 
@@ -51,12 +52,13 @@ export async function notifyStageChange(
   });
   if (!app) return;
 
+  const pii = piiPublic(app.prisoner);
   const stageText = newStage.replaceAll("_", " ");
-  const kinMessage = `RIHAI SETU update: the legal case of ${app.prisoner.fullName} (Reg ${app.prisoner.prisonerRegNo}) has moved to stage "${stageText}". This is an automated status message; the court makes all decisions.`;
+  const kinMessage = `RIHAI SETU update: the legal case of ${pii.fullName} (Reg ${app.prisoner.prisonerRegNo}) has moved to stage "${stageText}". This is an automated status message; the court makes all decisions.`;
 
   await logAndSend({
     recipientType: "next_of_kin",
-    contact: app.prisoner.nextOfKinPhone ?? null,
+    contact: pii.nextOfKinPhone ?? null,
     channel: "sms",
     message: kinMessage,
     relatedEntityType: "Application",
@@ -68,7 +70,7 @@ export async function notifyStageChange(
       recipientType: "dlsa_lawyer",
       userId: app.legalAidAssignment.lawyerId,
       channel: "in_app",
-      message: `Application for ${app.prisoner.fullName} (${primaryCaseNumber(app.prisonerId)}) advanced to "${stageText}".`,
+      message: `Application for ${pii.fullName} (${primaryCaseNumber(app.prisonerId)}) advanced to "${stageText}".`,
       relatedEntityType: "Application",
       relatedEntityId: app.id,
     });
@@ -111,14 +113,16 @@ export async function notifyHearingScheduled(
     where: { id: applicationId },
     include: { prisoner: true },
   });
-  if (!app || !app.prisoner.nextOfKinPhone) return;
+  if (!app) return;
+  const pii = piiPublic(app.prisoner);
+  if (!pii.nextOfKinPhone) return;
 
   const dateStr = hearingDate.toLocaleDateString("en-IN", { dateStyle: "long" });
   await logAndSend({
     recipientType: "next_of_kin",
-    contact: app.prisoner.nextOfKinPhone,
+    contact: pii.nextOfKinPhone,
     channel: "sms",
-    message: `RIHAI SETU update: a court hearing for ${app.prisoner.fullName}'s case is scheduled for ${dateStr}. The court's decision alone determines the outcome.`,
+    message: `RIHAI SETU update: a court hearing for ${pii.fullName}'s case is scheduled for ${dateStr}. The court's decision alone determines the outcome.`,
     relatedEntityType: "Application",
     relatedEntityId: app.id,
   });

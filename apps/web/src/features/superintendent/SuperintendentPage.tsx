@@ -24,6 +24,8 @@ export default function SuperintendentPage() {
   const query = useQuery({
     queryKey: ["eligible-prisoners", jailId],
     enabled: isManager,
+    refetchOnMount: "always",
+    staleTime: 0,
     queryFn: async () => {
       const res = await api.get<{ data: EligiblePrisonerRow[] }>(
         `/jails/${jailId}/superintendent/eligible-prisoners`,
@@ -44,6 +46,8 @@ export default function SuperintendentPage() {
       setOutcomes(data);
       setSelected(new Set());
       void queryClient.invalidateQueries({ queryKey: ["eligible-prisoners", jailId] });
+      // Drafting moves applications out of "flagged", which changes stall windows.
+      void queryClient.invalidateQueries({ queryKey: ["stall-list", jailId] });
     },
   });
 
@@ -64,7 +68,7 @@ export default function SuperintendentPage() {
       <EmptyState
         title="Superintendent access only"
         body="This portal is restricted to jail superintendents."
-        action={<Link to={`/jails/${jailId}`} className="text-sm font-medium text-blue-700 hover:underline">← Back to jail</Link>}
+        action={<Link to={`/jails/${jailId}`} className="crumb">← Back to jail</Link>}
       />
     );
   }
@@ -84,13 +88,9 @@ export default function SuperintendentPage() {
   return (
     <div className="space-y-4">
       <div>
-        <Link to={`/jails/${jailId}`} className="text-sm text-slate-500 hover:text-slate-700">
-          ← Jail portal
-        </Link>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
-          Section 479 — Superintendent portal
-        </h1>
-        <p className="mt-1 max-w-2xl text-sm text-slate-500">
+        <Link to={`/jails/${jailId}`} className="crumb">← Jail portal</Link>
+        <h1 className="page-title mb-1.5">Section 479 — Superintendent portal</h1>
+        <p className="lede max-w-2xl">
           Prisoners whose latest eligibility assessment is <strong>eligible</strong> and whose application has not
           advanced past <em>flagged</em>. Drafting accelerates paperwork; a human lawyer always reviews before filing.
         </p>
@@ -99,8 +99,8 @@ export default function SuperintendentPage() {
       {draft.isError && <ErrorBanner message={extractApiError(draft.error).message} />}
 
       {outcomes && (
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="mb-2 text-sm font-semibold text-slate-800">Draft results</p>
+        <div className="panel !mt-4">
+          <p className="mb-2 text-sm font-bold text-navy">Draft results</p>
           <ul className="space-y-1.5 text-sm">
             {outcomes.map((o) => (
               <li key={o.prisonerId}>
@@ -111,11 +111,11 @@ export default function SuperintendentPage() {
                       href={`${(import.meta.env.VITE_API_URL ?? "http://localhost:4000/api/v1").replace(/\/api\/v1$/, "")}${o.documentUrl}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="font-medium underline"
+                      className="font-semibold underline"
                     >
                       open document ↗
                     </a>{" "}
-                    <span className="ml-1 rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-bold text-orange-800">
+                    <span className="ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">
                       Lawyer review pending
                     </span>
                   </span>
@@ -130,13 +130,14 @@ export default function SuperintendentPage() {
 
       {rows.length === 0 ? (
         <EmptyState
+          icon="🔍"
           title="No eligible prisoners awaiting applications"
           body="Run the nightly eligibility sweep or recompute after editing case details to refresh this list."
         />
       ) : (
         <>
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <label className="flex items-center gap-2 text-sm text-slate-700">
+            <label className="flex items-center gap-2 text-sm font-semibold text-navy">
               <input
                 type="checkbox"
                 checked={allSelected}
@@ -150,7 +151,7 @@ export default function SuperintendentPage() {
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value as ApplicationType)}
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="input-base w-auto bg-white"
               >
                 <option value={ApplicationType.Bail}>Bail</option>
                 <option value={ApplicationType.PersonalBond}>Personal bond</option>
@@ -158,47 +159,47 @@ export default function SuperintendentPage() {
               <button
                 disabled={selected.size === 0 || draft.isPending}
                 onClick={() => draft.mutate([...selected])}
-                className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-40"
+                className="btn btn-primary disabled:opacity-40"
               >
                 {draft.isPending ? "Drafting…" : `Auto-draft ${selected.size || ""} application${selected.size === 1 ? "" : "s"}`}
               </button>
             </div>
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-            <table className="min-w-full divide-y divide-slate-200 text-sm">
-              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+          <div className="panel-tight overflow-x-auto">
+            <table className="data-table min-w-full">
+              <thead>
                 <tr>
-                  <th className="px-3 py-3"></th>
-                  <th className="px-4 py-3">Name</th>
-                  <th className="px-4 py-3">Case no</th>
-                  <th className="px-4 py-3">Offence</th>
-                  <th className="px-4 py-3">Eligibility basis</th>
-                  <th className="px-4 py-3">In custody</th>
-                  <th className="px-4 py-3"></th>
+                  <th className="w-8"></th>
+                  <th>Name</th>
+                  <th>Case no</th>
+                  <th>Offence</th>
+                  <th>Eligibility basis</th>
+                  <th>In custody</th>
+                  <th></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody>
                 {rows.map((r) => (
-                  <tr key={r.prisonerId} className={selected.has(r.prisonerId) ? "bg-blue-50/40" : undefined}>
-                    <td className="px-3 py-3">
+                  <tr key={r.prisonerId} className={selected.has(r.prisonerId) ? "bg-[#FFF6EC]/70" : undefined}>
+                    <td>
                       <input type="checkbox" checked={selected.has(r.prisonerId)} onChange={() => toggle(r.prisonerId)} />
                     </td>
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-slate-800">{r.fullName}</p>
-                      <p className="font-mono text-[11px] text-slate-400">{r.prisonerRegNo}</p>
+                    <td>
+                      <p className="font-semibold text-navy">{r.fullName}</p>
+                      <p className="mono-cell text-[#a7adb6]">{r.prisonerRegNo}</p>
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-slate-600">{r.caseNumber}</td>
-                    <td className="max-w-[200px] truncate px-4 py-3 text-slate-600">{r.offence}</td>
-                    <td className="max-w-[260px] px-4 py-3 text-xs text-slate-600">{r.eligibilityReason}</td>
-                    <td className="whitespace-nowrap px-4 py-3 text-slate-600">
+                    <td className="mono-cell text-bodytext">{r.caseNumber}</td>
+                    <td className="max-w-[200px] truncate text-bodytext">{r.offence}</td>
+                    <td className="max-w-[260px] text-xs text-bodytext">{r.eligibilityReason}</td>
+                    <td className="whitespace-nowrap text-bodytext">
                       {Math.floor(r.custodyDays / 30.4375)} mo {r.custodyDays % 30} d
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="text-right">
                       <button
                         onClick={() => draft.mutate([r.prisonerId])}
                         disabled={draft.isPending}
-                        className="whitespace-nowrap rounded-md bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-800 disabled:opacity-60"
+                        className="btn btn-primary btn-sm whitespace-nowrap disabled:opacity-60"
                       >
                         Auto-draft
                       </button>
@@ -208,7 +209,7 @@ export default function SuperintendentPage() {
               </tbody>
             </table>
           </div>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-bodytext">
             Drafted applications appear on each prisoner profile under "Application progress" with a
             lawyer-review-pending warning;
             they must be marked reviewed by a DLSA lawyer or superintendent before they can be filed.

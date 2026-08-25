@@ -12,6 +12,8 @@ import {
 } from "@rihai/shared-types";
 import type { Jail } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
+import { piiPublic } from "../lib/pii.js";
+import { assertPasswordPolicy } from "../lib/passwords.js";
 import { logger } from "../lib/logger.js";
 import { ApiError } from "../middleware/errors.js";
 
@@ -107,13 +109,17 @@ export async function getJailStats(jail: Jail): Promise<JailStats> {
       where: { prisoner: { jailId: jail.id } },
       orderBy: { updatedAt: "desc" },
       take: 8,
-      include: { prisoner: { select: { id: true, fullName: true } } },
+      include: {
+        prisoner: {
+          select: { id: true, fullName: true, fullNameEnc: true },
+        },
+      },
     }),
     prisma.prisoner.findMany({
       where: { jailId: jail.id },
       orderBy: { createdAt: "desc" },
       take: 8,
-      select: { id: true, fullName: true, gender: true, createdAt: true },
+      select: { id: true, fullName: true, fullNameEnc: true, gender: true, createdAt: true },
     }),
   ]);
 
@@ -122,14 +128,14 @@ export async function getJailStats(jail: Jail): Promise<JailStats> {
       kind: "application_stage_change",
       at: a.updatedAt.toISOString(),
       prisonerId: a.prisoner.id,
-      prisonerName: a.prisoner.fullName,
+      prisonerName: piiPublic(a.prisoner).fullName,
       detail: `Application moved to “${stageLabel(a.stage)}”`,
     })),
     ...recentAdmissions.map((p) => ({
       kind: "new_admission" as const,
       at: p.createdAt.toISOString(),
       prisonerId: p.id,
-      prisonerName: p.fullName,
+      prisonerName: piiPublic(p).fullName,
       detail: "New admission recorded",
     })),
   ]
@@ -205,6 +211,7 @@ export async function addStaff(jail: Jail, input: AddStaffInput): Promise<Create
     if (user) throw ApiError.conflict("A user with that email already exists — attach them instead");
     if (!input.name?.trim()) throw ApiError.badRequest("name is required when creating a new user");
     temporaryPassword = generateTemporaryPassword();
+    assertPasswordPolicy(temporaryPassword); // generated, but keep the policy honest
     user = await prisma.user.create({
       data: {
         name: input.name.trim(),

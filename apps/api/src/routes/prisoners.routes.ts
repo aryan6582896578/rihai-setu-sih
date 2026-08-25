@@ -12,6 +12,7 @@ import {
 } from "@rihai/shared-types";
 import { prisma } from "../lib/prisma.js";
 import { uploadsDir } from "../lib/paths.js";
+import { audit } from "../lib/audit.js";
 import { ApiError, asyncHandler } from "../middleware/errors.js";
 import {
   loadPrisonerForUser,
@@ -59,6 +60,15 @@ prisonersNestedRouter.get(
   asyncHandler(async (req, res) => {
     const q = listQuerySchema.parse(req.query);
     const result: PrisonerListItemPaginated = await listPrisoners(req.params.jailId!, q);
+    audit({
+      actorId: req.user!.id,
+      actorName: req.user!.name,
+      action: "prisoner.list_read",
+      entityType: "Prisoner",
+      entityId: req.params.jailId!,
+      fieldsTouched: [`count:${result.total}`],
+      ipAddress: req.ip ?? undefined,
+    });
     res.json(result);
   }),
 );
@@ -123,7 +133,13 @@ prisonersRouter.get(
   "/:id",
   asyncHandler(async (req, res) => {
     await loadPrisonerForUser(req.user!, req.params.id!);
-    res.json({ data: await getPrisonerDetail(req.params.id!) });
+    res.json({
+      data: await getPrisonerDetail(req.params.id!, {
+        actorId: req.user!.id,
+        actorName: req.user!.name,
+        ip: req.ip ?? undefined,
+      }),
+    });
   }),
 );
 
@@ -142,7 +158,7 @@ prisonersRouter.patch(
       throw ApiError.forbidden("Only staff can edit prisoner details");
     }
     const input = personalSchema.parse(req.body);
-    await updatePersonalInfo(req.params.id!, input);
+    await updatePersonalInfo(req.params.id!, input, { actorId: req.user!.id });
     res.json({ data: await getPrisonerDetail(req.params.id!) });
   }),
 );
@@ -173,7 +189,7 @@ prisonersRouter.post(
     }
     if (!req.file) throw ApiError.badRequest("photo file is required");
     const url = `/uploads/photos/${req.file.filename}`;
-    await setPhotoUrl(req.params.id!, url);
+    await setPhotoUrl(req.params.id!, url, { actorId: req.user!.id });
     res.json({ data: { photoUrl: url } });
   }),
 );
@@ -207,6 +223,15 @@ prisonersRouter.patch(
       throw ApiError.forbidden("Only staff can edit case records");
     }
     const input = caseSchema.parse(req.body);
+    audit({
+      actorId: req.user!.id,
+      actorName: req.user!.name,
+      action: "case_record.write",
+      entityType: "CaseRecord",
+      entityId: req.params.caseId!,
+      fieldsTouched: Object.keys(input),
+      ipAddress: req.ip ?? undefined,
+    });
     const result = await updateCaseRecord(
       req.params.id!,
       req.params.caseId!,
@@ -297,6 +322,7 @@ enrollmentsRouter.patch(
       .object({
         progressPct: z.coerce.number().int().min(0).max(100).optional(),
         markComplete: z.boolean().optional(),
+        regenerate: z.boolean().optional(),
       })
       .parse(req.body);
     res.json({ data: await updateEnrollment(req.params.id!, body) });
@@ -368,6 +394,15 @@ applicationActionsRouter.patch(
       throw ApiError.forbidden("Your role cannot advance application stages");
     }
     const body = z.object({ stage: z.nativeEnum(ApplicationStage) }).parse(req.body);
+    audit({
+      actorId: req.user!.id,
+      actorName: req.user!.name,
+      action: "application.stage",
+      entityType: "Application",
+      entityId: req.params.id!,
+      fieldsTouched: [`stage:${body.stage}`],
+      ipAddress: req.ip ?? undefined,
+    });
     res.json({ data: await advanceStage(req.params.id!, body.stage, req.user!.id) });
   }),
 );
@@ -384,6 +419,15 @@ applicationActionsRouter.post(
     if (!roleIsOneOf(membership.roleAtJail, REVIEW_ROLES)) {
       throw ApiError.forbidden("Only a DLSA lawyer or superintendent can review applications");
     }
+    audit({
+      actorId: req.user!.id,
+      actorName: req.user!.name,
+      action: "application.review",
+      entityType: "Application",
+      entityId: req.params.id!,
+      fieldsTouched: ["reviewed_by", "reviewed_at"],
+      ipAddress: req.ip ?? undefined,
+    });
     res.json({ data: await markReviewed(req.params.id!, req.user!.id) });
   }),
 );

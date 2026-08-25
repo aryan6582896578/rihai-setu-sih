@@ -14,6 +14,9 @@ import CourtTrackingPage from "./features/court/CourtTrackingPage";
 import LegalAidPage from "./features/court/LegalAidPage";
 import OvercrowdingPage from "./features/overcrowding/OvercrowdingPage";
 import RollupPage from "./features/overcrowding/RollupPage";
+import NotificationsPage from "./features/notifications/NotificationsPage";
+import ComplianceReportPage from "./features/compliance/ComplianceReportPage";
+import DataIngestionPage from "./features/admin/DataIngestionPage";
 
 export default function App() {
   const status = useAuthStore((s) => s.status);
@@ -38,6 +41,10 @@ export default function App() {
           <Route path="/jails/:jailId/legal-aid" element={<LegalAidPage />} />
           <Route path="/jails/:jailId/overcrowding" element={<OvercrowdingPage />} />
           <Route path="/overcrowding" element={<RollupPage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
+          <Route path="/jails/:jailId/compliance-report" element={<ComplianceReportPage />} />
+          <Route path="/compliance-report" element={<ComplianceReportPage />} />
+          <Route path="/admin/data-ingestion" element={<DataIngestionPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

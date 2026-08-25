@@ -66,15 +66,13 @@ export default function OvercrowdingPage() {
   return (
     <div className="space-y-5">
       <div>
-        <Link to={`/jails/${jailId}`} className="text-sm text-slate-500 hover:text-slate-700">
-          ← Jail portal
-        </Link>
-        <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
+        <Link to={`/jails/${jailId}`} className="crumb">← Jail portal</Link>
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+            <h1 className="page-title mb-1.5">
               Overcrowding intelligence — {state.jail.name}
             </h1>
-            <p className="text-sm text-slate-500">
+            <p className="lede">
               Deterministic date-math projections from live eligibility data. No black boxes.
             </p>
           </div>
@@ -82,44 +80,38 @@ export default function OvercrowdingPage() {
         </div>
       </div>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <section className="panel !mt-0">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-semibold text-slate-900">Current state &amp; 30-day trend</h2>
-          <p className="text-xs text-slate-400">Snapshots written nightly at 02:00</p>
+          <h2 className="display m-0 text-base font-bold text-navy">Current state &amp; 30-day trend</h2>
+          <p className="text-xs text-bodytext">Snapshots written nightly at 02:00</p>
         </div>
-        <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
             ["Occupancy", `${state.occupancy}/${state.sanctionedCapacity}`],
             ["% of capacity", `${state.capacityPct}%`],
             [over > 0 ? "Over by" : "Headroom", `${Math.abs(over)} beds`],
             ["Undertrials", String(state.undertrialCount)],
           ].map(([k, v]) => (
-            <div key={k} className="rounded-lg border border-slate-100 bg-slate-50/60 p-3">
-              <p className="text-[11px] uppercase tracking-wide text-slate-400">{k}</p>
-              <p className="mt-0.5 text-lg font-semibold text-slate-900">{v}</p>
+            <div key={k} className="mini-stat !p-3">
+              <p className="k">{k}</p>
+              <p className="display mt-0.5 text-lg font-bold text-navy">{v}</p>
             </div>
           ))}
         </div>
-        <div className="mt-3">
+        <div className="mt-4">
           <LineChart
-            series={[{ label: "Actual occupancy (past 30 snapshots)", color: "#1d4ed8", points: state.trend.map((t) => t.occupancy) }]}
+            series={[{ label: "Actual occupancy (past 30 snapshots)", color: "#D9531E", points: state.trend.map((t) => t.occupancy) }]}
             yLabel="inmates"
           />
         </div>
       </section>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <section className="panel">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-semibold text-slate-900">Forward projection</h2>
-          <div className="flex gap-1">
+          <h2 className="display m-0 text-base font-bold text-navy">Forward projection</h2>
+          <div className="tabpills !mb-0">
             {([30, 60, 90] as const).map((d) => (
-              <button
-                key={d}
-                onClick={() => setDays(d)}
-                className={`rounded-md px-3 py-1.5 text-xs font-semibold ${
-                  days === d ? "bg-blue-700 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
+              <button key={d} onClick={() => setDays(d)} className={days === d ? "active" : ""}>
                 {d} days
               </button>
             ))}
@@ -130,31 +122,31 @@ export default function OvercrowdingPage() {
           <Spinner />
         ) : (
           <>
-            <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
               <div className="rounded-lg border border-emerald-100 bg-emerald-50/60 p-3">
-                <p className="text-[11px] uppercase tracking-wide text-emerald-700">Expected releases ({days}d)</p>
-                <p className="mt-0.5 text-lg font-semibold text-emerald-900">
+                <p className="k !text-emerald-700">Expected releases ({days}d)</p>
+                <p className="display mt-0.5 text-lg font-bold text-emerald-900">
                   {projectionQuery.data.expectedReleasesInWindow}
                 </p>
               </div>
-              <div className="rounded-lg border border-slate-100 bg-slate-50/60 p-3">
-                <p className="text-[11px] uppercase tracking-wide text-slate-500">Avg admissions/day</p>
-                <p className="mt-0.5 text-lg font-semibold text-slate-900">
+              <div className="mini-stat !p-3">
+                <p className="k">Avg admissions/day</p>
+                <p className="display mt-0.5 text-lg font-bold text-navy">
                   {projectionQuery.data.dailyAdmissionRate}
                 </p>
               </div>
-              <div className="rounded-lg border border-blue-100 bg-blue-50/60 p-3">
-                <p className="text-[11px] uppercase tracking-wide text-blue-700">Pipeline relief vs baseline</p>
-                <p className="mt-0.5 text-lg font-semibold text-blue-900">
+              <div className="rounded-lg border border-peach bg-[#FFF6EC] p-3">
+                <p className="k !text-[#8a4a1c]">Pipeline relief vs baseline</p>
+                <p className="display mt-0.5 text-lg font-bold text-terracotta">
                   -{(projectionQuery.data.points.at(-1)?.baseline ?? 0) - (projectionQuery.data.points.at(-1)?.projected ?? 0)} beds
                 </p>
               </div>
             </div>
-            <div className="mt-3">
+            <div className="mt-4">
               <LineChart
                 series={[
-                  { label: "Baseline (no intervention)", color: "#f59e0b", points: projectionQuery.data.points.map((p) => p.baseline), dashed: true },
-                  { label: "Projected with §479 pipeline", color: "#059669", points: projectionQuery.data.points.map((p) => p.projected) },
+                  { label: "Baseline (no intervention)", color: "#F5A623", points: projectionQuery.data.points.map((p) => p.baseline), dashed: true },
+                  { label: "Projected with §479 pipeline", color: "#4C7A3B", points: projectionQuery.data.points.map((p) => p.projected) },
                 ]}
                 yLabel="inmates"
               />
@@ -163,8 +155,8 @@ export default function OvercrowdingPage() {
         )}
       </section>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="font-semibold text-slate-900">Backlog breakdown</h2>
+      <section className="panel">
+        <h2 className="display m-0 text-base font-bold text-navy">Backlog breakdown</h2>
         {backlogQuery.isLoading || !backlogQuery.data ? (
           <Spinner />
         ) : (

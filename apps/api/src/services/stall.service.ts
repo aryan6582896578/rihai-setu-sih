@@ -8,7 +8,9 @@ import {
 } from "@rihai/shared-types";
 import { prisma } from "../lib/prisma.js";
 import { logger } from "../lib/logger.js";
+import { piiPublic } from "../lib/pii.js";
 import { ApiError } from "../middleware/errors.js";
+import { notifyStallEscalated } from "./notifications.service.js";
 
 interface StallRowRaw {
   id: string;
@@ -147,6 +149,12 @@ export async function escalateApplication(userId: string, role: Role, applicatio
       escalatedAt: new Date(),
     },
   });
+
+  void notifyStallEscalated(
+    application.prisoner.jailId,
+    applicationId,
+    `${piiPublic(application.prisoner).fullName} stalled ${daysStalled} day(s) at stage ${application.stage}`,
+  ).catch((err) => logger.error("[notify] escalate hook failed", err));
 
   logger.info(`Escalated stall alert`, {
     applicationId,

@@ -1,0 +1,6 @@
+full_name,prisoner_reg_no,date_of_birth,gender,admission_date,next_of_kin_name,next_of_kin_phone,case_number,cnr_number,court_name,offence,max_sentence_years,carries_death_or_life,is_first_time_offender,pending_case_count,custody_start_date,external_ref_id
+Ramesh Ingest Kumar,ING-R001,1994-03-12,male,2025-11-02,Sunita Devi,+919800011111,ST/ING/1001,CNR-ING-0001,ACJM Court No. 3,Cheating - IPC 420,3,false,true,0,2025-11-02,EPR-9001
+Sarita Ingest Bai,ING-R002,1990-07-25,female,2026-01-15,Mohan Lal,+919800022222,ST/ING/1002,CNR-ING-0002,JMFC Court 7,Misdemeanour Assault - IPC 354,2,false,true,1,2026-01-10,EPR-9002
+Bad Date Row,ING-R003,not-a-date,male,2026-02-01,,,ST/ING/1003,,ACJM Court No. 2,Theft - IPC 379,1,false,true,0,2026-02-01,EPR-9003
+Ramesh Ingest Kumar,ING-R004,1994-03-12,male,2025-11-20,Ramesh Jr,+919800033333,ST/ING/1004,CNR-ING-0004,District Court Rampur,Cheating - IPC 420,3,false,true,2,2025-11-18,EPR-9004
+Vikram Ingest Singh,ING-R005,1988-12-01,male,2026-03-05,Kamla Devi,+919800044444,ST/ING/1005,CNR-ING-0005,Sessions Division,Robbery - IPC 392,7,false,false,3,2026-03-05,EPR-9005

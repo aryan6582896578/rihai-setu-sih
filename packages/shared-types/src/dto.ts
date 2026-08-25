@@ -321,3 +321,10 @@ export interface OvercrowdingRollup {
     projectedSum: number;
   };
 }
+
+export interface ComplianceMetrics {
+  eligibleIdentified: number;
+  applicationsFiled: number;
+  releasesCompleted: number;
+  avgDaysFlaggedToReleased: number | null;
+}

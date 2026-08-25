@@ -62,10 +62,15 @@ model User {
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
 
+  // MFA (TOTP). Secret stored encrypted via the PII envelope scheme (lib/pii.ts).
+  mfaSecretEnc String?  @map("mfa_secret_enc")
+  mfaEnabled   Boolean  @default(false) @map("mfa_enabled")
+
   jailAccess    JailAccess[]
   notesAuthored Note[]       @relation("NoteAuthor")
   applicationsReviewed Application[] @relation("ApplicationReviewer")
   legalAidAssignments  LegalAidAssignment[] @relation("LegalAidAssignments")
+  refreshSessions      RefreshSession[]
 
   @@map("User")
 }
@@ -84,6 +89,7 @@ model Jail {
   jailAccess JailAccess[]
   prisoners  Prisoner[]
   occupancySnapshots OccupancySnapshot[]
+  ingestionBatches IngestionBatch[]
 
   @@map("Jail")
 }
@@ -102,17 +108,33 @@ model JailAccess {
   @@map("JailAccess")
 }
 
+// Tier-1 PII (full_name, date_of_birth, next-of-kin, photo) is stored ONLY in the
+// *_enc envelope-encrypted columns once backfill runs; the legacy plaintext columns
+// remain as nullable fallbacks and are always written NULL going forward.
+// name_idx is an HMAC blind index so exact-name search works without plaintext.
 model Prisoner {
   id            String    @id @default(cuid())
   jailId        String    @map("jail_id")
-  fullName      String    @map("full_name")
+  fullName      String?   @map("full_name")
   prisonerRegNo String    @unique @map("prisoner_reg_no")
-  dateOfBirth   DateTime  @map("date_of_birth")
+  dateOfBirth   DateTime? @map("date_of_birth")
   gender        String
   admissionDate DateTime  @map("admission_date")
   photoUrl      String?   @map("photo_url")
   nextOfKinName  String?  @map("next_of_kin_name")
   nextOfKinPhone String?  @map("next_of_kin_phone")
+
+  fullNameEnc      String? @map("full_name_enc")
+  dateOfBirthEnc   String? @map("date_of_birth_enc")
+  nextOfKinNameEnc String? @map("next_of_kin_name_enc")
+  nextOfKinPhoneEnc String? @map("next_of_kin_phone_enc")
+  photoUrlEnc      String? @map("photo_url_enc")
+  nameIdx          String? @map("name_idx")
+
+  // Provenance: set when the row arrived via bulk ingestion (Prompt 8).
+  sourceSystem  String?  @map("source_system")
+  externalRefId String?  @map("external_ref_id")
+
   createdAt     DateTime  @default(now()) @map("created_at")
 
   jail          Jail                    @relation(fields: [jailId], references: [id])
@@ -121,8 +143,10 @@ model Prisoner {
   applications  Application[]
   enrollments   Enrollment[]
   notes         Note[]
+  dataRequests  DataRequest[]
 
   @@index([jailId])
+  @@index([nameIdx])
   @@map("Prisoner")
 }
 
@@ -139,6 +163,12 @@ model CaseRecord {
   pendingCaseCount    Int        @map("pending_case_count")
   custodyStartDate    DateTime   @map("custody_start_date")
   caseStatus          CaseStatus @map("case_status")
+
+  // Provenance (Prompt 8): Tier-2 fields are encrypted at the volume level in prod;
+  // these columns record where bulk-ingested rows came from.
+  sourceSystem  String? @map("source_system")
+  externalRefId String? @map("external_ref_id")
+
   updatedAt           DateTime   @default(now()) @updatedAt @map("updated_at")
 
   prisoner Prisoner @relation(fields: [prisonerId], references: [id], onDelete: Cascade)
@@ -303,4 +333,103 @@ model NotificationLog {
   @@index([recipientUserId])
   @@index([relatedEntityType, relatedEntityId])
   @@map("NotificationLog")
+}
+
+// DB-backed refresh sessions (Prompt 8): rotation invalidates the old token,
+// revoke-all flips every active row for the user.
+model RefreshSession {
+  id           String    @id @default(cuid())
+  userId       String    @map("user_id")
+  jti          String    @unique
+  tokenHash    String    @map("token_hash")
+  ipAddress    String?   @map("ip_address")
+  userAgent    String?   @map("user_agent")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  expiresAt    DateTime  @map("expires_at")
+  revokedAt    DateTime? @map("revoked_at")
+  rotatedFrom  String?   @map("rotated_from")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("RefreshSession")
+}
+
+// Append-only audit trail for every read/write touching Tier-1/Tier-2 fields.
+model AuditLog {
+  id           String   @id @default(cuid())
+  actorId      String?  @map("actor_id")
+  actorType    String   @default("user") @map("actor_type")
+  actorName    String?  @map("actor_name")
+  action       String
+  entityType   String   @map("entity_type")
+  entityId     String?  @map("entity_id")
+  fieldsTouched Json?   @map("fields_touched")
+  ipAddress    String?  @map("ip_address")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@index([actorId])
+  @@index([createdAt])
+  @@map("AuditLog")
+}
+
+// Prompt 8 Part 1 — bulk ingestion with mandatory human reconciliation.
+model IngestionBatch {
+  id          String   @id @default(cuid())
+  jailId      String   @map("jail_id")
+  sourceSystem String  @map("source_system")
+  initiatedBy String   @map("initiated_by")
+  fileName    String?  @map("file_name")
+  status      String   @default("pending")
+  rowCount    Int      @default(0) @map("row_count")
+  errorCount  Int      @default(0) @map("error_count")
+  mergedCount Int      @default(0) @map("merged_count")
+  rejectedCount Int    @default(0) @map("rejected_count")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  jail Jail            @relation(fields: [jailId], references: [id])
+  rows IngestionRow[]
+
+  @@index([jailId])
+  @@map("IngestionBatch")
+}
+
+model IngestionRow {
+  id               String   @id @default(cuid())
+  batchId          String   @map("batch_id")
+  rowNo            Int      @map("row_no")
+  rawData          Json     @map("raw_data")
+  mappedData       Json     @map("mapped_data")
+  validationStatus String   @map("validation_status")
+  validationErrors Json?    @map("validation_errors")
+  conflictType     String?  @map("conflict_type")
+  conflictWithId   String?  @map("conflict_with_id")
+  resolved         Boolean  @default(false)
+  resolvedAction   String?  @map("resolved_action")
+  resolvedBy       String?  @map("resolved_by")
+  resolvedAt       DateTime? @map("resolved_at")
+
+  batch IngestionBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([batchId])
+  @@map("IngestionRow")
+}
+
+// Admin-actioned correction/deletion requests (DPDP data-principal rights).
+model DataRequest {
+  id          String   @id @default(cuid())
+  prisonerId  String   @map("prisoner_id")
+  requestedBy String   @map("requested_by")
+  type        String
+  reason      String
+  status      String   @default("pending")
+  actedBy     String?  @map("acted_by")
+  actedAt     DateTime? @map("acted_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  prisoner Prisoner @relation(fields: [prisonerId], references: [id], onDelete: Cascade)
+
+  @@index([prisonerId])
+  @@map("DataRequest")
 }
