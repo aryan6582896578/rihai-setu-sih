@@ -193,6 +193,7 @@ export interface PrisonerDetail {
   gender: string;
   admissionDate: string;
   photoUrl: string | null;
+  consentToShareProfile: boolean;
   cases: CaseRecordDto[];
   primaryCaseId: string | null;
   eligibility: EligibilityAssessmentDto | null;
@@ -327,4 +328,95 @@ export interface ComplianceMetrics {
   applicationsFiled: number;
   releasesCompleted: number;
   avgDaysFlaggedToReleased: number | null;
+}
+
+// ---------- NGO job posting + recommendations (Prompt: employment pipeline) ----------
+
+export type JobStatus = "active" | "paused" | "closed";
+
+export interface JobPostingDto {
+  id: string;
+  ngoId: string;
+  ngoName: string;
+  title: string;
+  description: string;
+  requiredSkills: string[];
+  preferredSkills: string[];
+  requiredCertificates: string[];
+  minExperienceMonths: number;
+  jobCategory: string;
+  district: string;
+  status: JobStatus;
+  openings: number | null;
+  wageInfo: string | null;
+  createdAt: string;
+  applicationCount?: number;
+}
+
+export interface CreateJobInput {
+  title: string;
+  description?: string;
+  requiredSkills: string[];
+  preferredSkills?: string[];
+  requiredCertificates?: string[];
+  minExperienceMonths?: number;
+  jobCategory?: string;
+  district?: string;
+  openings?: number | null;
+  wageInfo?: string | null;
+}
+
+export type JobApplicationStatus = "pending" | "shortlisted" | "rejected" | "hired";
+
+export interface TrainingRecordDto {
+  program: string;
+  category: string;
+  status: "completed" | "in_progress" | "enrolled";
+  progressPct: number;
+  certificateUrl: string | null;
+  completedAt: string | null;
+}
+
+export interface JobApplicationDto {
+  id: string;
+  jobId: string;
+  jobTitle: string;
+  prisonerId: string;
+  prisonerName: string;
+  prisonerRegNo: string;
+  jailName: string;
+  jailDistrict: string;
+  jailPhone: string | null;
+  skills: string[];
+  educationBaseline: string | null;
+  machinerySkills: string | null;
+  targetDomain: string | null;
+  training: TrainingRecordDto[];
+  status: JobApplicationStatus;
+  note: string | null;
+  appliedAt: string;
+}
+
+export interface NgoStatsDto {
+  activeJobs: number;
+  pausedJobs: number;
+  closedJobs: number;
+  totalApplications: number;
+  pendingApplications: number;
+  shortlistedApplications: number;
+  topDistricts: { district: string; jobs: number }[];
+}
+
+export interface RecommendationDto {
+  job_id: string;
+  score: number;
+  cosine_similarity: number;
+  eligible_for_recommendation: boolean;
+  explanation: string;
+  matched_required_skills: string[];
+  missing_required_skills: string[];
+  ineligibility_reasons: string[];
+  component_scores: Record<string, number>;
+  job: JobPostingDto;
+  appliedAlready: boolean;
 }

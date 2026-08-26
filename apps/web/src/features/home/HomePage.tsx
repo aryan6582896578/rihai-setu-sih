@@ -55,6 +55,7 @@ export default function HomePage() {
   const navLinks: { label: string; href: string; current?: boolean }[] = [
     { label: t("nav.home"), href: "/", current: true },
     { label: t("nav.how"), href: "#how-it-works" },
+    { label: t("nav.ngo"), href: "/login" },
     { label: t("nav.admin"), href: "/login" },
     { label: t("nav.reports"), href: "/login" },
   ];

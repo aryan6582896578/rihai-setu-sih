@@ -25,7 +25,7 @@ function parseRange(req: Request): { from: Date; to: Date } {
 }
 
 complianceJailRouter.get(
-  "/compliance-report",
+  "/",
   requireJailAccess,
   asyncHandler(async (req: Request, res: Response) => {
     const { from, to } = parseRange(req);
@@ -34,7 +34,7 @@ complianceJailRouter.get(
 );
 
 complianceJailRouter.get(
-  "/compliance-report/export",
+  "/export",
   requireJailAccess,
   asyncHandler(async (req: Request, res: Response) => {
     const { from, to } = parseRange(req);
@@ -60,7 +60,7 @@ export const complianceRollupRouter = Router();
 complianceRollupRouter.use(requireAuth);
 
 complianceRollupRouter.get(
-  "/compliance-report",
+  "/",
   asyncHandler(async (req: Request, res: Response) => {
     if (!req.user || req.user.role !== Role.SuperAdmin) {
       throw ApiError.forbidden("Cross-jail compliance rollup is restricted to super admins");
@@ -71,7 +71,7 @@ complianceRollupRouter.get(
 );
 
 complianceRollupRouter.get(
-  "/compliance-report/export",
+  "/export",
   asyncHandler(async (req: Request, res: Response) => {
     if (!req.user || req.user.role !== Role.SuperAdmin) {
       throw ApiError.forbidden("Cross-jail compliance rollup is restricted to super admins");

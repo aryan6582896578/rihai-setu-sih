@@ -5,7 +5,9 @@ import {
   ApplicationStage,
   STAGE_ORDER,
   type ApplicationDto,
+  type JobApplicationDto,
   type PrisonerDetail,
+  type RecommendationDto,
   type TrainingProgramDto,
 } from "@rihai/shared-types";
 import { api, extractApiError } from "../../lib/api";
@@ -75,6 +77,7 @@ export default function PrisonerProfilePage() {
       <CaseSection detail={detail} canEdit={canEdit} onChanged={refresh} />
       <ApplicationProgressCard detail={detail} onChanged={refresh} />
       <SkillPassportPanel detail={detail} canEdit={canEdit} onChanged={refresh} />
+      <RecommendedJobsPanel detail={detail} canEdit={canEdit} />
       <NotesPanel detail={detail} canEdit={!!user && user.role !== "viewer"} onChanged={refresh} />
     </div>
   );
@@ -425,6 +428,7 @@ function ApplicationProgressCard({ detail, onChanged }: { detail: PrisonerDetail
 
   const canAdvance = !!user && ADVANCE_ROLES.includes(user.role);
   const canReview = !!user && REVIEW_ROLES.includes(user.role);
+  const canEdit = !!user && EDITOR_ROLES.includes(user.role);
 
   let nextStage: ApplicationStage | null = null;
   if (active) {
@@ -440,7 +444,7 @@ function ApplicationProgressCard({ detail, onChanged }: { detail: PrisonerDetail
       {!active ? (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm text-bodytext">No application opened yet.</p>
-          {canAdvance && (
+          {canEdit && (
             <button onClick={() => openApp.mutate()} disabled={openApp.isPending} className="btn btn-outline btn-sm">
               Open application (flagged)
             </button>
@@ -783,6 +787,176 @@ function SkillPassportPanel({ detail, canEdit, onChanged }: { detail: PrisonerDe
       </div>
     );
   }
+}
+
+function RecommendedJobsPanel({ detail, canEdit }: { detail: PrisonerDetail; canEdit: boolean }) {
+  const queryClient = useQueryClient();
+  const [recs, setRecs] = useState<RecommendationDto[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [showList, setShowList] = useState(false);
+  const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
+
+  const applicationsQuery = useQuery({
+    queryKey: ["job-applications", detail.id],
+    queryFn: async () => {
+      const res = await api.get<{ data: JobApplicationDto[] }>(`/prisoners/${detail.id}/job-applications`);
+      return res.data.data;
+    },
+  });
+
+  const findJobs = async () => {
+    setLoading(true);
+    setErr(null);
+    try {
+      const res = await api.get<{ data: RecommendationDto[] }>(`/prisoners/${detail.id}/recommended-jobs`);
+      setRecs(res.data.data);
+      setShowList(true);
+    } catch (e) {
+      setErr(extractApiError(e).message);
+      setShowList(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const apply = useMutation({
+    mutationFn: async (jobId: string) => {
+      await api.post(`/prisoners/${detail.id}/job-applications`, { jobId });
+    },
+    onSuccess: (_d, jobId) => {
+      setAppliedIds((prev) => new Set(prev).add(jobId));
+      void queryClient.invalidateQueries({ queryKey: ["job-applications"] });
+    },
+    onError: (e) => setErr(extractApiError(e).message),
+  });
+
+  const scorePillCls = (score: number) =>
+    score >= 75 ? "pill-ok" : score >= 50 ? "pill-warn" : "pill-neutral";
+  const barColor = (score: number) =>
+    score >= 75 ? "bg-emerald-500" : score >= 50 ? "bg-amber-500" : "bg-slate-400";
+
+  return (
+    <section className="panel" id="recommended-jobs">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="display m-0 text-base font-bold text-navy">Recommended jobs</h2>
+          <p className="kicker mb-0 mt-0.5">Explainable matches from the AI employment engine (Python)</p>
+        </div>
+        {detail.consentToShareProfile ? (
+          <button onClick={() => void findJobs()} disabled={loading} className="btn btn-primary btn-sm disabled:opacity-60">
+            {loading ? "Matching…" : "Find matching jobs"}
+          </button>
+        ) : (
+          <span className="pill-warn">Consent not recorded</span>
+        )}
+      </div>
+
+      {!detail.consentToShareProfile && (
+        <p className="info-note mt-3">
+          This prisoner has not consented to profile sharing with employers, so job matching and
+          applications are disabled. Record their consent first — the AI engine will then include
+          them in recommendations.
+        </p>
+      )}
+
+      {err && (
+        <div className="mt-3">
+          <ErrorBanner message={`${err} — Is the Python recommender running on port 8000?`} />
+        </div>
+      )}
+
+      {showList && recs && recs.length === 0 && (
+        <p className="mt-3 text-sm text-bodytext">No matching openings right now. Check back as employers post new roles.</p>
+      )}
+
+      {showList && recs && recs.length > 0 && (
+        <div className="mt-4 grid gap-3 lg:grid-cols-2">
+          {recs.map((r) => {
+            const applied = r.appliedAlready || appliedIds.has(r.job_id);
+            return (
+              <div key={r.job_id} className="card-shadow rounded-xl border border-[#f1e6d5] bg-white p-4">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <p className="display m-0 text-sm font-bold text-navy">{r.job.title}</p>
+                  <span className={scorePillCls(r.score)}>{Math.round(r.score)}/100</span>
+                </div>
+                <p className="mt-1 text-xs text-bodytext">
+                  {r.job.ngoName} · {r.job.district || "—"} · {r.job.jobCategory || "—"}
+                  {r.job.wageInfo ? ` · ${r.job.wageInfo}` : ""}
+                </p>
+                <div className="mt-2.5 h-2 rounded bg-[#f1ece1]">
+                  <div
+                    className={`h-full rounded ${barColor(r.score)}`}
+                    style={{ width: `${Math.max(0, Math.min(100, Math.round(r.score)))}%` }}
+                  />
+                </div>
+                <p className="mt-2.5 text-sm text-bodytext">{r.explanation}</p>
+                {(r.matched_required_skills.length > 0 || r.missing_required_skills.length > 0) && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {r.matched_required_skills.map((s) => (
+                      <span key={`m-${s}`} className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">
+                        {s}
+                      </span>
+                    ))}
+                    {r.missing_required_skills.map((s) => (
+                      <span key={`x-${s}`} className="rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-700">
+                        missing: {s}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {canEdit && (
+                  <div className="mt-3 flex justify-end border-t border-[#f6f1e7] pt-2.5">
+                    {applied ? (
+                      <button disabled className="btn btn-outline btn-sm opacity-70">
+                        Applied
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => apply.mutate(r.job_id)}
+                        disabled={apply.isPending}
+                        className="btn btn-primary btn-sm"
+                      >
+                        Apply
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="panel-tight mt-4 !p-3.5">
+        <h3 className="display m-0 mb-2 text-sm font-bold text-navy">Job applications</h3>
+        {!applicationsQuery.data || applicationsQuery.data.length === 0 ? (
+          <p className="mb-0 text-sm text-bodytext/80">No job applications yet.</p>
+        ) : (
+          <table className="data-table w-full">
+            <thead>
+              <tr>
+                <th>Job</th>
+                <th>Applied date</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {applicationsQuery.data.map((a) => (
+                <tr key={a.id}>
+                  <td className="font-semibold text-navy">{a.jobTitle}</td>
+                  <td>{formatDate(a.appliedAt)}</td>
+                  <td>
+                    <span className="pill-neutral">{a.status}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </section>
+  );
 }
 
 function NotesPanel({ detail, canEdit, onChanged }: { detail: PrisonerDetail; canEdit: boolean; onChanged: () => void }) {

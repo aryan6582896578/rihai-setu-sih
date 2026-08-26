@@ -4,6 +4,7 @@ export const Role = {
   JailStaff: "jail_staff",
   DlsaLawyer: "dlsa_lawyer",
   Viewer: "viewer",
+  NgoPartner: "ngo_partner",
 } as const;
 export type Role = (typeof Role)[keyof typeof Role];
 

@@ -23,8 +23,8 @@ export class ApiError extends Error {
   static notFound(message = "Resource not found") {
     return new ApiError(404, "NOT_FOUND", message);
   }
-  static conflict(message: string) {
-    return new ApiError(409, "CONFLICT", message);
+  static conflict(message: string, code = "CONFLICT") {
+    return new ApiError(409, code, message);
   }
 }
 

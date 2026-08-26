@@ -333,5 +333,51 @@ mobile were the goal) — noted as future work.
 - [x] PROMPT 9 SSO placeholder on /login: "or" divider → `Login with e-Prisons SSO` button w/ secondary badge **NIC · MeriPehchaan Government Auth** (correct double-a spelling); local-only click opens modal with the exact coming-soon copy + "Use staff login instead" that closes and focuses the email field. No OAuth client, no redirect, no network call, never navigates away -- _smoke: demo superintendent login still 200 via API after LoginPage rewrite; typecheck+build green_
 - [x] Fix: jail-page "Superintendent portal · N stalled" badge went stale (global 30s query cache, no invalidation) -> stall-list query now staleTime 0 + refetchOnMount always + 45s poll; stage advance/review/draft/auto-draft mutations invalidate ["stall-list"]; superintendent eligible list also refetches on mount -- _verified: server GET recomputes live (63 after actions); badge tracks fresh value on mount/poll_
 - [x] Fix: language toggle "did nothing" on the jail dashboard -- dashboard content was hardcoded EN. Added ~70 app-chrome keys (nav, roles, KPIs, tabs, staff mgmt, stall table, stage names) to both dictionaries and wired t() through Layout nav/role labels, JailDetailPage (tabs/actions/stat cards), OverviewTab, StaffTab (incl. role select options + add-staff form), StallTab (thresholds line, headers, escalate). Toggle now visibly flips the whole dashboard -- _typecheck+build green, vite serving /jails 200, mojibake scan clean_
+- [x] Role-based UI pruning aligned to backend gates via new `lib/permissions.ts` (EDITOR/ADVANCE/REVIEW/ESCALATION/MANAGER flags): DLSA lawyer now sees read-only Legal Aid (no assign buttons, surety checklist rendered as summary card), no Escalate button on stall list, no "Open application" (editor-only), no Apply on recommended jobs; viewer additionally loses court-sync buttons. Backend remains the enforcement layer -- _smoke: lawyer GET granted 200 read-only; lawyer PATCH surety -> 403; lawyer escalate -> 403; typecheck+build green_
+- [x] NGO portal v2 (NGO-POV overhaul): Prisoner gained structured `education_baseline`/`machinery_skills`/`target_domain` columns (seed writes them; backfill parsed all 600 SKILL PASSPORT notes -> 600 prisoners enriched); applicant API now returns education, machinery, target domain, jail contact (name/district/phone), full training history with certificate links + progress bars; new PATCH /ngo/applications/:id/status gives NGOs a shortlist/hire/reject workflow (ownership-checked) with counts in stats; dashboard rebuilt as candidate-pipeline review (status filter chips w/ counts, name/reg search, expandable profile cards, tel: contact card w/ staff-mediated privacy note, certificate deep-links); language toggle hidden on /ngo (English-only NGO side) -- _e2e: applied Karan A. to Warehouse Support Associate; NGO payload shows education "5th Standard", machinery chips, Tihar/West Delhi phone; shortlist -> status persisted; stats shortlisted=1; typecheck x3 + build green_
+
+---
+
+## 2026-08-25 — Session: Employment pipeline (Prompt: NGO jobs + Python recommender bridge) + compliance fix
+
+Architecture note: the NGO employer domain moved out of the backend-ai demo into the Express API; the
+Python FastAPI engine stays stateless (scoring only) and is reached via REST (`RECOMMENDER_URL`,
+default http://127.0.0.1:8000); the single shared Postgres remains the source of truth — Express owns
+all reads/writes, Python never touches the DB. Jobs were seeded directly into the common DB from the
+canonical skill vocabulary (`backend-ai/recommender-service/app/data/skill_dictionary.json`); the job
+workbook itself was not present in the repo — documented deviation.
+
+### Express wiring
+- [x] `app.ts`: mounted `/api/v1/ngo` (ngoRouter), `/api/v1/prisoners` (employmentPrisonerRouter BEFORE the existing prisoners mount), `/api/v1/skills` (skillsCatalogRouter)
+- [x] `config.ts` envSchema + `.env`/`.env.example`: `RECOMMENDER_URL="http://127.0.0.1:8000"` (documentation entry; services read process.env)
+- [x] Fixed pre-existing typecheck blockers: unused `Request` import (employment.routes), unused `JobPostingDto` import + missing `JobStatus` type + missing `Prisma` namespace import (recommendations.service), `ApiError.conflict(msg)` gained optional `code` param so `RECOMMENDER_UNAVAILABLE` fits the factory pattern
+
+### Seeder (`apps/api/scripts/seed-ngo.ts`, idempotent)
+- [x] 2 ngo_partner users (ngo1@rihai.gov.in "Meera Sharma (Seva Foundation)", ngo2@rihai.gov.in "Arjun Livelihood Trust", Passw0rd!23) -- _run: created both_
+- [x] 12 active JobPostings (6 per NGO), every skill tag verified against the canonical dictionary; skip-if title+ngoId exists -- _run: `created 12 job(s), skipped 0; ngo_partner users: 2, JobPosting rows: 12`; re-run safe_
+
+### Frontend
+- [x] LoginPage: NGO demo account card (demo.ngo.role) + role-based redirect `role === "ngo_partner" ? "/ngo" : "/jails"` in both login and MFA onSuccess; i18n keys `demo.ngo.role` / `nav.ngo` (EN+HI)
+- [x] HomePage navbar order: Home · How it works · **NGO portal** · Jails admin · Reports
+- [x] `/ngo` NgoDashboardPage (protected route in App.tsx): 🔒 guard for non-ngo roles, 5 mini-stats (active/paused/closed/applications/pending), Post-a-job modal with canonical-skill chip pickers (selected shown as pills) + comma-separated certificates, jobs table with status pills + Applicants modal + Pause/Activate/Close PATCH actions with invalidation
+- [x] PrisonerProfilePage: RecommendedJobsPanel between Skill Passport and Notes — "Find matching jobs" → GET recommended-jobs; score pills + progress bars + explanation + matched/missing skill pills; Apply button (EDITOR_ROLES only) posts job-application and flips to "Applied"; always-on compact "Job applications" table keyed ["job-applications"] and invalidated after apply
+
+### End-to-end smoke (actual results)
+- [x] Python health `{"status":"ok"}`; NGO login ok; GET /ngo/jobs = 6 seeded (+ closed QA job); stats at login `active=6 paused=0 closed=1 totalApps=0 pending=0`
+- [x] POST /ngo/jobs "QA Smoke Role" (packaging/Thane/logistics) created → PATCH status=closed OK
+- [x] Superintendent login → Tihar Central Prison No. 4, 45 eligible prisoners; picked one with a completed enrollment
+- [x] GET recommended-jobs (Express→Python over shared DB): 5 recs — _top: Organic Farming Assistant **37.5/100** (matched organic_farming, missing plant_care); Warehouse Support Associate **10/100** (missing inventory_handling, packaging)_
+- [x] POST job-application → 201 `pending` for "Organic Farming Assistant"; NGO Applicants endpoint shows the prisoner (name decrypted, reg no, jail, status pending); prisoner job-applications list updated
+- [x] Compliance report re-verified after root-cause fixes (**double-mounted route path** on /jails/:jailId and **HAVING-clause jail filter** that dropped per-jail rows): GET /jails/{id}/compliance-report?from=2026-01-01&to=2026-12-31 → `eligibleIdentified=10 applicationsFiled=68 releasesCompleted=4 avgDaysFlaggedToReleased=0` (no 404/500)
+
+### Verification commands
+```
+npm run typecheck --workspace @rihai/shared-types   # clean
+npm run typecheck --workspace apps/api              # clean (after fixes above)
+npm run typecheck --workspace apps/web              # clean
+npm run build -w apps/web                           # vite build green (175 modules)
+npx tsx apps/api/scripts/seed-ngo.ts                # idempotent seeder
+mojibake scan of all touched files                  # zero replacement chars
+```
 
 ---

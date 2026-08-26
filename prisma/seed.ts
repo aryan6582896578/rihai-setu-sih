@@ -225,6 +225,15 @@ async function main() {
           fullName,
           dateOfBirth: new Date(new Date().getFullYear() - age, 0, 15),
         }),
+        // Employment facts surfaced to NGO partners (staff-mediated).
+        ...(passport
+          ? {
+              educationBaseline: passport.education_baseline || null,
+              machinerySkills: passport.specific_machinery_skills || null,
+              targetDomain: passport.target_job_domain || null,
+            }
+          : {}),
+        consentToShareProfile: !!passport?.consent_to_share_profile,
       },
     });
 

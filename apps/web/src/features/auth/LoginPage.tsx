@@ -11,6 +11,7 @@ const DEMO_ACCOUNTS = [
   { key: "demo.staff.role", email: "staff1a@rihai.gov.in" },
   { key: "demo.admin.role", email: "superadmin@rihai.gov.in" },
   { key: "demo.dlsa.role", email: "dlsa@rihai.gov.in" },
+  { key: "demo.ngo.role", email: "ngo1@rihai.gov.in" },
 ];
 const DEMO_PASSWORD = "Passw0rd!23";
 
@@ -45,7 +46,7 @@ export default function LoginPage() {
       }
       if ("user" in data && "accessToken" in data) {
         setSession(data.user, data.accessToken);
-        navigate("/jails");
+        navigate(data.user.role === "ngo_partner" ? "/ngo" : "/jails");
       }
     },
   });
@@ -57,7 +58,7 @@ export default function LoginPage() {
     },
     onSuccess: (data) => {
       setSession(data.user, data.accessToken);
-      navigate("/jails");
+      navigate(data.user.role === "ngo_partner" ? "/ngo" : "/jails");
     },
   });
 

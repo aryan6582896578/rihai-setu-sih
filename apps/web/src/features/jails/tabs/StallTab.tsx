@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApplicationStage, type StallRow } from "@rihai/shared-types";
 import { api, extractApiError } from "../../../lib/api";
 import { useLang } from "../../../lib/i18n";
+import { roleFlags } from "../../../lib/permissions";
+import { useAuthStore } from "../../../state/authStore";
 import { EmptyState, ErrorBanner, Spinner } from "../../../components/ui";
 
 const STAGE_KEY: Record<ApplicationStage, string> = {
@@ -16,6 +18,8 @@ const STAGE_KEY: Record<ApplicationStage, string> = {
 export default function StallTab({ jailId }: { jailId: string }) {
   const queryClient = useQueryClient();
   const { t } = useLang();
+  const user = useAuthStore((s) => s.user);
+  const { canEscalate } = roleFlags(user?.role);
 
   const stallQuery = useQuery({
     queryKey: ["stall-list", jailId],
@@ -92,7 +96,7 @@ export default function StallTab({ jailId }: { jailId: string }) {
                       {row.escalatedAt &&
                         new Date(row.escalatedAt).toLocaleDateString("en-IN", { dateStyle: "medium" })}
                     </span>
-                  ) : (
+                  ) : canEscalate ? (
                     <button
                       onClick={() => escalateMutation.mutate(row.applicationId)}
                       disabled={escalateMutation.isPending}
@@ -100,6 +104,8 @@ export default function StallTab({ jailId }: { jailId: string }) {
                     >
                       {t("stall.escalate")}
                     </button>
+                  ) : (
+                    <span className="text-xs text-[#c3c8cf]">—</span>
                   )}
                 </td>
               </tr>

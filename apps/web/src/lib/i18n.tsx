@@ -16,6 +16,7 @@ const T: Record<Lang, Record<string, string>> = {
     "nav.how": "How it works",
     "nav.admin": "Jails admin",
     "nav.reports": "Reports",
+    "nav.ngo": "NGO portal",
     "cta.stafflogin": "Staff login",
     "menu.open": "Menu",
 
@@ -145,6 +146,7 @@ const T: Record<Lang, Record<string, string>> = {
     "demo.staff.role": "Jail staff — Rampur",
     "demo.admin.role": "Super admin (all jails)",
     "demo.dlsa.role": "DLSA lawyer",
+    "demo.ngo.role": "NGO partner \u2014 Seva Foundation",
     "demo.send": "Send",
 
     "sso.or": "or",
@@ -253,6 +255,7 @@ const T: Record<Lang, Record<string, string>> = {
     "nav.how": "यह कैसे काम करता है",
     "nav.admin": "जेल प्रशासन",
     "nav.reports": "रिपोर्ट",
+    "nav.ngo": "एनजीओ पोर्टल",
     "cta.stafflogin": "स्टाफ लॉगिन",
     "menu.open": "मेन्यू",
 
@@ -372,6 +375,7 @@ const T: Record<Lang, Record<string, string>> = {
     "demo.staff.role": "जेल स्टाफ — रामपुर",
     "demo.admin.role": "सुपर एडमिन (सभी जेलें)",
     "demo.dlsa.role": "डीएलएसए वकील",
+    "demo.ngo.role": "एनजीओ साझेदार — सेवा फ़ाउंडेशन",
     "demo.send": "भेजें",
 
     "sso.or": "या",

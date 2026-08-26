@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useUnreadCount } from "../features/notifications/NotificationsPage";
@@ -25,6 +25,9 @@ export default function Layout() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { t } = useLang();
+  const location = useLocation();
+  // NGO portal is English-only for its audience: no language switch there.
+  const showLangToggle = !location.pathname.startsWith("/ngo");
   const [menuOpen, setMenuOpen] = useState(false);
   const [mfaOpen, setMfaOpen] = useState(false);
   const [mfaSecret, setMfaSecret] = useState<string | null>(null);
@@ -127,7 +130,7 @@ export default function Layout() {
                   </span>
                 )}
               </Link>
-              <LangToggle />
+              {showLangToggle && <LangToggle />}
               <button
                 onClick={() => {
                   setMfaOpen(true);

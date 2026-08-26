@@ -27,6 +27,11 @@ import { notificationsRouter } from "./routes/notifications.routes.js";
 import { courtJailRouter } from "./routes/court.routes.js";
 import { applicationCourtRouter } from "./routes/application-court.routes.js";
 import { adminRouter } from "./routes/admin.routes.js";
+import {
+  ngoRouter,
+  employmentPrisonerRouter,
+  skillsCatalogRouter,
+} from "./routes/employment.routes.js";
 // PARKED: 
 import {
   overcrowdingJailRouter,
@@ -66,6 +71,8 @@ export function createApp() {
   app.use("/api/v1/overcrowding", overcrowdingRollupRouter);
   app.use("/api/v1/applications", applicationCourtRouter);
 
+  app.use("/api/v1/ngo", ngoRouter);
+  app.use("/api/v1/prisoners", employmentPrisonerRouter);
   app.use("/api/v1/prisoners", prisonersRouter);
   app.use("/api/v1/enrollments", enrollmentsRouter);
   app.use("/api/v1/training-programs", trainingProgramsRouter);
@@ -75,6 +82,7 @@ app.use("/api/v1/notifications", notificationsRouter);
 app.use("/api/v1/applications", applicationsRouter);
 app.use("/api/v1/applications", applicationActionsRouter);
 app.use("/api/v1/admin", adminRouter);
+app.use("/api/v1/skills", skillsCatalogRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

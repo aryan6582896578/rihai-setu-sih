@@ -9,6 +9,7 @@ import JailsPage from "./features/jails/JailsPage";
 import JailDetailPage from "./features/jails/JailDetailPage";
 import PrisonersPage from "./features/prisoners/PrisonersPage";
 import PrisonerProfilePage from "./features/prisoners/PrisonerProfilePage";
+import NgoDashboardPage from "./features/ngo/NgoDashboardPage";
 import SuperintendentPage from "./features/superintendent/SuperintendentPage";
 import CourtTrackingPage from "./features/court/CourtTrackingPage";
 import LegalAidPage from "./features/court/LegalAidPage";
@@ -44,6 +45,7 @@ export default function App() {
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/jails/:jailId/compliance-report" element={<ComplianceReportPage />} />
           <Route path="/compliance-report" element={<ComplianceReportPage />} />
+          <Route path="/ngo" element={<NgoDashboardPage />} />
           <Route path="/admin/data-ingestion" element={<DataIngestionPage />} />
         </Route>
       </Route>

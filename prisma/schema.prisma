@@ -17,6 +17,7 @@ enum Role {
   jail_staff
   dlsa_lawyer
   viewer
+  ngo_partner
 }
 
 enum ApplicationType {
@@ -71,6 +72,7 @@ model User {
   applicationsReviewed Application[] @relation("ApplicationReviewer")
   legalAidAssignments  LegalAidAssignment[] @relation("LegalAidAssignments")
   refreshSessions      RefreshSession[]
+  jobPostings          JobPosting[]         @relation("NgoJobPostings")
 
   @@map("User")
 }
@@ -135,6 +137,15 @@ model Prisoner {
   sourceSystem  String?  @map("source_system")
   externalRefId String?  @map("external_ref_id")
 
+  // Skill-passport employment facts surfaced to NGO partners (staff-mediated).
+  educationBaseline String? @map("education_baseline")
+  machinerySkills   String? @map("machinery_skills")
+  targetDomain      String? @map("target_domain")
+
+  // Explicit prisoner consent (dataset column / staff-recorded) gating any
+  // sharing of the profile with NGO employers. Never inferred or defaulted on.
+  consentToShareProfile Boolean @default(false) @map("consent_to_share_profile")
+
   createdAt     DateTime  @default(now()) @map("created_at")
 
   jail          Jail                    @relation(fields: [jailId], references: [id])
@@ -144,6 +155,7 @@ model Prisoner {
   enrollments   Enrollment[]
   notes         Note[]
   dataRequests  DataRequest[]
+  jobApplications JobApplication[] @relation("JobApplications")
 
   @@index([jailId])
   @@index([nameIdx])
@@ -432,4 +444,51 @@ model DataRequest {
 
   @@index([prisonerId])
   @@map("DataRequest")
+}
+
+// NGO job posting — the Express-owned half of the employment pipeline. The same
+// rows are mapped into the Python recommender's stable Job contract at call time
+// (single Postgres database shared by both services; the engine stays stateless).
+model JobPosting {
+  id                      String   @id @default(cuid())
+  ngoId                   String   @map("ngo_id")
+  title                   String
+  description             String   @default("")
+  requiredSkills          String[] @map("required_skills")
+  preferredSkills         String[] @map("preferred_skills")
+  requiredCertificates    String[] @map("required_certificates")
+  minExperienceMonths     Int      @default(0) @map("min_experience_months")
+  jobCategory             String   @default("") @map("job_category")
+  district                String   @default("")
+  status                  String   @default("active")
+  openings                Int?
+  wageInfo                String?  @map("wage_info")
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  ngo         User            @relation("NgoJobPostings", fields: [ngoId], references: [id])
+  applications JobApplication[]
+
+  @@index([ngoId])
+  @@index([status])
+  @@map("JobPosting")
+}
+
+// A jail-side application by/for a prisoner against a posted vacancy.
+model JobApplication {
+  id         String   @id @default(cuid())
+  jobId      String   @map("job_id")
+  prisonerId String   @map("prisoner_id")
+  appliedBy  String   @map("applied_by")
+  status     String   @default("pending")
+  note       String?
+  appliedAt  DateTime @default(now()) @map("applied_at")
+
+  job      JobPosting @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  prisoner Prisoner   @relation("JobApplications", fields: [prisonerId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, prisonerId])
+  @@index([prisonerId])
+  @@index([jobId])
+  @@map("JobApplication")
 }

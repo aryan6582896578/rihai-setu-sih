@@ -8,9 +8,12 @@ import {
 } from "@rihai/shared-types";
 import { api, extractApiError } from "../../lib/api";
 import { formatDate, STAGE_LABELS } from "../../lib/format";
+import { roleFlags } from "../../lib/permissions";
+import { useAuthStore } from "../../state/authStore";
 import { EmptyState, ErrorBanner, Spinner } from "../../components/ui";
 
 export default function LegalAidPage() {
+  const user = useAuthStore((s) => s.user);
   const { jailId = "" } = useParams();
   const [tab, setTab] = useState<"queue" | "surety">("queue");
 
@@ -34,12 +37,12 @@ export default function LegalAidPage() {
         ))}
       </div>
 
-      {tab === "queue" ? <AssignmentQueue jailId={jailId} /> : <SuretyChecklist jailId={jailId} />}
+      {tab === "queue" ? <AssignmentQueue jailId={jailId} canEdit={roleFlags(user?.role).canEdit} /> : <SuretyChecklist jailId={jailId} canEdit={roleFlags(user?.role).canEdit} />}
     </div>
   );
 }
 
-function AssignmentQueue({ jailId }: { jailId: string }) {
+function AssignmentQueue({ jailId, canEdit }: { jailId: string; canEdit: boolean }) {
   const queryClient = useQueryClient();
   const [picked, setPicked] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
@@ -94,7 +97,7 @@ function AssignmentQueue({ jailId }: { jailId: string }) {
                 <th>Case no</th>
                 <th>Stage</th>
                 <th>Opened</th>
-                <th>Assign</th>
+                {canEdit && <th>Assign</th>}
               </tr>
             </thead>
             <tbody>
@@ -107,6 +110,7 @@ function AssignmentQueue({ jailId }: { jailId: string }) {
                   <td className="mono-cell text-bodytext">{r.caseNumber}</td>
                   <td><span className="pill pill-neutral">{STAGE_LABELS[r.stage]}</span></td>
                   <td className="text-xs text-bodytext">{formatDate(r.openedAt)}</td>
+                  {canEdit && (
                   <td>
                     <div className="flex flex-wrap items-center justify-end gap-2">
                       <select
@@ -149,6 +153,7 @@ function AssignmentQueue({ jailId }: { jailId: string }) {
                       </button>
                     </div>
                   </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -159,7 +164,7 @@ function AssignmentQueue({ jailId }: { jailId: string }) {
   );
 }
 
-function SuretyChecklist({ jailId }: { jailId: string }) {
+function SuretyChecklist({ jailId, canEdit }: { jailId: string; canEdit: boolean }) {
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
 
@@ -209,7 +214,7 @@ function SuretyChecklist({ jailId }: { jailId: string }) {
       ) : (
         <div className="space-y-3">
           {rows.map((r) => (
-            <SuretyRow key={r.applicationId} row={r} onSave={(patch) => save.mutate({ applicationId: r.applicationId, ...patch })} busy={save.isPending} />
+            <SuretyRow key={r.applicationId} row={r} canEdit={canEdit} onSave={(patch) => save.mutate({ applicationId: r.applicationId, ...patch })} busy={save.isPending} />
           ))}
         </div>
       )}
@@ -219,10 +224,12 @@ function SuretyChecklist({ jailId }: { jailId: string }) {
 
 function SuretyRow({
   row,
+  canEdit,
   onSave,
   busy,
 }: {
   row: GrantedSuretyRow;
+  canEdit: boolean;
   onSave: (patch: { bondAmount?: number; suretyRequired?: boolean; suretyArranged?: boolean; notes?: string }) => void;
   busy: boolean;
 }) {
@@ -236,6 +243,33 @@ function SuretyRow({
     suretyRequired !== row.suretyRequired ||
     suretyArranged !== row.suretyArranged ||
     notes !== (row.notes ?? "");
+
+  if (!canEdit) {
+    // Read-only view for roles the API would reject (e.g. DLSA lawyer, viewer).
+    return (
+      <div className={`card-shadow rounded-card border bg-white p-4 sm:p-5 ${row.suretyArranged ? "border-emerald-200" : "border-saffron/60"}`}>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <p className="display font-bold text-navy">{row.prisonerName}</p>
+            <p className="text-xs text-bodytext">Stage: {STAGE_LABELS[row.stage]}</p>
+          </div>
+          <span className={row.suretyArranged ? "pill-ok" : "pill-warn"}>
+            {row.suretyArranged ? "Surety arranged" : "Surety pending"}
+          </span>
+        </div>
+        <dl className="mt-3 grid grid-cols-2 gap-x-5 gap-y-3 text-sm sm:grid-cols-4">
+          <div><dt className="mb-1 text-[11px] font-bold uppercase tracking-wide text-bodytext">Bond amount</dt><dd className="font-semibold text-heading">{row.bondAmount ? `₹${row.bondAmount}` : "—"}</dd></div>
+          <div><dt className="mb-1 text-[11px] font-bold uppercase tracking-wide text-bodytext">Surety required</dt><dd className="font-semibold text-heading">{row.suretyRequired ? "Yes" : "No"}</dd></div>
+          <div className="sm:col-span-2"><dt className="mb-1 text-[11px] font-bold uppercase tracking-wide text-bodytext">Notes</dt><dd className="text-heading">{row.notes || "—"}</dd></div>
+        </dl>
+        {!row.suretyArranged && (
+          <p className="mt-2 text-xs text-bodytext">
+            Read-only — jail staff complete this checklist to unlock the release stage.
+          </p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className={`card-shadow rounded-card border bg-white p-4 sm:p-5 ${row.suretyArranged ? "border-emerald-200" : "border-saffron/60"}`}>

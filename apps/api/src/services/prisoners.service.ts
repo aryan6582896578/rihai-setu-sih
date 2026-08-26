@@ -252,6 +252,7 @@ export async function getPrisonerDetail(prisonerId: string, auditCtx?: { actorId
     gender: prisoner.gender,
     admissionDate: prisoner.admissionDate.toISOString(),
     photoUrl: pii.photoUrl,
+    consentToShareProfile: prisoner.consentToShareProfile,
     cases: prisoner.cases.map(toCaseDto),
     primaryCaseId: primaryCase?.id ?? null,
     eligibility,

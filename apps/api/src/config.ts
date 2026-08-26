@@ -17,6 +17,7 @@ const envSchema = z.object({
   PUBLIC_API_URL: z.string().url().default("http://localhost:4000"),
   LOGIN_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(5),
   LOGIN_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60_000),
+  RECOMMENDER_URL: z.string().url().default("http://127.0.0.1:8000"),
 });
 
 const parsed = envSchema.safeParse(process.env);

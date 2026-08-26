@@ -17,15 +17,16 @@ export async function getComplianceMetrics(
   const jailFilter = jailId ? Prisma.sql`AND p.jail_id = ${jailId}` : Prisma.empty;
 
   const [eligibleRows, filedRows, releasedRows, avgRows] = await Promise.all([
-    // First-ever "eligible" assessment per prisoner within range
+    // First-ever "eligible" assessment per prisoner within range. The jail filter
+    // must live in WHERE (p.jail_id is not grouped) — HAVING broke with a 500.
     prisma.$queryRaw<{ n: bigint }[]>(Prisma.sql`
       SELECT COUNT(*) AS n FROM (
         SELECT e.prisoner_id, MIN(e.computed_at) AS first_eligible
         FROM "EligibilityAssessment" e
         JOIN "Prisoner" p ON p.id = e.prisoner_id
-        WHERE e.status = 'eligible'
+        WHERE e.status = 'eligible' ${jailFilter}
         GROUP BY e.prisoner_id
-        HAVING MIN(e.computed_at) BETWEEN ${from} AND ${to} ${jailFilter}
+        HAVING MIN(e.computed_at) BETWEEN ${from} AND ${to}
       ) t
     `),
     prisma.$queryRaw<{ n: bigint }[]>(Prisma.sql`

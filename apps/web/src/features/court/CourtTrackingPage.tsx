@@ -3,11 +3,15 @@ import { Link, useParams } from "react-router-dom";
 import type { CourtTrackingRow } from "@rihai/shared-types";
 import { api, extractApiError } from "../../lib/api";
 import { formatDate, STAGE_LABELS } from "../../lib/format";
+import { roleFlags } from "../../lib/permissions";
+import { useAuthStore } from "../../state/authStore";
 import { EmptyState, ErrorBanner, Spinner } from "../../components/ui";
 
 export default function CourtTrackingPage() {
   const { jailId = "" } = useParams();
   const queryClient = useQueryClient();
+  const user = useAuthStore((s) => s.user);
+  const { canAdvance } = roleFlags(user?.role);
 
   const query = useQuery({
     queryKey: ["court-tracking", jailId],
@@ -61,6 +65,7 @@ export default function CourtTrackingPage() {
               <strong> it never decides bail</strong>; only the court does.
             </p>
           </div>
+          {canAdvance && (
           <button
             onClick={() => syncAll.mutate(rows)}
             disabled={rows.length === 0 || syncAll.isPending}
@@ -68,6 +73,7 @@ export default function CourtTrackingPage() {
           >
             {syncAll.isPending ? "Syncing all…" : `Sync all (${rows.length})`}
           </button>
+          )}
         </div>
       </div>
 
@@ -129,13 +135,17 @@ export default function CourtTrackingPage() {
                   </td>
                   <td className="text-bodytext">{r.daysSinceFiled ?? "-"}</td>
                   <td className="text-right">
-                    <button
-                      onClick={() => syncOne.mutate(r.applicationId)}
-                      disabled={syncOne.isPending}
-                      className="btn btn-outline btn-sm whitespace-nowrap"
-                    >
-                      {syncOne.isPending && syncOne.variables === r.applicationId ? "Syncing…" : "Sync from eCourts (mock)"}
-                    </button>
+                    {canAdvance ? (
+                      <button
+                        onClick={() => syncOne.mutate(r.applicationId)}
+                        disabled={syncOne.isPending}
+                        className="btn btn-outline btn-sm whitespace-nowrap"
+                      >
+                        {syncOne.isPending && syncOne.variables === r.applicationId ? "Syncing…" : "Sync from eCourts (mock)"}
+                      </button>
+                    ) : (
+                      <span className="text-xs text-[#c3c8cf]">—</span>
+                    )}
                   </td>
                 </tr>
               ))}
