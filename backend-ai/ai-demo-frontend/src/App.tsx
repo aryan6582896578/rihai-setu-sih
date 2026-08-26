@@ -13,11 +13,23 @@ type Recommendation = {
 
 type ChatReply = {
   answer: string;
-  source: "ollama" | "faq" | "fallback" | "safety";
+  source: "rag" | "faq" | "fallback" | "safety" | "out_of_scope";
   escalation_required: boolean;
+  sources: Array<{
+    source_id: string;
+    title: string;
+    issuer: string;
+    page: number | null;
+    url: string;
+  }>;
 };
 
-type ChatMessage = { role: "user" | "assistant"; text: string; source?: ChatReply["source"] };
+type ChatMessage = {
+  role: "user" | "assistant";
+  text: string;
+  source?: ChatReply["source"];
+  sources?: ChatReply["sources"];
+};
 
 const jobs = [
   {
@@ -145,7 +157,15 @@ function App() {
       });
       if (!response.ok) throw new Error("The chatbot service did not respond.");
       const data = await response.json() as ChatReply;
-      setChatMessages((current) => [...current, { role: "assistant", text: data.answer, source: data.source }]);
+      setChatMessages((current) => [
+        ...current,
+        {
+          role: "assistant",
+          text: data.answer,
+          source: data.source,
+          sources: data.sources,
+        },
+      ]);
     } catch (error) {
       setChatMessages((current) => [...current, { role: "assistant", text: "I cannot reach the chatbot right now. Please make sure it is running on port 8001." }]);
     } finally {
@@ -208,6 +228,17 @@ function App() {
           <div className="chat-window" aria-live="polite">
             {chatMessages.map((message, index) => <div className={`message ${message.role}`} key={index}>
               <p>{message.text}</p>
+              {message.sources && message.sources.length > 0 && <div className="message-sources">
+                <strong>Sources</strong>
+                {message.sources.map((source) => source.url ?
+                  <a key={`${source.source_id}-${source.page ?? "document"}`} href={source.url} target="_blank" rel="noreferrer">
+                    {source.title}{source.page ? ` · page ${source.page}` : ""}
+                  </a> :
+                  <span key={`${source.source_id}-${source.page ?? "document"}`}>
+                    {source.title}{source.page ? ` · page ${source.page}` : ""}
+                  </span>
+                )}
+              </div>}
             </div>)}
             {chatting && <div className="message assistant"><p>Thinking…</p></div>}
           </div>

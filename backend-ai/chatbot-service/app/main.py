@@ -1,4 +1,4 @@
-"""FastAPI entry point for the approved-answer FAQ chatbot."""
+"""FastAPI entry point for the scoped local RAG chatbot."""
 
 from fastapi import FastAPI
 
@@ -7,9 +7,9 @@ from app.schemas import HealthResponse
 
 
 app = FastAPI(
-    title="RIHAI SETU FAQ Chatbot",
-    summary="Approved-answer support chatbot without external LLM calls.",
-    version="1.0.0",
+    title="RIHAI SETU Scoped RAG Chatbot",
+    summary="Document-grounded local support chatbot with safety routing.",
+    version="1.1.0",
 )
 
 

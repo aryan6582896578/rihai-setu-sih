@@ -1,11 +1,17 @@
-# RIHAI SETU FAQ Chatbot
+# RIHAI SETU Scoped RAG Chatbot
 
-This is a standalone FastAPI service with an approved FAQ catalog and an
-optional local Ollama responder. When enabled, Ollama answers ordinary
-questions first; the FAQ catalog is the offline fallback. It does not require
-a cloud API key, RAG documents or a database. Legal, medical and emergency
-questions always receive a safe caseworker or authorized-service escalation
-message.
+This standalone FastAPI service answers scoped questions about RIHAI SETU,
+employment, skills, training, rehabilitation and general access to legal-aid
+services. It retrieves passages from an approved local knowledge base and asks
+Ollama to answer only from those passages. It requires no cloud API key or
+database.
+
+The knowledge base contains six official Government of India/NALSA PDFs plus a
+curated description of the implemented RIHAI SETU website. A local BM25 text
+index provides retrieval. Groq provides fast grounded generation when a key is
+configured, while Ollama remains an optional offline fallback. Unrelated
+questions are declined. Personal legal, bail, court, medical, emergency and
+self-harm questions are safety-routed before retrieval.
 
 ## Run locally
 
@@ -14,6 +20,9 @@ cd backend-ai\chatbot-service
 py -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
+$secureGroqKey = Read-Host "Groq API key" -AsSecureString
+$env:GROQ_API_KEY = [System.Net.NetworkCredential]::new("", $secureGroqKey).Password
+$env:GROQ_MODEL="llama-3.1-8b-instant"
 python -m uvicorn app.main:app --reload --port 8001
 ```
 
@@ -69,20 +78,56 @@ Response:
   "category": "Jobs",
   "confidence": 1.0,
   "source": "faq",
+  "provider": null,
+  "sources": [],
   "escalation_required": false,
   "suggested_questions": []
 }
 ```
+
+Possible `source` values are `rag`, `faq`, `out_of_scope`, `safety` and
+`fallback`. RAG responses include document titles, page numbers and official
+URLs in the `sources` array.
+
+### Check the knowledge base
+
+```text
+GET /api/v1/chat/knowledge
+```
+
+It reports whether the index is ready and returns document/chunk counts.
 
 ## Add or edit FAQs
 
 Edit `app/data/faqs.json`, then restart the service. Every answer should be
 reviewed and approved before being added.
 
-## Enable local Ollama
+## Rebuild the RAG index
 
-To make the locally installed Ollama model answer normal questions, set these
-PowerShell values before starting the service:
+The repository contains a ready index. Rebuild it after adding, replacing or
+editing a knowledge document:
+
+```powershell
+python -m app.rag_ingest
+```
+
+Approved documents are declared in `app/data/documents.json`. Source files live
+in `app/data/documents/`, and the generated index is
+`app/data/rag_index.json`.
+
+## Fast Groq generation
+
+The service automatically prefers Groq when `GROQ_API_KEY` is present. The
+default model is `llama-3.1-8b-instant`; override it with `GROQ_MODEL` when
+needed. Never put a real API key in source code, `.env.example`, screenshots or
+Git commits.
+
+The question and retrieved public passages are sent to Groq. Do not enter names,
+case numbers, prisoner IDs or other personal information in the chatbot.
+
+## Optional local Ollama fallback
+
+To retain Ollama as an offline fallback, also set:
 
 ```powershell
 $env:CHATBOT_ENABLE_OLLAMA="true"
@@ -90,9 +135,6 @@ $env:OLLAMA_BASE_URL="http://127.0.0.1:11434"
 $env:OLLAMA_MODEL="llama3.2:latest"
 ```
 
-The local model is never used for legal, medical, emergency, self-harm or
-criminal-case questions. When Ollama is off or unavailable, matching approved
-FAQ answers are still returned; unmatched questions receive the approved
-caseworker message. The existing Express codebase has an optional
-`gpt-4o-mini` integration for another feature, but this chatbot does not use a
-cloud LLM or any external API key.
+Both providers receive only the question and retrieved approved context and
+must return `INSUFFICIENT_CONTEXT` when the passages do not support an answer.
+If neither provider is available, matching approved FAQs still work.

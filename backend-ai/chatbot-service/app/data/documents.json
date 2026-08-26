@@ -1,0 +1,58 @@
+[
+  {
+    "source_id": "rihai-setu-website",
+    "title": "RIHAI SETU Website and AI Features",
+    "issuer": "RIHAI SETU",
+    "filename": "rihai_setu_website_knowledge.md",
+    "url": "",
+    "category": "website"
+  },
+  {
+    "source_id": "mha-prison-manual-2016",
+    "title": "Model Prison Manual 2016",
+    "issuer": "Ministry of Home Affairs, Government of India",
+    "filename": "model_prison_manual_2016.pdf",
+    "url": "https://www.mha.gov.in/sites/default/files/2024-12/PrisonManualA2016_20122024.pdf",
+    "category": "rehabilitation"
+  },
+  {
+    "source_id": "msde-pmkvy-4",
+    "title": "PMKVY 4.0 Guidelines",
+    "issuer": "Ministry of Skill Development and Entrepreneurship",
+    "filename": "pmkvy_4_guidelines.pdf",
+    "url": "https://msde.gov.in/static/uploads/2024/02/PMKVY-4.0-Guidelines_final-copy.pdf",
+    "category": "skills"
+  },
+  {
+    "source_id": "dge-employment-manual",
+    "title": "National Employment Service Manual, Volume I",
+    "issuer": "Directorate General of Employment",
+    "filename": "national_employment_service_manual.pdf",
+    "url": "https://dge.gov.in/sites/default/files/2024-05/NESM-2022-Volume-I_0.pdf",
+    "category": "employment"
+  },
+  {
+    "source_id": "nalsa-utrc",
+    "title": "Revised SOP and Guidelines for Undertrial Review Committees",
+    "issuer": "National Legal Services Authority",
+    "filename": "nalsa_utrc_guidelines.pdf",
+    "url": "https://cdnbbsr.s3waas.gov.in/s32e45f93088c7db59767efef516b306aa/uploads/2025/04/20250514906784624.pdf",
+    "category": "legal-aid"
+  },
+  {
+    "source_id": "nalsa-prison-clinics",
+    "title": "SOP - Functioning of Prison Legal Aid Clinics 2022",
+    "issuer": "National Legal Services Authority",
+    "filename": "nalsa_prison_legal_aid_clinics.pdf",
+    "url": "https://cdnbbsr.s3waas.gov.in/s32e45f93088c7db59767efef516b306aa/uploads/2025/04/20250408618042663.pdf",
+    "category": "legal-aid"
+  },
+  {
+    "source_id": "nalsa-custody-representation",
+    "title": "SOP for Representation of Persons in Custody",
+    "issuer": "National Legal Services Authority",
+    "filename": "nalsa_representation_persons_in_custody.pdf",
+    "url": "https://cdnbbsr.s3waas.gov.in/s32e45f93088c7db59767efef516b306aa/uploads/2025/04/20250408976593997.pdf",
+    "category": "legal-aid"
+  }
+]

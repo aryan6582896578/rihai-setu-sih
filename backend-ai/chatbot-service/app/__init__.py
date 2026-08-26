@@ -1,1 +1,1 @@
-"""RIHAI SETU approved-answer FAQ chatbot."""
+"""RIHAI SETU scoped local RAG chatbot."""

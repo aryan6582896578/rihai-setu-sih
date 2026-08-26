@@ -8,7 +8,13 @@ from pathlib import Path
 import re
 import unicodedata
 
-from app.services.ollama import ask_ollama, ollama_enabled
+from app.services.groq import ask_groq_grounded, groq_enabled
+from app.services.ollama import ask_ollama_grounded, ollama_enabled
+from app.services.rag import (
+    RetrievedChunk,
+    question_is_in_scope,
+    retrieve_context,
+)
 
 
 _DATA_PATH = Path(__file__).resolve().parents[1] / "data" / "faqs.json"
@@ -39,11 +45,19 @@ _SYNONYMS = {
     "course": "training",
     "courses": "training",
 }
-_ESCALATION_TERMS = frozenset(
+_HARD_ESCALATION_TERMS = frozenset(
     {
-        "bail", "case", "court", "crime", "doctor", "emergency", "lawyer",
-        "legal", "medical", "offence", "police", "self harm", "suicide",
+        "doctor", "emergency", "medical", "self harm", "suicide",
     }
+)
+_LEGAL_DECISION_TERMS = frozenset(
+    {
+        "bail", "case", "court", "offence", "police", "release order",
+        "sentence",
+    }
+)
+_PERSONAL_TERMS = frozenset(
+    {"advice", "eligible", "i", "me", "mine", "my", "should"}
 )
 _FALLBACK = (
     "I do not have a verified answer for that question. Please contact your "
@@ -53,6 +67,10 @@ _ESCALATION = (
     "I cannot provide legal, medical or emergency guidance. Please contact your "
     "authorized NGO caseworker, relevant emergency service, legal aid provider "
     "or portal administrator."
+)
+_OUT_OF_SCOPE = (
+    "I can only help with RIHAI SETU, jobs, skills, training, rehabilitation "
+    "and general access to approved support services."
 )
 
 
@@ -117,19 +135,42 @@ def _suggestions(limit: int = 3) -> list[FAQ]:
     return list(FAQS[:limit])
 
 
-def answer_question(
-    message: str,
-) -> tuple[str, FAQ | None, float, str, bool, list[FAQ]]:
-    """Return an approved answer, a match record and safe fallback metadata."""
-
-    query = _tokens(message)
+def _requires_escalation(message: str, query: frozenset[str]) -> bool:
     normalized_message = _normalized_phrase(message)
+    normalized_terms = frozenset(normalized_message.split())
     if any(
         (" " in term and term in normalized_message)
         or (" " not in term and term in query)
-        for term in _ESCALATION_TERMS
+        for term in _HARD_ESCALATION_TERMS
     ):
-        return _ESCALATION, None, 0.0, "safety", True, _suggestions()
+        return True
+    if "legal advice" in normalized_message:
+        return True
+    has_legal_decision = any(
+        (" " in term and term in normalized_message)
+        or (" " not in term and term in query)
+        for term in _LEGAL_DECISION_TERMS
+    )
+    return has_legal_decision and bool(normalized_terms & _PERSONAL_TERMS)
+
+
+def answer_question(
+    message: str,
+) -> tuple[
+    str,
+    FAQ | None,
+    float,
+    str,
+    bool,
+    list[FAQ],
+    list[RetrievedChunk],
+    str | None,
+]:
+    """Return an approved answer, a match record and safe fallback metadata."""
+
+    query = _tokens(message)
+    if _requires_escalation(message, query):
+        return _ESCALATION, None, 0.0, "safety", True, _suggestions(), [], None
 
     ranked = sorted(
         ((faq, _score(query, faq)) for faq in FAQS),
@@ -137,13 +178,50 @@ def answer_question(
     )
     best, confidence = ranked[0]
     suggestions = [faq for faq, _ in ranked[:3]]
-    # Ollama is the preferred responder for all ordinary questions when enabled.
-    # The FAQ catalog remains a dependable offline fallback if the local model
-    # is stopped or fails to answer.
-    generated = ask_ollama(message) if ollama_enabled() else None
+    in_scope = question_is_in_scope(message) or confidence >= 0.34
+    if not in_scope:
+        return (
+            _OUT_OF_SCOPE,
+            None,
+            0.0,
+            "out_of_scope",
+            False,
+            suggestions,
+            [],
+            None,
+        )
+
+    contexts = retrieve_context(message)
+    provider: str | None = None
+    generated = None
+    if contexts and groq_enabled():
+        generated = ask_groq_grounded(message, contexts)
+        provider = "groq" if generated else None
+    if not generated and contexts and ollama_enabled():
+        generated = ask_ollama_grounded(message, contexts)
+        provider = "ollama" if generated else None
     if generated:
-        return generated, None, confidence, "ollama", False, suggestions
+        retrieval_confidence = min(contexts[0].score / 12.0, 1.0)
+        return (
+            generated,
+            None,
+            round(retrieval_confidence, 4),
+            "rag",
+            False,
+            suggestions,
+            contexts,
+            provider,
+        )
 
     if confidence < 0.34:
-        return _FALLBACK, None, confidence, "fallback", True, suggestions
-    return best.answer, best, confidence, "faq", False, suggestions
+        return (
+            _FALLBACK,
+            None,
+            confidence,
+            "fallback",
+            True,
+            suggestions,
+            [],
+            None,
+        )
+    return best.answer, best, confidence, "faq", False, suggestions, [], None
