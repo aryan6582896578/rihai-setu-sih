@@ -6,11 +6,12 @@ import { piiPublic } from "../lib/pii.js";
 import { getPrimaryCase } from "./eligibility.service.js";
 
 /**
- * Prompt 11 — family notifications across the paperwork lifecycle.
+ * Prompt 11 — family notifications across the paperwork lifecycle, plus
+ * employment/training milestones (skill completions, job-pipeline updates).
  *
  * Event-specific templated messages (never one generic "status changed" text),
  * consent-gated, locale-aware (EN/HI), channel-aware (SMS/WhatsApp with
- * fallback), deduplicated on (application_id, event_key).
+ * fallback), deduplicated on (entity_type, entity_id, event_key).
  */
 
 export const FAMILY_EVENTS = [
@@ -22,6 +23,10 @@ export const FAMILY_EVENTS = [
   "order_denied",
   "surety_arranged",
   "released",
+  "skill_course_completed",
+  "job_application_shortlisted",
+  "job_application_hired",
+  "job_application_rejected",
 ] as const;
 export type FamilyEventKey = (typeof FAMILY_EVENTS)[number];
 
@@ -34,6 +39,9 @@ export interface FamilyTemplateVars {
   bond_amount?: string;
   lawyer_name?: string;
   lawyer_phone?: string;
+  program_name?: string;
+  job_title?: string;
+  ngo_name?: string;
 }
 
 export type FamilySendOutcome =
@@ -91,6 +99,22 @@ const TEMPLATE_SEED: TemplateSeed = {
     en: "Good news: {{prisoner_name}} was released today. Warm wishes to the whole family - RIHAI SETU.",
     hi: "अच्छी खबर: {{prisoner_name}} आज रिहा हो गए हैं। पूरे परिवार को रिहाई सेतु की ओर से शुभकामनाएं।",
   },
+  skill_course_completed: {
+    en: "Good news: {{prisoner_name}} has successfully completed the skill course \"{{program_name}}\" and earned a certificate - one step closer to employment after release. - RIHAI SETU",
+    hi: "अच्छी खबर: {{prisoner_name}} ने कौशल प्रशिक्षण \"{{program_name}}\" सफलतापूर्वक पूरा कर प्रमाणपत्र अर्जित किया है - रिहाई के बाद रोज़गार की ओर एक और कदम। - रिहाई सेतु",
+  },
+  job_application_shortlisted: {
+    en: "RIHAI SETU update: {{prisoner_name}} has been shortlisted by {{ngo_name}} for the role \"{{job_title}}\". The facility will coordinate the next steps.",
+    hi: "रिहाई सेतु सूचना: {{prisoner_name}} को {{ngo_name}} द्वारा \"{{job_title}}\" पद हेतु शॉर्टलिस्ट किया गया है। आगे की कार्रवाई हेतु जेल प्रशासन समन्वय करेगा।",
+  },
+  job_application_hired: {
+    en: "Good news: {{ngo_name}} has selected {{prisoner_name}} for the role \"{{job_title}}\". Jail staff will coordinate the joining formalities. - RIHAI SETU",
+    hi: "अच्छी खबर: {{ngo_name}} ने {{prisoner_name}} का चयन \"{{job_title}}\" पद हेतु किया है। शामिल होने की प्रक्रिया हेतु जेल स्टाफ समन्वय करेंगे। - रिहाई सेतु",
+  },
+  job_application_rejected: {
+    en: "RIHAI SETU update: {{prisoner_name}}'s application for \"{{job_title}}\" at {{ngo_name}} did not progress this time. Their profile remains active and more employers will see it - the journey continues.",
+    hi: "रिहाई सेतु सूचना: {{prisoner_name}} का आवेदन {{ngo_name}} में \"{{job_title}}\" पद हेतु इस बार आगे नहीं बढ़ा। उनकी प्रोफ़ाइल सक्रिय रहेगी और अधिक नियोक्ता इसे देखेंगे - प्रयास जारी रहेगा।",
+  },
 };
 
 /** Idempotent, skip-existing so super_admin template edits survive restarts. */
@@ -121,8 +145,30 @@ export function renderTemplate(tpl: string, vars: FamilyTemplateVars): string {
 }
 
 // ---------------------------------------------------------------------------
-// Trigger entry point
+// Trigger entry points
 // ---------------------------------------------------------------------------
+
+/**
+ * Generic entry point for any prisoner-scoped family event (skill completions,
+ * job-pipeline updates, …). Legal-application events go through sendFamilyEvent
+ * below, which additionally enriches messages with case context.
+ */
+export async function sendPrisonerFamilyEvent(opts: {
+  prisonerId: string;
+  entityType: string;
+  entityId: string;
+  eventKey: FamilyEventKey;
+  extraVars?: FamilyTemplateVars;
+}): Promise<FamilySendOutcome> {
+  const prisoner = await prisma.prisoner.findUnique({ where: { id: opts.prisonerId } });
+  if (!prisoner) return { ok: false, reason: "no_template" };
+  return deliverFamilyEvent(prisoner, {
+    entityType: opts.entityType,
+    entityId: opts.entityId,
+    eventKey: opts.eventKey,
+    vars: { prisoner_name: piiPublic(prisoner).fullName ?? undefined, ...(opts.extraVars ?? {}) },
+  });
+}
 
 export async function sendFamilyEvent(
   applicationId: string,
@@ -139,7 +185,28 @@ export async function sendFamilyEvent(
   });
   if (!app) return { ok: false, reason: "no_template" };
 
-  const prisoner = app.prisoner;
+  // Denials go out ONLY once a named human exists to call (Prompt 4 assignment).
+  // Delaying briefly to backfill beats sending an unanswerable message.
+  if (eventKey === "order_denied") {
+    if (!app.legalAidAssignment || !app.legalAidAssignment.lawyer.name) {
+      logger.info(`[family] ${applicationId}:${eventKey} held back - no LegalAidAssignment yet`);
+      return { ok: false, reason: "awaiting_lawyer" };
+    }
+  }
+
+  const vars = await buildApplicationVars(app, extraVars);
+  return deliverFamilyEvent(app.prisoner, {
+    entityType: "Application",
+    entityId: applicationId,
+    eventKey,
+    vars,
+  });
+}
+
+async function deliverFamilyEvent(
+  prisoner: Prisoner,
+  opts: { entityType: string; entityId: string; eventKey: FamilyEventKey; vars: FamilyTemplateVars },
+): Promise<FamilySendOutcome> {
   const pii = piiPublic(prisoner);
 
   // CONSENT GATE — mandatory before anything else. Toggling consent off stops
@@ -149,31 +216,26 @@ export async function sendFamilyEvent(
   if (!phone) return { ok: false, reason: "no_contact" };
 
   // A retried webhook / manual re-sync must never re-send the same message.
-  const dedupeKey = `${applicationId}:${eventKey}`;
+  // Legacy rows keyed applications as `${entityId}:${eventKey}` — keep that shape
+  // for Application so history keeps deduping across deploys.
+  const dedupeKey =
+    opts.entityType === "Application"
+      ? `${opts.entityId}:${opts.eventKey}`
+      : `${opts.entityType}:${opts.entityId}:${opts.eventKey}`;
   const alreadySent = await prisma.notificationLog.findFirst({
     where: { dedupeKey, status: { not: "failed" } },
     select: { id: true },
   });
   if (alreadySent) return { ok: false, reason: "duplicate" };
 
-  // Denials go out ONLY once a named human exists to call (Prompt 4 assignment).
-  // Delaying briefly to backfill beats sending an unanswerable message.
-  if (eventKey === "order_denied") {
-    if (!app.legalAidAssignment || !app.legalAidAssignment.lawyer.name) {
-      logger.info(`[family] ${dedupeKey} held back - no LegalAidAssignment yet`);
-      return { ok: false, reason: "awaiting_lawyer" };
-    }
-  }
-
-  const vars = await buildVars(app, extraVars);
   const locales = orderedLocales(prisoner.nextOfKinPreferredLocale);
   const channels = orderedChannels(prisoner.nextOfKinPreferredChannel);
 
   let lastFailure: string | undefined;
   for (const channel of channels) {
-    const template = await pickTemplate(eventKey, channel, locales);
+    const template = await pickTemplate(opts.eventKey, channel, locales);
     if (!template) continue;
-    const message = renderTemplate(template.messageTemplate, vars);
+    const message = renderTemplate(template.messageTemplate, opts.vars);
 
     const result = await notificationProvider.send(phone, channel as "sms" | "whatsapp", message);
     const delivered = result.status === "sent" || result.status === "logged";
@@ -183,8 +245,8 @@ export async function sendFamilyEvent(
         recipientContact: phone,
         channel,
         message,
-        relatedEntityType: "Application",
-        relatedEntityId: applicationId,
+        relatedEntityType: opts.entityType,
+        relatedEntityId: opts.entityId,
         status: result.status,
         templateKey: template.eventKey,
         locale: template.locale,
@@ -234,7 +296,7 @@ async function pickTemplate(
   return prisma.notificationTemplate.findFirst({ where: { eventKey, channel } });
 }
 
-async function buildVars(
+async function buildApplicationVars(
   app: Application & {
     prisoner: Prisoner;
     legalAidAssignment: { lawyer: { name: string; phone: string | null } } | null;

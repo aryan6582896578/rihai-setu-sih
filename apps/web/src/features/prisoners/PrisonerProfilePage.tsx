@@ -72,6 +72,7 @@ export default function PrisonerProfilePage() {
       <nav className="tabpills">
         {[
           ["#personal-info", "Personal"],
+          ["#family-alerts", "Family alerts"],
           ["#case", "Case details"],
           ["#eligibility", "§479 eligibility"],
           ["#application", "Application progress"],
@@ -85,6 +86,7 @@ export default function PrisonerProfilePage() {
       </nav>
 
       <PersonalSection detail={detail} canEdit={canEdit} onChanged={refresh} />
+      <NextOfKinPanel detail={detail} canEdit={canEdit} onChanged={refresh} />
       <EligibilityPanel detail={detail} canEdit={canEdit} onChanged={refresh} />
       <CaseSection detail={detail} canEdit={canEdit} onChanged={refresh} />
       <ApplicationProgressCard detail={detail} onChanged={refresh} />
@@ -219,6 +221,202 @@ function PersonalSection({ detail }: { detail: PrisonerDetail; canEdit: boolean;
           </div>
         ))}
       </dl>
+    </section>
+  );
+}
+
+// ---- Family (next-of-kin) contact + consent for automatic WhatsApp/SMS updates ----
+
+type NextOfKin = {
+  nextOfKinName: string | null;
+  nextOfKinPhone: string | null;
+  consentGiven: boolean;
+  preferredChannel: "sms" | "whatsapp" | null;
+  preferredLocale: "en" | "hi" | null;
+};
+
+function NextOfKinPanel({
+  detail,
+  canEdit,
+  onChanged,
+}: {
+  detail: PrisonerDetail;
+  canEdit: boolean;
+  onChanged: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const [editing, setEditing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [form, setForm] = useState({
+    nextOfKinName: "",
+    nextOfKinPhone: "",
+    preferredChannel: "whatsapp" as "sms" | "whatsapp",
+    preferredLocale: "en" as "en" | "hi",
+  });
+  const [consentDraft, setConsentDraft] = useState(false);
+
+  const inputCls = "input-base";
+  const labelCls = "mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-bodytext";
+
+  const nokQuery = useQuery({
+    queryKey: ["next-of-kin", detail.id],
+    queryFn: async () => {
+      const res = await api.get<{ data: NextOfKin }>(`/prisoners/${detail.id}/next-of-kin`);
+      return res.data.data;
+    },
+  });
+  const nok = nokQuery.data;
+
+  const startEdit = () => {
+    if (nok) {
+      setForm({
+        nextOfKinName: nok.nextOfKinName ?? "",
+        nextOfKinPhone: nok.nextOfKinPhone ?? "",
+        preferredChannel: nok.preferredChannel ?? "whatsapp",
+        preferredLocale: nok.preferredLocale ?? "en",
+      });
+      setConsentDraft(nok.consentGiven);
+    }
+    setError(null);
+    setEditing(true);
+  };
+
+  const save = useMutation({
+    mutationFn: async () => {
+      // Backend fields are individually optional — only send the ones filled in.
+      await api.patch(`/prisoners/${detail.id}/next-of-kin`, {
+        ...(form.nextOfKinName.trim() ? { nextOfKinName: form.nextOfKinName.trim() } : {}),
+        ...(form.nextOfKinPhone.trim() ? { nextOfKinPhone: form.nextOfKinPhone.trim() } : {}),
+        preferredChannel: form.preferredChannel,
+        preferredLocale: form.preferredLocale,
+        consentGiven: consentDraft,
+      });
+    },
+    onSuccess: () => {
+      setError(null);
+      setEditing(false);
+      onChanged();
+      void queryClient.invalidateQueries({ queryKey: ["next-of-kin", detail.id] });
+    },
+    onError: (e) => setError(extractApiError(e).message),
+  });
+
+  return (
+    <section className="panel" id="family-alerts">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 className="display m-0 text-base font-bold text-navy">Family case updates</h2>
+          <p className="kicker mb-0 mt-0.5">Automatic WhatsApp/SMS updates to the registered family member</p>
+        </div>
+        {canEdit && !editing && (
+          <button onClick={startEdit} className="btn btn-outline btn-sm">
+            {nok?.nextOfKinPhone ? "Edit" : "Add family contact"}
+          </button>
+        )}
+      </div>
+
+      {editing ? (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            save.mutate();
+          }}
+          className="mt-3 space-y-3"
+        >
+          {error && <ErrorBanner message={error} />}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className={labelCls}>Family member name</label>
+              <input
+                className={inputCls}
+                value={form.nextOfKinName}
+                onChange={(e) => setForm({ ...form, nextOfKinName: e.target.value })}
+                placeholder="e.g. Sunita Devi"
+              />
+            </div>
+            <div>
+              <label className={labelCls}>WhatsApp / SMS number</label>
+              <input
+                type="tel"
+                className={inputCls}
+                value={form.nextOfKinPhone}
+                onChange={(e) => setForm({ ...form, nextOfKinPhone: e.target.value })}
+                placeholder="+91 98765 43210 (E.164)"
+              />
+            </div>
+            <div>
+              <label className={labelCls}>Preferred channel</label>
+              <select
+                className={`${inputCls} bg-white`}
+                value={form.preferredChannel}
+                onChange={(e) => setForm({ ...form, preferredChannel: e.target.value as "sms" | "whatsapp" })}
+              >
+                <option value="whatsapp">WhatsApp</option>
+                <option value="sms">SMS</option>
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Message language</label>
+              <select
+                className={`${inputCls} bg-white`}
+                value={form.preferredLocale}
+                onChange={(e) => setForm({ ...form, preferredLocale: e.target.value as "en" | "hi" })}
+              >
+                <option value="en">English</option>
+                <option value="hi">हिन्दी (Hindi)</option>
+              </select>
+            </div>
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={consentDraft} onChange={(e) => setConsentDraft(e.target.checked)} />
+            The family member has consented to receive automatic updates about this prisoner
+          </label>
+          {!consentDraft && (
+            <p className="info-note">Without consent no message is ever sent — updates stay disabled.</p>
+          )}
+          <div className="flex items-center gap-2">
+            <button type="submit" disabled={save.isPending} className="btn btn-primary btn-sm disabled:opacity-50">
+              {save.isPending ? "Saving…" : "Save"}
+            </button>
+            <button type="button" onClick={() => setEditing(false)} className="btn btn-outline btn-sm">
+              Cancel
+            </button>
+          </div>
+        </form>
+      ) : (
+        <>
+          <dl className="mt-4 grid grid-cols-2 gap-x-5 gap-y-4 text-sm sm:grid-cols-4">
+            {[
+              ["Family member", nok?.nextOfKinName ?? "-"],
+              ["Phone", nok?.nextOfKinPhone ?? "-"],
+              [
+                "Preferred channel",
+                nok?.preferredChannel === "whatsapp" ? "WhatsApp" : nok?.preferredChannel === "sms" ? "SMS" : "-",
+              ],
+              ["Language", nok?.preferredLocale === "hi" ? "Hindi" : nok?.preferredLocale === "en" ? "English" : "-"],
+            ].map(([k, v]) => (
+              <div key={k} className="info-field">
+                <dt className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.07em] text-bodytext">{k}</dt>
+                <dd className="font-semibold text-heading">{v}</dd>
+              </div>
+            ))}
+          </dl>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {nok?.consentGiven ? (
+              <span className="pill pill-ok">Consent recorded — updates active</span>
+            ) : (
+              <span className="pill pill-warn">No consent — updates disabled</span>
+            )}
+          </div>
+          {!nok?.consentGiven && (
+            <p className="info-note mt-3">
+              Add the family member's number and tick consent — they will then automatically receive
+              WhatsApp/SMS updates when an application moves forward, a hearing is scheduled, a skill course is
+              completed, or a job application status changes.
+            </p>
+          )}
+        </>
+      )}
     </section>
   );
 }
@@ -918,6 +1116,13 @@ function RecommendedJobsPanel({ detail, canEdit }: { detail: PrisonerDetail; can
   const [showList, setShowList] = useState(false);
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
 
+  const consentMutation = useMutation({
+    mutationFn: async (consent: boolean) => {
+      await api.patch(`/prisoners/${detail.id}/consent`, { consentToShareProfile: consent });
+    },
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["prisoner", detail.id] }),
+  });
+
   const applicationsQuery = useQuery({
     queryKey: ["job-applications", detail.id],
     queryFn: async () => {
@@ -965,18 +1170,42 @@ function RecommendedJobsPanel({ detail, canEdit }: { detail: PrisonerDetail; can
           <p className="kicker mb-0 mt-0.5">Explainable matches from the AI employment engine (Python)</p>
         </div>
         {detail.consentToShareProfile ? (
-          <button onClick={() => void findJobs()} disabled={loading} className="btn btn-primary btn-sm disabled:opacity-60">
-            {loading ? "Matching…" : "Find matching jobs"}
-          </button>
+          <>
+            <button onClick={() => void findJobs()} disabled={loading} className="btn btn-primary btn-sm disabled:opacity-60">
+              {loading ? "Matching…" : "Find matching jobs"}
+            </button>
+            {canEdit && (
+              <button
+                onClick={() => consentMutation.mutate(false)}
+                disabled={consentMutation.isPending}
+                className="btn btn-outline btn-sm"
+                title="Revoke consent — this prisoner will be excluded from employer recommendations"
+              >
+                {consentMutation.isPending ? "Saving…" : "Revoke consent"}
+              </button>
+            )}
+          </>
         ) : (
-          <span className="pill-warn">Consent not recorded</span>
+          <>
+            <span className="pill-warn">Consent not recorded</span>
+            {canEdit && (
+              <button
+                onClick={() => consentMutation.mutate(true)}
+                disabled={consentMutation.isPending}
+                className="btn btn-primary btn-sm"
+                title="Record prisoner's consent to share their skill passport with NGO employers"
+              >
+                {consentMutation.isPending ? "Saving…" : "Record consent"}
+              </button>
+            )}
+          </>
         )}
       </div>
 
       {!detail.consentToShareProfile && (
         <p className="info-note mt-3">
           This prisoner has not consented to profile sharing with employers, so job matching and
-          applications are disabled. Record their consent first — the AI engine will then include
+          applications are disabled. Click <strong>Record consent</strong> above — the AI engine will then include
           them in recommendations.
         </p>
       )}

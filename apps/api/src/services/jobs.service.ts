@@ -4,6 +4,7 @@ import { logger } from "../lib/logger.js";
 import { piiPublic } from "../lib/pii.js";
 import { audit } from "../lib/audit.js";
 import { notifyJobApplicationStatus } from "./notifications.service.js";
+import { sendPrisonerFamilyEvent, type FamilyEventKey } from "./family-notifications.service.js";
 import { ApiError } from "../middleware/errors.js";
 import type {
   CreateJobInput,
@@ -249,6 +250,27 @@ export async function updateApplicationStatus(
       ngoName: ngo?.name ?? "An NGO partner",
       status: status as "shortlisted" | "hired" | "rejected",
     }).catch((err) => logger.error("[notify] job application status hook failed", err));
+
+    // Templated family update via SMS/WhatsApp (consent-gated inside the
+    // notification service; fire-and-forget by design).
+    const familyEvent: FamilyEventKey | null =
+      status === "shortlisted"
+        ? "job_application_shortlisted"
+        : status === "hired"
+          ? "job_application_hired"
+          : status === "rejected"
+            ? "job_application_rejected"
+            : null;
+    if (familyEvent) {
+      void sendPrisonerFamilyEvent({
+        prisonerId: app.prisonerId,
+        entityType: "JobApplication",
+        entityId: applicationRowId,
+        eventKey: familyEvent,
+        extraVars: { job_title: app.job.title, ngo_name: ngo?.name ?? undefined },
+      }).catch((err) => logger.error("[family] job application event failed", err));
+    }
+
     audit({
       actorId: actor.id,
       action: "job_application.status",

@@ -22,6 +22,7 @@ import { audit } from "../lib/audit.js";
 import { ApiError } from "../middleware/errors.js";
 import { getPrimaryCase, recomputeForPrisoner } from "./eligibility.service.js";
 import { buildCertificateHtml } from "./certificates.service.js";
+import { sendPrisonerFamilyEvent } from "./family-notifications.service.js";
 
 const MS_PER_DAY = 86_400_000;
 
@@ -649,6 +650,19 @@ export async function updateEnrollment(
     data: { progressPct: progress, status, certificateUrl, ...(completedAt ? { completedAt } : {}) },
     include: { program: true },
   });
+
+  // First time this enrollment reaches completed -> tell the family (consent-
+  // gated inside the notification service; fire-and-forget by design).
+  if (existing.status !== "completed" && e.status === "completed") {
+    void sendPrisonerFamilyEvent({
+      prisonerId: existing.prisonerId,
+      entityType: "Enrollment",
+      entityId: enrollmentId,
+      eventKey: "skill_course_completed",
+      extraVars: { program_name: e.program.name },
+    }).catch((err) => logger.error("[family] skill completion event failed", err));
+  }
+
   return {
     id: e.id,
     status: e.status,

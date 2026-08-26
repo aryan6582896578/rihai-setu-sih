@@ -371,6 +371,35 @@ prisonersRouter.post(
   }),
 );
 
+// Explicit prisoner consent to share profile with NGO employers.  Must be
+// recorded before the AI engine will rank them or applications are accepted.
+const consentSchema = z.object({ consentToShareProfile: z.boolean() });
+
+prisonersRouter.patch(
+  "/:id/consent",
+  asyncHandler(async (req, res) => {
+    const { membership } = await loadPrisonerForUser(req.user!, req.params.id!);
+    if (!EDITOR_ROLES.includes(membership.roleAtJail)) {
+      throw ApiError.forbidden("Only jail staff can record prisoner consent");
+    }
+    const body = consentSchema.parse(req.body);
+    await prisma.prisoner.update({
+      where: { id: req.params.id },
+      data: { consentToShareProfile: body.consentToShareProfile },
+    });
+    audit({
+      actorId: req.user!.id,
+      actorName: req.user!.name,
+      action: "prisoner.consent",
+      entityType: "Prisoner",
+      entityId: req.params.id!,
+      fieldsTouched: [`consent_to_share_profile:${body.consentToShareProfile}`],
+      ipAddress: req.ip ?? undefined,
+    });
+    res.json({ data: { consentToShareProfile: body.consentToShareProfile } });
+  }),
+);
+
 // Prompt 11 — next-of-kin contact, consent and channel/locale preferences.
 // Consent is the legal gate for every outbound family message; edits are audited.
 const nokSchema = z.object({

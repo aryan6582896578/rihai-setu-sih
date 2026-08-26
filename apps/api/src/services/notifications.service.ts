@@ -110,8 +110,9 @@ export async function notifyStallEscalated(
 
 /**
  * NGO moved a candidate through the hiring pipeline (shortlisted/hired/rejected).
- * Jail staff of the prisoner's facility get an in-app row; on hire the
- * next-of-kin SMS log also records the good news (provider seam as usual).
+ * Jail staff of the prisoner's facility get an in-app row. The family-facing
+ * message goes out separately as a templated family event (see
+ * family-notifications.service, fired from jobs.service.updateApplicationStatus).
  */
 export async function notifyJobApplicationStatus(opts: {
   jailId: string;
@@ -140,17 +141,6 @@ export async function notifyJobApplicationStatus(opts: {
       userId: access.userId,
       channel: "in_app",
       message,
-      relatedEntityType: "JobPosting",
-      relatedEntityId: opts.applicationId,
-    });
-  }
-
-  if (opts.status === "hired") {
-    await logAndSend({
-      recipientType: "next_of_kin",
-      contact: null, // phone decrypted at call site when provider goes live
-      channel: "sms",
-      message: `RIHAI SETU: ${opts.ngoName} has selected ${opts.prisonerName} for "${opts.jobTitle}". Jail staff will coordinate next steps.`,
       relatedEntityType: "JobPosting",
       relatedEntityId: opts.applicationId,
     });
