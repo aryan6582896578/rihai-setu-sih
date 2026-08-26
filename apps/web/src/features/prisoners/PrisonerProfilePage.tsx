@@ -19,6 +19,15 @@ const EDITOR_ROLES = ["super_admin", "jail_superintendent", "jail_staff"];
 const ADVANCE_ROLES = [...EDITOR_ROLES, "dlsa_lawyer"];
 const REVIEW_ROLES = ["super_admin", "jail_superintendent", "dlsa_lawyer"];
 
+const STAGE_PILLS: Partial<Record<ApplicationStage, string>> = {
+  [ApplicationStage.Flagged]: "pill-warn",
+  [ApplicationStage.Drafted]: "pill-warn",
+  [ApplicationStage.Filed]: "pill-neutral",
+  [ApplicationStage.HearingScheduled]: "pill-neutral",
+  [ApplicationStage.OrderPassed]: "pill-ok",
+  [ApplicationStage.Released]: "pill-ok",
+};
+
 function apiOriginUrl(relative: string | null | undefined): string | null {
   if (!relative) return null;
   const origin = import.meta.env.VITE_API_URL?.replace(/\/api\/v1$/, "") ?? "http://localhost:4000";
@@ -26,7 +35,7 @@ function apiOriginUrl(relative: string | null | undefined): string | null {
 }
 
 export default function PrisonerProfilePage() {
-  const { prisonerId = "" } = useParams();
+  const { prisonerId = "", jailId = "" } = useParams();
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
 
@@ -45,7 +54,7 @@ export default function PrisonerProfilePage() {
     return (
       <div className="space-y-3">
         <ErrorBanner message={extractApiError(query.error).message} />
-        <Link to=".." className="crumb">← Back</Link>
+        <Link to={`/jails/${jailId}/prisoners`} className="crumb">← All prisoners</Link>
       </div>
     );
 
@@ -54,7 +63,10 @@ export default function PrisonerProfilePage() {
 
   return (
     <div className="space-y-5">
-      <Link to=".." className="crumb">← All prisoners</Link>
+      {/* Absolute paths: `to=".."` resolves against the ROUTE hierarchy, and this
+          page is a flat leaf route under pathless wrappers — so ".." lands on "/"
+          (react-router v7). Never use relative links from this page. */}
+      <Link to={`/jails/${jailId}/prisoners`} className="crumb">← All prisoners</Link>
       <ProfileHeader detail={detail} canEdit={canEdit} onChanged={refresh} />
 
       <nav className="tabpills">
@@ -94,6 +106,7 @@ function ProfileHeader({
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [tempPin, setTempPin] = useState<string | null>(null);
 
   const upload = useMutation({
     mutationFn: async (file: File) => {
@@ -105,6 +118,17 @@ function ProfileHeader({
       setUploadError(null);
       onChanged();
     },
+    onError: (e) => setUploadError(extractApiError(e).message),
+  });
+
+  const issueTempPin = useMutation({
+    mutationFn: async () => {
+      const res = await api.post<{ data: { temporaryPin: string } }>(
+        `/prisoners/${detail.id}/portal/temp-pin`,
+      );
+      return res.data.data.temporaryPin;
+    },
+    onSuccess: (pin) => setTempPin(pin),
     onError: (e) => setUploadError(extractApiError(e).message),
   });
 
@@ -156,6 +180,24 @@ function ProfileHeader({
           §479: {badge.label}
         </span>
       </div>
+      {canEdit && (
+        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[#f0e4d3] pt-3">
+          <button
+            onClick={() => issueTempPin.mutate()}
+            disabled={issueTempPin.isPending}
+            className="btn btn-outline btn-sm"
+            title="One-time PIN for the prisoner portal (/portal/login). The prisoner must change it at next login."
+          >
+            {issueTempPin.isPending ? "Issuing…" : "Issue portal temp PIN"}
+          </button>
+          {tempPin && (
+            <span className="rounded-lg border border-peach bg-[#FFF6EC] px-3 py-1.5 text-xs font-semibold text-navy">
+              One-time PIN: <b className="font-mono">{tempPin}</b> — show once; prisoner changes it on
+              next login
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -370,22 +412,35 @@ function CaseSection({ detail, canEdit, onChanged }: { detail: PrisonerDetail; c
 function ApplicationProgressCard({ detail, onChanged }: { detail: PrisonerDetail; onChanged: () => void }) {
   const user = useAuthStore((s) => s.user);
   const [error, setError] = useState<string | null>(null);
-  const active = detail.applications.find(
-    (a) => a.stage !== ApplicationStage.Released,
-  ) ?? detail.applications[0];
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const active =
+    detail.applications.find((a) => a.id === selectedId) ??
+    detail.applications.find((a) => a.stage !== ApplicationStage.Released) ??
+    detail.applications[0];
 
-  // Stage changes reset/shift stall windows, so the jail page stall badge and
-  // stall list must be refetched, not served from cache.
+  // Stage changes reset/shift stall windows and move cases through court, so
+  // every dependent view must refetch — not serve stale cache.
   const qc = useQueryClient();
   const invalidate = () => {
     setError(null);
     void qc.invalidateQueries({ queryKey: ["stall-list"] });
+    void qc.invalidateQueries({ queryKey: ["jail-stats"] });
+    void qc.invalidateQueries({ queryKey: ["court-tracking"] });
     onChanged();
   };
 
   const openApp = useMutation({
     mutationFn: async () => {
       await api.post(`/prisoners/${detail.id}/applications`, {});
+    },
+    onSuccess: invalidate,
+    onError: (e) => setError(extractApiError(e).message),
+  });
+
+  const createDraft = useMutation({
+    mutationFn: async (applicationId: string) => {
+      const res = await api.post<{ data: ApplicationDto }>(`/applications/${applicationId}/generate-draft`);
+      return res.data.data;
     },
     onSuccess: invalidate,
     onError: (e) => setError(extractApiError(e).message),
@@ -441,6 +496,50 @@ function ApplicationProgressCard({ detail, onChanged }: { detail: PrisonerDetail
       <h2 className="display m-0 text-base font-bold text-navy">Application progress</h2>
       {error && <div className="mt-2"><ErrorBanner message={error} /></div>}
 
+      {detail.applications.length > 0 && (
+        <div className="mt-4">
+          <p className="kicker mb-2">
+            All applications ({detail.applications.length}) — pick one to inspect
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {detail.applications.map((a) => {
+              const isActive = a.id === active?.id;
+              const stageIdx = STAGE_ORDER.indexOf(a.stage);
+              const isDraftLike = stageIdx >= 0 && stageIdx <= STAGE_ORDER.indexOf(ApplicationStage.Drafted);
+              return (
+                <button
+                  key={a.id}
+                  onClick={() => setSelectedId(a.id)}
+                  title={`${a.type === "personal_bond" ? "Personal bond" : "Bail"} application · updated ${formatDateTime(a.updatedAt)}`}
+                  className={`flex items-center gap-2 rounded-[10px] border px-3 py-2 text-left text-xs transition ${
+                    isActive
+                      ? "border-terracotta bg-[#FFF6EC] ring-2 ring-terracotta/20"
+                      : "border-[#f1e6d5] bg-white hover:border-saffron"
+                  }`}
+                >
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${isDraftLike ? "bg-amber-400" : "bg-emerald-500"}`} />
+                  <span className="font-bold text-navy">
+                    {a.type === "personal_bond" ? "Personal bond" : "Bail"}
+                  </span>
+                  <span className={`pill ${STAGE_PILLS[a.stage] ?? "pill-neutral"}`}>{STAGE_LABELS[a.stage]}</span>
+                  {a.generatedDocumentUrl && (
+                    <a
+                      href={apiOriginUrl(a.generatedDocumentUrl)!}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="font-semibold text-terracotta hover:underline"
+                    >
+                      draft ↗
+                    </a>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {!active ? (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm text-bodytext">No application opened yet.</p>
@@ -493,6 +592,18 @@ function ApplicationProgressCard({ detail, onChanged }: { detail: PrisonerDetail
               </span>
             )}
             <div className="ml-auto flex flex-wrap gap-2">
+              {canAdvance &&
+                !active.generatedDocumentUrl &&
+                STAGE_ORDER.indexOf(active.stage) <= STAGE_ORDER.indexOf(ApplicationStage.Drafted) && (
+                  <button
+                    onClick={() => createDraft.mutate(active.id)}
+                    disabled={createDraft.isPending}
+                    title="Generate the formal bail / bond draft document (any staff, DLSA lawyer or superintendent)"
+                    className="btn btn-navy btn-sm"
+                  >
+                    {createDraft.isPending ? "Generating…" : "Create formal draft"}
+                  </button>
+                )}
               <button
                 onClick={() => void openPreview(active.id)}
                 disabled={previewBusy}
@@ -517,18 +628,25 @@ function ApplicationProgressCard({ detail, onChanged }: { detail: PrisonerDetail
                   </button>
                 )}
               {canAdvance && nextStage && (
-                <button
-                  onClick={() => advance.mutate({ app: active, next: nextStage })}
-                  disabled={advance.isPending}
-                  title={
-                    nextStage === ApplicationStage.Filed && !active.reviewedByName
-                      ? "Requires review by DLSA lawyer first"
-                      : undefined
-                  }
-                  className="btn btn-primary btn-sm"
-                >
-                  Advance to {STAGE_LABELS[nextStage]}
-                </button>
+                (() => {
+                  const filedBlocked =
+                    nextStage === ApplicationStage.Filed &&
+                    (!active.reviewedByName || !active.generatedDocumentUrl);
+                  return (
+                    <button
+                      onClick={() => advance.mutate({ app: active, next: nextStage })}
+                      disabled={advance.isPending || filedBlocked}
+                      title={
+                        nextStage === ApplicationStage.Filed
+                          ? "Filing needs BOTH a formal draft document and approval (Mark reviewed) by a DLSA lawyer or superintendent"
+                          : undefined
+                      }
+                      className="btn btn-primary btn-sm disabled:opacity-40"
+                    >
+                      Advance to {STAGE_LABELS[nextStage]}
+                    </button>
+                  );
+                })()
               )}
             </div>
           </div>
@@ -572,9 +690,12 @@ function ApplicationProgressCard({ detail, onChanged }: { detail: PrisonerDetail
             </ul>
           </div>
 
-          {nextStage === ApplicationStage.Filed && !active.reviewedByName && (
+          {nextStage === ApplicationStage.Filed && (!active.reviewedByName || !active.generatedDocumentUrl) && (
             <p className="mt-2 text-xs font-semibold text-amber-700">
-              Filing is blocked until a DLSA lawyer or superintendent marks this draft reviewed.
+              Filing is blocked until the formal draft document exists{" "}
+              {(!active.generatedDocumentUrl) && <span>(use “Create formal draft” above)</span>}
+              {!active.generatedDocumentUrl && !active.reviewedByName && " and "}
+              {(!active.reviewedByName) && <span>a DLSA lawyer or superintendent marks it Reviewed</span>}.
             </p>
           )}
         </>

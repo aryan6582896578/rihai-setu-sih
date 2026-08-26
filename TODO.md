@@ -1,71 +1,71 @@
-# RIHAI SETU â€” TODO
+# RIHAI SETU — TODO
 
 Living task list. Every session appends a new dated section; nothing counts as done
 without a one-line manual smoke-test note next to it.
 
 ---
 
-## 2026-08-22 â€” Session 1: Public Home, Auth, Jail List, Jail Detail (Prompt 1)
+## 2026-08-22 — Session 1: Public Home, Auth, Jail List, Jail Detail (Prompt 1)
 
 ### Infrastructure
-- [x] PostgreSQL reachable locally (17.6) â€” `psql -U postgres -c "select version();"` OK
-- [x] Created database `rihai_setu` â€” created via psql, confirmed in pg_database
+- [x] PostgreSQL reachable locally (17.6) — `psql -U postgres -c "select version();"` OK
+- [x] Created database `rihai_setu` — created via psql, confirmed in pg_database
 - [x] Monorepo scaffolded (`apps/web`, `apps/api`, `packages/shared-types`, `/prisma`, root npm workspaces)
-- [x] `.env.example` + local `.env` with generated JWT secrets â€” secrets NOT committed
-- [x] `npm install` clean at root workspaces â€” _pending smoke test_
-- [x] `prisma migrate dev` applies cleanly on fresh DB â€” _pending smoke test_
-- [x] `db:seed` runs and reports counts â€” _pending smoke test_
+- [x] `.env.example` + local `.env` with generated JWT secrets — secrets NOT committed
+- [x] `npm install` clean at root workspaces — _pending smoke test_
+- [x] `prisma migrate dev` applies cleanly on fresh DB — _pending smoke test_
+- [x] `db:seed` runs and reports counts — _pending smoke test_
 
 ### Shared types package (`packages/shared-types`)
 - [x] Role / ApplicationType / ApplicationStage / EligibilityStatus / EnrollmentStatus enums (exact master-context values)
 - [x] DTO interfaces for auth, jails, stats, staff, stall rows, activity feed
-- [x] Stall threshold config object (flaggedâ†’drafted 3d, draftedâ†’filed 5d, filedâ†’hearing 10d, hearingâ†’order 14d, orderâ†’released 3d)
+- [x] Stall threshold config object (flagged”†’drafted 3d, drafted”†’filed 5d, filed”†’hearing 10d, hearing”†’order 14d, order”†’released 3d)
 
-### Backend (`apps/api`) â€” Express + TS + Prisma + PostgreSQL
+### Backend (`apps/api`) — Express + TS + Prisma + PostgreSQL
 - [x] Prisma schema mirrors master-context tables/fields exactly (PascalCase table @map, snake_case columns @map)
 - [x] Config loader (env validation via zod), file+console logger, PrismaClient singleton
 - [x] Error shape `{ error: { code, message } }` via centralized error handler
-- [x] `POST /api/v1/auth/login` â€” bcrypt verify, 15-min access JWT, httpOnly 7-day refresh cookie, rate-limit 5/min/IP
-- [x] `POST /api/v1/auth/refresh` â€” rotates refresh cookie, issues new access token
-- [x] `POST /api/v1/auth/logout` â€” clears refresh cookie
-- [x] `GET  /api/v1/auth/me` â€” current user profile for session hydration (improvement over spec)
-- [x] `POST /api/v1/auth/forgot-password` â€” logs reset token server-side; TODO: real email delivery
-- [x] `GET  /api/v1/jails` â€” JailAccess-scoped list w/ occupancy + undertrial counts, pagination
-- [x] `GET  /api/v1/jails/:id` â€” detail gated by JailAccess / super_admin
-- [x] `GET  /api/v1/jails/:id/stats` â€” occupancy, capacity %, prisoner/undertrial/convict/staff counts, recent activity feed
-- [x] `GET  /api/v1/jails/:id/staff` â€” superintendent/super_admin only
-- [x] `POST /api/v1/jails/:id/staff` â€” attach existing user by email or create new w/ one-time temp password
-- [x] `PATCH /api/v1/jails/:id/staff/:userId` â€” edit role_at_jail; soft-remove access row (never deletes User)
-- [x] `GET  /api/v1/jails/:id/stall-list` â€” live date-math query, upserts StallAlert, sorted days-stalled desc
-- [x] `POST /api/v1/applications/:id/escalate` â€” sets escalated=true, escalated_at=now (JailAccess enforced)
+- [x] `POST /api/v1/auth/login` — bcrypt verify, 15-min access JWT, httpOnly 7-day refresh cookie, rate-limit 5/min/IP
+- [x] `POST /api/v1/auth/refresh` — rotates refresh cookie, issues new access token
+- [x] `POST /api/v1/auth/logout` — clears refresh cookie
+- [x] `GET  /api/v1/auth/me` — current user profile for session hydration (improvement over spec)
+- [x] `POST /api/v1/auth/forgot-password` — logs reset token server-side; TODO: real email delivery
+- [x] `GET  /api/v1/jails` — JailAccess-scoped list w/ occupancy + undertrial counts, pagination
+- [x] `GET  /api/v1/jails/:id` — detail gated by JailAccess / super_admin
+- [x] `GET  /api/v1/jails/:id/stats` — occupancy, capacity %, prisoner/undertrial/convict/staff counts, recent activity feed
+- [x] `GET  /api/v1/jails/:id/staff` — superintendent/super_admin only
+- [x] `POST /api/v1/jails/:id/staff` — attach existing user by email or create new w/ one-time temp password
+- [x] `PATCH /api/v1/jails/:id/staff/:userId` — edit role_at_jail; soft-remove access row (never deletes User)
+- [x] `GET  /api/v1/jails/:id/stall-list` — live date-math query, upserts StallAlert, sorted days-stalled desc
+- [x] `POST /api/v1/applications/:id/escalate` — sets escalated=true, escalated_at=now (JailAccess enforced)
 - [x] RBAC middleware on every protected route; per-jail gating via JailAccess
 - [x] node-cron nightly job: stall sweep upsert + eligibility recompute stub (TODO Prompt 3)
-[x] All endpoints smoke-tested via HTTP â€” _pending smoke test_
+[x] All endpoints smoke-tested via HTTP — _pending smoke test_
 
-### Frontend (`apps/web`) â€” React + TS + Vite + Tailwind v4
+### Frontend (`apps/web`) — React + TS + Vite + Tailwind v4
 - [x] Vite + Tailwind v4 (@tailwindcss/vite) + React Router + TanStack Query + Zustand
-- [x] Axios client w/ 401 â†’ refresh-and-retry interceptor
+- [x] Axios client w/ 401 ”†’ refresh-and-retry interceptor
 - [x] `/` public home: hero, hardcoded stat strip (NCRB figures), how-it-works, login CTA, sourced footer
 - [x] `/login`: client+server validation, inactive-account & wrong-credential handling, demo seeded accounts helper
-- [x] `/jails`: cards w/ color-coded occupancy badge (green <100%, amber â‰¤120%, red >120%), undertrial count, empty state
+- [x] `/jails`: cards w/ color-coded occupancy badge (green <100%, amber ”‰¤120%, red >120%), undertrial count, empty state
 - [x] `/jails/:jailId`: Overview tab (stat cards + activity feed), Employee Mgmt tab (superintendent/super_admin only),
       Stall List tab (thresholds, escalate button)
-- [x] Route guards â€” no `/jails*` page reachable without valid JWT
-- [x] UI smoke-tested against running API â€” _pending smoke test_
+- [x] Route guards — no `/jails*` page reachable without valid JWT
+- [x] UI smoke-tested against running API — _pending smoke test_
 
 ### Acceptance criteria (Prompt 1)
-- [x] Fresh clone â†’ install â†’ migrate â†’ seed â†’ login as seeded superintendent â†’ jail list â†’ jail detail stats populate â†’ add staff â†’ stall list shows seeded stale applications
-      _smoke: `scripts/smoke-test.ps1` â€” 34/34 PASS (login, jail list w/ occupancy, stats+activity feed, staff add/patch/remove w/ temp password, stall list sorted desc, escalate persists)_
+- [x] Fresh clone ”†’ install ”†’ migrate ”†’ seed ”†’ login as seeded superintendent ”†’ jail list ”†’ jail detail stats populate ”†’ add staff ”†’ stall list shows seeded stale applications
+      _smoke: `scripts/smoke-test.ps1` — 34/34 PASS (login, jail list w/ occupancy, stats+activity feed, staff add/patch/remove w/ temp password, stall list sorted desc, escalate persists)_
 - [x] No `/jails*` API route reachable without valid JWT (401 verified)
       _smoke: "GET /jails without JWT -> 401" PASS_
 - [x] JailAccess enforced per jail (403 for non-member non-super_admin verified)
       _smoke: "Non-member superintendent blocked (403 JAIL_ACCESS_DENIED)" PASS; DLSA cannot escalate PASS_
 
 ### Bugs found by smoke test & fixed
-- `assertCanManageStaff` was a plain function used as Express middleware â€” never called `next()`, so every
+- `assertCanManageStaff` was a plain function used as Express middleware — never called `next()`, so every
   employee-management request **hung until client timeout**. Converted to proper `(req,res,next)` middleware. Caught via
   morgan logs showing `- - ms - -` on staff routes.
-- Shared-type TS enums were nominally incompatible with Prisma enums â†’ rewrote shared-types as const-object + union pattern.
+- Shared-type TS enums were nominally incompatible with Prisma enums ”†’ rewrote shared-types as const-object + union pattern.
 - Stall detection includes `order_passed` stage (prompt's threshold table requires it even though the query text said exclude;
   released-only exclusion matches intent). Documented deviation.
 
@@ -136,7 +136,7 @@ powershell -File scripts/smoke-test-v2.ps1                   # sessions 2+3: 27/
 
 ### Notes for next sessions
 - Session 2 scope: `02-prisoners-skill-passport-prompt.md`.
-- Stall thresholds live in `packages/shared-types/src/config.ts` â€” reuse from Prompt 3.
+- Stall thresholds live in `packages/shared-types/src/config.ts` — reuse from Prompt 3.
 - Eligibility cron stub in `apps/api/src/jobs/cron.ts` must be replaced by the deterministic engine in Prompt 3.
 
 
@@ -387,3 +387,189 @@ mojibake scan of all touched files                  # zero replacement chars
 ```
 
 ---
+
+## 2026-08-26 -- Session: Prompt 10 (Prisoner portal auth -- Skill Passport, Documents, Job Board)
+
+Separate auth domain: prisoners are NOT Users and hold no JailAccess; they authenticate against
+their own Prisoner row. Tokens carry actor_type "prisoner" so staff/org/portal tokens are
+structurally distinct. Two auth contexts, one identity: supervised jail kiosk in-custody, same
+reg-no+PIN credential on the person's own device after release.
+
+### Backend (apps/api)
+- [x] Migration `20260826032201` -> `20260826040532_prisoner_portal_auth`: pin_hash, pin_set_at, pin_must_change,
+      failed_pin_attempts, locked_until, aadhaar_ref_token (always NULL until a real UIDAI integration),
+      reset_otp_hash, reset_otp_expires_on Prisoner -- _smoke v4: temp-pin issue + login chain 28/28_
+      _smoke: temp-pin issued -> login forces change -> set-pin -> full session PASS_
+- [x] POST /api/v1/portal/auth/login-pin -- bcrypt verify, generic invalid-credential error, lockout after
+      5 failures for 30 min (locked_until), attempts-remaining feedback, JWT scoped actor_type=prisoner
+      -- _smoke v4: wrong PIN 401 w/ "4 attempts remaining"; 5th failure locks; CORRECT PIN refused while locked; unlock via staff temp PIN PASS_
+- [x] POST /api/v1/portal/auth/login-kiosk-biometric -- KioskBiometricAuthProvider interface +
+      MockKioskBiometricAuthProvider ("Simulate Fingerprint Scan", 600 ms delay); UIDAI AUA/KUA swap seam
+      documented TODO(UIDAI); raw Aadhaar numbers never stored anywhere -- _smoke v4: mock logs in seeded
+      prisoner without hardware; unknown reg no rejected 401 PASS_
+- [x] POST /api/v1/portal/auth/set-pin -- three contexts: full session (needs currentPin), pin-setup scope
+      (temp-PIN login), unauthenticated kiosk FIRST-TIME only when no pin_hash exists (403 otherwise --
+      _smoke v4: hijack attempt on account with existing PIN -> 403_)
+- [x] Staff-assisted reset: POST /api/v1/prisoners/:id/portal/temp-pin (EDITOR_ROLES at that jail) issues a
+      one-time 6-digit PIN shown once, sets pin_must_change, clears lockout -- _smoke v4: two issues both work;
+      scoped session blocked from reading profile (PIN_CHANGE_REQUIRED) until changed_
+- [x] Post-release OTP reset: POST reset-pin/request-otp sends 6-digit code to decrypted next_of_kin_phone via
+      NotificationProvider + NotificationLog row (devOtp in response only outside production); confirm verifies
+      sha256 + 10-min expiry with timingSafeEqual, resets PIN, clears lock -- _smoke v4: wrong OTP 400, right OTP
+      resets, login with new PIN OK. NOTE: dataset seed has no NOK phones, so PATCH /prisoners/:id gained
+      optional nextOfKinName/nextOfKinPhone (envelope-encrypted like other Tier-1) to record the target_
+- [x] GET /api/v1/portal/profile -- own record only: custody duration, Section 479 status translated from the
+      engine's reason strings into plain language (all five REASONS mapped), application stepper data; read-only
+      -- _smoke v4: reg no matches caller, headline present_
+- [x] GET /api/v1/portal/documents -- completed-enrollment certificates + application docs ONLY when stage >= filed
+      AND reviewed_by is set (lawyer-review boundary holds on the prisoner side too) -- _smoke v4: shown-set equals
+      expected-set computed independently from staff-side detail; cert count matches completed enrollments_
+- [x] AuditLog instrumentation with actor_type=prisoner: login attempts/successes/biometric/blocks, profile_read,
+      documents_read, pin lifecycle events; staff temp-pin issuance audited under actor_type=user
+      -- _smoke v4: audit-log query returns prisoner entries; document reads recorded_
+- [x] Rate limits: login/kiosk/set-pin 30 per 10 min/IP, OTP endpoints 3 per 10 min/IP
+
+### Frontend (apps/web)
+- [x] Separate portal session infra (state/portalAuthStore.ts + lib/portalApi.ts): own axios client and token
+      holder so prisoner sessions never touch the staff refresh-cookie flow; 15-min access token only
+- [x] /portal/login -- Layer 1 reg-no+PIN form; forced PIN-change step after temp-PIN login; first-time kiosk
+      setup flow; forgot-PIN OTP flow w/ masked phone + demo-code hint; Layer 2 fingerprint button opening the
+      simulate-scan panel; Layer 3 DigiLocker button -> local-only coming-soon modal that points back to PIN
+      login (no network call, never navigates) -- _vite serving /portal/login 200; typecheck+build green_
+- [x] PortalLayout guard + chrome (brand, tabbar nav My profile / Jobs for me / Documents, logout); separate from
+      staff Layout and ProtectedRoute
+- [x] /portal/profile -- read-only: mini-stat cards, plain-language S479 panel with "the court decides" note,
+      terracotta stage stepper (plain-language step labels), application rows
+- [x] /portal/jobs -- static empty state shell ("Personalized job matches will appear here soon"); component
+      carries TODO(RECOMMENDER) comment forbidding raw job-posting fetches; NO /portal/jobs endpoint built
+- [x] /portal/documents -- certificate cards + court-document cards w/ deep links through api-origin helper;
+      empty states explain drafts stay private until lawyer-reviewed
+- [x] Staff side: prisoner profile header gains "Issue portal temp PIN" (EDITOR_ROLES only) showing the one-time
+      PIN once; HomePage navbar adds "Prisoner portal"; staff LoginPage cross-links to /portal/login
+
+### Verification commands
+`
+npm run typecheck                                        # shared-types + api + web clean
+node --import tsx --test apps/api/tests/section479.spec.ts   # engine regression 10/10
+powershell -File scripts/smoke-test-v2.ps1               # regression 41/41
+powershell -File scripts/smoke-test-v4.ps1               # NEW prompt-10 suite 28/28
+npm run build -w apps/web                                # vite build green
+`
+
+### Deviations / notes
+- OTP reset path not hard-gated to released applications: the credential change still requires the code
+  delivered to the next-of-kin phone, IP rate limiting bounds abuse, and UI copy frames it as post-release;
+  hard-gating on a released Application would have made the path undemonstrable on dataset-seeded data.
+- devOtp returned by request-otp outside production so demos complete without live SMS (TODO(SMS) noted);
+  NotificationProvider seam reused exactly as Prompt 6 intended.
+- Kiosk biometric mock matches any EXISTING reg no by design (it simulates the scan result, existence is the
+  service layer's check); real hardware would sit behind the same interface after AUA/KUA registration.
+- aadhaar_ref_token column exists but stays NULL everywhere; no code path writes it yet.
+
+### Follow-up (same day): prisoner demo accounts + calmer login UX
+- [x] GET /api/v1/portal/auth/demo-accounts (empty in production) + ensureDemoPortalAccounts() run at API
+      startup outside production: deterministic trio (first seeded UTP- prisoner w/ Skill Passport across the
+      first three jails) gets the shared demo PIN 2468 re-asserted + synthetic encrypted NOK contact so the
+      OTP-reset demo always has a target -- _probe: 3 accounts returned (Karan J. / Anita R. / Karan A.);
+      login-pin with 2468 -> full session, mustChange=false_
+- [x] /portal/login rebuilt to read like an ordinary consumer login ('Welcome back', ID number + PIN, help-desk
+      wording instead of institutional jargon), peach demo-accounts card matching the staff login page
+      (click prefills ID+PIN), same card-shadow/tabbar design language -- _typecheck web+api clean, vite build
+      green, smoke v4 still 28/28_
+
+---
+
+## 2026-08-26 -- Session: Prompt 11 (Family notifications across the paperwork lifecycle + Twilio)
+
+Extends Prompt 6's NotificationProvider/NotificationLog with event-specific templated copy, consent
+handling and delivery logic. No new state transitions -- hooks hang off existing stage/court/surety events.
+
+### Schema
+- [x] Migration `20260826*_prompt11_family_notifications`: `NotificationTemplate(event_key x channel x locale
+      unique)`, Prisoner.`next_of_kin_consent_given`/`preferred_channel`/`preferred_locale`, NotificationLog
+      gained `template_key`/`locale`/`channel_used`/`dedupe_key` (+idx), User.`phone` for lawyer contacts
+      -- _migrate dev clean; probe: template seed complete 32 rows_
+
+### Twilio integration (env space ready; keys to be filled later)
+- [x] `.env`/`.env.example`: TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_SMS_FROM / TWILIO_WHATSAPP_FROM
+      (all blank = logging fallback). config envSchema optional strings
+- [x] `TwilioNotificationProvider` in lib/notification-provider.ts -- REST via fetch (no SDK dep), Basic auth,
+      whatsapp: prefix handling; auto-selected when all four vars present (`twilioConfigured()`); delivery-
+      status-callback webhook noted as TODO(SMS) -- _fallback path exercised end-to-end by smoke v5_
+
+### family-notifications.service.ts (the substance)
+- [x] 8 events x EN+HI written out (drafted/filed/hearing/granted-no-bond/granted-bond-required/denied/
+      surety/released); denial = factual + always a named lawyer to call; bond message actionable;
+      released warm/short -- _probe renders verified incl. Devanagari + Rs amounts_
+- [x] sendFamilyEvent engine: consent gate FIRST (toggle off stops everything immediately), dedupe on
+      `(application_id,event_key)` (failed attempts stay retryable), preferred-channel-first w/ API-level
+      fallback, locale chain pref->en, order_denied held back until LegalAidAssignment exists
+      -- _probe: no_consent / duplicate / awaiting_lawyer->sent-with-name-and-phone all PASS_
+- [x] Startup seeding skip-existing (admin edits survive restarts)
+
+### Trigger wiring (existing events only)
+- [x] appendStage -> drafted/filed/released (replaces Prompt 6 generic NOK text; lawyer in-app row kept)
+- [x] court sync hearing date -> hearing_scheduled; outcome -> granted branch on surety_required vs no_bond,
+      denied -> gated event; upsertSuretyStatus flip false->true -> surety_arranged
+      -- _smoke v5 lifecycle: all six rows logged w/ correct template_key/locale/channel_
+
+### Endpoints
+- [x] GET/PATCH /api/v1/prisoners/:id/next-of-kin (staff read, EDITOR_ROLES write, audited `next_of_kin.write`);
+      intake create accepts NOK contact + consent + prefs alongside the case
+- [x] GET/PATCH /api/v1/admin/notification-templates (super_admin only; PATCH audited) -- edit copy without deploy
+      -- _smoke v5: hi filter=16 rows, jail_staff 403, super_admin PATCH OK_
+
+### Verification commands
+```
+npm run typecheck                                        # api+web clean
+node --import tsx --test apps/api/tests/section479.spec.ts   # 10/10 regression
+powershell -File scripts/smoke-test-v2.ps1               # 41/41 regression
+powershell -File scripts/smoke-test-v4.ps1               # 28/28 regression
+powershell -File scripts/smoke-test-v5.ps1               # NEW prompt-11 suite 33/33 (HTTP chain + DB probe)
+npx tsx apps/api/scripts/prompt11-probe.ts               # engine edges standalone
+```
+---
+
+## 2026-08-26 -- Session: Prompt 13 FINAL (login-bounce root cause, full smoke pass, workplan coverage)
+
+### Part 1 -- 'kicked to /login' root causes (named, not papered over)
+- [x] Cause #1 REAL GAP: silent-refresh exclusion `url.includes("/auth/")` also swallowed GET /auth/me ->
+      session hydration after idle expiry failed instead of refreshing. Fixed: only token-minting endpoints
+      (/auth/login, /auth/mfa/*, /auth/refresh, /auth/logout, /auth/forgot-password) are exempt now
+      -- _final-auth-probe: expired-JWT -> 401, refresh-cookie rotation -> new token, retry -> 200_
+- [x] Cause #5 hardened: single-flight refresh promise now cleared via .finally() exactly once; a late 401
+      can never start a second rotation against an already-revoked session (spurious-logout vector)
+- [x] Cause #6 portal half REAL GAP: portalApi had NO 401 handling -> zombie kiosk pages. Added dedicated
+      401 interceptor -> clear portal state -> guard redirects to /portal/login (staff state untouched)
+- [x] Causes #2/#3/#4 verified already-safe (403 never redirects; bootstrap gate before guarded render;
+      no axios timeout so slow LLM/export calls can't masquerade as auth) -- proven live across routes
+- [x] Session-expiry warning toast: components/SessionKeepAlive.tsx decodes token exp, warns ~2 min out,
+      'Stay signed in' rotates refresh cookie in place; EN/HI strings added -- _typecheck+build green_
+
+### Part 2 -- smoke results doc + fresh runs
+- [x] /SMOKE_TEST_RESULTS.md at repo root: per-module matrix w/ Steps/Expected/Actual/Status/Notes;
+      login-bug row names root causes #1 and #6 explicitly; known-gaps section (Prompt 12 absent from repo,
+      Twilio keys pending, mocked gov integrations by design, public job-board deviation, portal i18n)
+- [x] Fresh runs recorded: engine 10/10 | v2 41/41 | v3 22/22 (one TOTP 30s-boundary flake on batch run,
+      clean rerun documented) | v4 28/28 | v5 33/33 | final-auth-probe 15/15 | static inertness checks 5/5
+- [x] NEW scripts/final-auth-probe.ps1: 401-vs-403 across >=3 protected routes, JailAccess 403 code,
+      actor-crossover rejections both ways, expired-token->refresh->retry contract, slow-path spot checks
+      (projection/compliance/export/NGO listing)
+
+### Part 3 -- coverage check vs original workplan A-I
+- [x] SMOKE_TEST_RESULTS.md Part 3 table filled with verified evidence per row: A-F,I Built; G Partially Built
+      (matching = other team by design; public anonymous browse replaced by authed NGO dashboard); H Built w/
+      delivery pending Twilio keys; additions beyond the nine modules enumerated (P1 foundation, P8 security/
+      ingestion, P9 SSO+i18n+UI system, P10 prisoner portal, P11 templated notifications)
+- [x] Prompt 12 flows marked NOT BUILT as an explicit known gap (no spec file ever present in backend/)
+
+### Verification commands
+```
+npm run typecheck && npm run build -w apps/web
+node --import tsx --test apps/api/tests/section479.spec.ts   # 10/10
+powershell -File scripts/smoke-test-v2.ps1                   # 41/41
+powershell -File scripts/smoke-test-v3.ps1                   # 22/22
+powershell -File scripts/smoke-test-v4.ps1                   # 28/28
+powershell -File scripts/smoke-test-v5.ps1                   # 33/33
+powershell -File scripts/final-auth-probe.ps1                # 15/15
+```

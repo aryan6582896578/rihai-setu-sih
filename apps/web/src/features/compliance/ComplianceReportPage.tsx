@@ -19,29 +19,31 @@ export default function ComplianceReportPage() {
   const [from, setFrom] = useState(defaultFrom);
   const [to, setTo] = useState(defaultTo);
 
+  // BUGFIX: the rollup route is mounted at /api/v1/compliance-report (route "/").
+  // The old code doubled the segment ("/compliance-report/compliance-report") → 404.
+  const base = isRollup ? "/compliance-report" : `/jails/${jailId}/compliance-report`;
+
   const query = useQuery({
     enabled: allowed,
     queryKey: ["compliance", jailId || "rollup", from, to],
     queryFn: async () => {
-      const base = isRollup
-        ? "/compliance-report/compliance-report"
-        : "/jails/" + jailId + "/compliance-report";
       const res = await api.get<{ data: ComplianceMetrics }>(base + "?from=" + from + "&to=" + to);
       return res.data.data;
     },
   });
 
+  function apiOrigin(): string {
+    return import.meta.env.VITE_API_URL?.replace(/\/api\/v1$/, "") ?? "http://localhost:4000";
+  }
+
   async function download(format: "csv" | "xlsx" | "pdf") {
-    const base = isRollup
-      ? "/compliance-report/compliance-report/export"
-      : "/jails/" + jailId + "/compliance-report/export";
     const qs = "?from=" + from + "&to=" + to + "&format=" + format;
     if (format === "pdf") {
-      const res = await api.get<{ data: { url: string } }>(base + qs);
-      window.open("http://localhost:4000" + res.data.data.url, "_blank");
+      const res = await api.get<{ data: { url: string } }>(base + "/export" + qs);
+      window.open(apiOrigin() + res.data.data.url, "_blank");
       return;
     }
-    const res = await api.get(base + qs, { responseType: "blob" });
+    const res = await api.get(base + "/export" + qs, { responseType: "blob" });
     const blobUrl = URL.createObjectURL(res.data as unknown as Blob);
     const a = document.createElement("a");
     a.href = blobUrl;
@@ -65,6 +67,9 @@ export default function ComplianceReportPage() {
   return (
     <div className="space-y-4">
       <div>
+        <Link to={isRollup ? "/jails" : `/jails/${jailId}`} className="crumb">
+          {isRollup ? "← All jails" : "← Jail portal"}
+        </Link>
         <h1 className="page-title mb-1.5">
           §479 compliance report {isRollup ? "— all jails" : ""}
         </h1>

@@ -25,10 +25,12 @@ import {
   createPrisoner,
   enrollInProgram,
   getPrisonerDetail,
+  getNextOfKin,
   listPrisoners,
   setPhotoUrl,
   updateCaseRecord,
   updateEnrollment,
+  updateNextOfKin,
   updatePersonalInfo,
 } from "../services/prisoners.service.js";
 import { recomputeForPrisoner } from "../services/eligibility.service.js";
@@ -38,7 +40,8 @@ import {
   markReviewed,
   toApplicationDto,
 } from "../services/applications.service.js";
-import { renderApplicationStatusSheet } from "../services/superintendent.service.js";
+import { renderApplicationStatusSheet, generateFormalDraftForApplication } from "../services/superintendent.service.js";
+import { issueTemporaryPin } from "../services/portal.service.js";
 
 export const prisonersRouter = Router();
 export const prisonersNestedRouter = Router({ mergeParams: true });
@@ -99,6 +102,12 @@ const createSchema = z.object({
   dateOfBirth: z.coerce.date(),
   gender: z.enum(["male", "female", "other"]),
   admissionDate: z.coerce.date().optional(),
+  // Prompt 11: consent is captured at intake, staff-entered alongside the NOK phone.
+  nextOfKinName: z.string().trim().min(2).max(120).optional(),
+  nextOfKinPhone: z.string().trim().min(6).max(24).optional(),
+  nextOfKinConsentGiven: z.boolean().optional(),
+  nextOfKinPreferredChannel: z.enum(["sms", "whatsapp"]).optional(),
+  nextOfKinPreferredLocale: z.enum(["en", "hi"]).optional(),
   case: z.object({
     cnrNumber: z.string().trim().max(40).optional(),
     caseNumber: z.string().trim().min(1).max(80),
@@ -148,6 +157,10 @@ const personalSchema = z.object({
   dateOfBirth: z.coerce.date().optional(),
   gender: z.enum(["male", "female", "other"]).optional(),
   admissionDate: z.coerce.date().optional(),
+  // Next-of-kin contact — Tier-1 PII, stored envelope-encrypted. Recorded by
+  // staff; also the delivery target for the portal's OTP PIN reset (Prompt 10).
+  nextOfKinName: z.string().trim().min(2).max(120).optional(),
+  nextOfKinPhone: z.string().trim().min(6).max(24).optional(),
 });
 
 prisonersRouter.patch(
@@ -341,6 +354,58 @@ prisonersRouter.post(
   }),
 );
 
+// Prompt 10 — staff-assisted portal PIN reset. Issues a one-time temp PIN that is
+// shown once; the prisoner must change it at the kiosk on next login.
+prisonersRouter.post(
+  "/:id/portal/temp-pin",
+  asyncHandler(async (req, res) => {
+    const { membership } = await loadPrisonerForUser(req.user!, req.params.id!);
+    if (!EDITOR_ROLES.includes(membership.roleAtJail)) {
+      throw ApiError.forbidden("Only jail staff can reset a prisoner's portal PIN");
+    }
+    const { temporaryPin } = await issueTemporaryPin(req.params.id!, {
+      id: req.user!.id,
+      name: req.user!.name,
+    });
+    res.json({ data: { temporaryPin } });
+  }),
+);
+
+// Prompt 11 — next-of-kin contact, consent and channel/locale preferences.
+// Consent is the legal gate for every outbound family message; edits are audited.
+const nokSchema = z.object({
+  nextOfKinName: z.string().trim().min(2).max(120).optional(),
+  nextOfKinPhone: z.string().trim().min(6).max(24).optional(),
+  consentGiven: z.boolean().optional(),
+  preferredChannel: z.enum(["sms", "whatsapp"]).optional(),
+  preferredLocale: z.enum(["en", "hi"]).optional(),
+});
+
+prisonersRouter.get(
+  "/:id/next-of-kin",
+  asyncHandler(async (req, res) => {
+    await loadPrisonerForUser(req.user!, req.params.id!);
+    res.json({ data: await getNextOfKin(req.params.id!) });
+  }),
+);
+
+prisonersRouter.patch(
+  "/:id/next-of-kin",
+  asyncHandler(async (req, res) => {
+    const { membership } = await loadPrisonerForUser(req.user!, req.params.id!);
+    if (!EDITOR_ROLES.includes(membership.roleAtJail)) {
+      throw ApiError.forbidden("Only jail staff can edit next-of-kin records");
+    }
+    const input = nokSchema.parse(req.body);
+    res.json({
+      data: await updateNextOfKin(req.params.id!, input, {
+        actorId: req.user!.id,
+        actorName: req.user!.name,
+      }),
+    });
+  }),
+);
+
 export const trainingProgramsRouter = Router();
 trainingProgramsRouter.use(requireAuth);
 trainingProgramsRouter.get(
@@ -378,6 +443,28 @@ applicationActionsRouter.get(
     await loadPrisonerForUser(req.user!, app.prisonerId);
     const html = await renderApplicationStatusSheet(req.params.id!);
     res.type("html").send(html);
+  }),
+);
+
+applicationActionsRouter.post(
+  "/:id/generate-draft",
+  asyncHandler(async (req, res) => {
+    const app = await prisma.application.findUnique({
+      where: { id: req.params.id },
+      select: { prisonerId: true },
+    });
+    if (!app) throw ApiError.notFound("Application not found");
+    await loadPrisonerForUser(req.user!, app.prisonerId);
+    audit({
+      actorId: req.user!.id,
+      actorName: req.user!.name,
+      action: "application.generate_draft",
+      entityType: "Application",
+      entityId: req.params.id!,
+      fieldsTouched: ["generated_document_url"],
+      ipAddress: req.ip ?? undefined,
+    });
+    res.json({ data: await generateFormalDraftForApplication(req.user!, req.params.id!) });
   }),
 );
 

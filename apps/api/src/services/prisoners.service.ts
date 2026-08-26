@@ -295,6 +295,12 @@ export interface CreatePrisonerServiceInput {
   dateOfBirth: Date | string;
   gender: string;
   admissionDate?: Date | string;
+  // Prompt 11: family contact + consent captured at intake (staff-entered).
+  nextOfKinName?: string;
+  nextOfKinPhone?: string;
+  nextOfKinConsentGiven?: boolean;
+  nextOfKinPreferredChannel?: "sms" | "whatsapp";
+  nextOfKinPreferredLocale?: "en" | "hi";
   case: {
     cnrNumber?: string;
     caseNumber: string;
@@ -326,7 +332,21 @@ export async function createPrisoner(
         prisonerRegNo: regNo,
         gender: input.gender,
         admissionDate: input.admissionDate ? new Date(input.admissionDate) : new Date(),
-        ...piiWriteFragment({ fullName: input.fullName.trim(), dateOfBirth: input.dateOfBirth }),
+        ...piiWriteFragment({
+          fullName: input.fullName.trim(),
+          dateOfBirth: input.dateOfBirth,
+          ...(input.nextOfKinName !== undefined ? { nextOfKinName: input.nextOfKinName.trim() } : {}),
+          ...(input.nextOfKinPhone !== undefined ? { nextOfKinPhone: input.nextOfKinPhone.trim() } : {}),
+        }),
+        ...(input.nextOfKinConsentGiven !== undefined
+          ? { nextOfKinConsentGiven: input.nextOfKinConsentGiven }
+          : {}),
+        ...(input.nextOfKinPreferredChannel !== undefined
+          ? { nextOfKinPreferredChannel: input.nextOfKinPreferredChannel }
+          : {}),
+        ...(input.nextOfKinPreferredLocale !== undefined
+          ? { nextOfKinPreferredLocale: input.nextOfKinPreferredLocale }
+          : {}),
       },
     });
     await tx.caseRecord.create({
@@ -423,7 +443,14 @@ export async function updateCaseRecord(
 
 export async function updatePersonalInfo(
   prisonerId: string,
-  input: { fullName?: string; dateOfBirth?: Date | string; gender?: string; admissionDate?: Date | string },
+  input: {
+    fullName?: string;
+    dateOfBirth?: Date | string;
+    gender?: string;
+    admissionDate?: Date | string;
+    nextOfKinName?: string;
+    nextOfKinPhone?: string;
+  },
   auditCtx?: { actorId?: string },
 ): Promise<void> {
   await prisma.prisoner.update({
@@ -434,6 +461,8 @@ export async function updatePersonalInfo(
       ...piiWriteFragment({
         ...(input.fullName !== undefined ? { fullName: input.fullName.trim() } : {}),
         ...(input.dateOfBirth !== undefined ? { dateOfBirth: input.dateOfBirth } : {}),
+        ...(input.nextOfKinName !== undefined ? { nextOfKinName: input.nextOfKinName.trim() } : {}),
+        ...(input.nextOfKinPhone !== undefined ? { nextOfKinPhone: input.nextOfKinPhone.trim() } : {}),
       }),
     },
   });
@@ -442,6 +471,8 @@ export async function updatePersonalInfo(
     ...(input.dateOfBirth !== undefined ? ["date_of_birth"] : []),
     ...(input.gender !== undefined ? ["gender"] : []),
     ...(input.admissionDate !== undefined ? ["admission_date"] : []),
+    ...(input.nextOfKinName !== undefined ? ["next_of_kin_name"] : []),
+    ...(input.nextOfKinPhone !== undefined ? ["next_of_kin_phone"] : []),
   ];
   audit({
     actorId: auditCtx?.actorId,
@@ -468,6 +499,86 @@ export async function setPhotoUrl(
     entityId: prisonerId,
     fieldsTouched: ["photo_url"],
   });
+}
+
+// ---- Next-of-kin contact + family-notification consent (Prompt 11) ----
+
+export interface NextOfKinDto {
+  nextOfKinName: string | null;
+  nextOfKinPhone: string | null;
+  consentGiven: boolean;
+  preferredChannel: "sms" | "whatsapp" | null;
+  preferredLocale: "en" | "hi" | null;
+}
+
+export async function getNextOfKin(prisonerId: string): Promise<NextOfKinDto> {
+  const p = await prisma.prisoner.findUniqueOrThrow({
+    where: { id: prisonerId },
+    select: {
+      nextOfKinNameEnc: true,
+      nextOfKinName: true,
+      nextOfKinPhoneEnc: true,
+      nextOfKinPhone: true,
+      nextOfKinConsentGiven: true,
+      nextOfKinPreferredChannel: true,
+      nextOfKinPreferredLocale: true,
+    },
+  });
+  return {
+    nextOfKinName: decryptField(p.nextOfKinNameEnc) ?? p.nextOfKinName ?? null,
+    nextOfKinPhone: decryptField(p.nextOfKinPhoneEnc) ?? p.nextOfKinPhone ?? null,
+    consentGiven: p.nextOfKinConsentGiven,
+    preferredChannel: (p.nextOfKinPreferredChannel as "sms" | "whatsapp" | null) ?? null,
+    preferredLocale: (p.nextOfKinPreferredLocale as "en" | "hi" | null) ?? null,
+  };
+}
+
+export async function updateNextOfKin(
+  prisonerId: string,
+  input: {
+    nextOfKinName?: string;
+    nextOfKinPhone?: string;
+    consentGiven?: boolean;
+    preferredChannel?: "sms" | "whatsapp";
+    preferredLocale?: "en" | "hi";
+  },
+  auditCtx?: { actorId?: string; actorName?: string },
+): Promise<NextOfKinDto> {
+  await prisma.prisoner.update({
+    where: { id: prisonerId },
+    data: {
+      ...piiWriteFragment({
+        ...(input.nextOfKinName !== undefined ? { nextOfKinName: input.nextOfKinName.trim() } : {}),
+        ...(input.nextOfKinPhone !== undefined ? { nextOfKinPhone: input.nextOfKinPhone.trim() } : {}),
+      }),
+      ...(input.consentGiven !== undefined
+        ? { nextOfKinConsentGiven: input.consentGiven }
+        : {}),
+      ...(input.preferredChannel !== undefined
+        ? { nextOfKinPreferredChannel: input.preferredChannel }
+        : {}),
+      ...(input.preferredLocale !== undefined
+        ? { nextOfKinPreferredLocale: input.preferredLocale }
+        : {}),
+    },
+  });
+  const touched = [
+    ...(input.nextOfKinName !== undefined ? ["next_of_kin_name"] : []),
+    ...(input.nextOfKinPhone !== undefined ? ["next_of_kin_phone"] : []),
+    ...(input.consentGiven !== undefined ? ["next_of_kin_consent_given"] : []),
+    ...(input.preferredChannel !== undefined ? ["next_of_kin_preferred_channel"] : []),
+    ...(input.preferredLocale !== undefined ? ["next_of_kin_preferred_locale"] : []),
+  ];
+  audit({
+    actorId: auditCtx?.actorId,
+    actorName: auditCtx?.actorName,
+    action: "next_of_kin.write",
+    entityType: "Prisoner",
+    entityId: prisonerId,
+    fieldsTouched: touched,
+  });
+  logger.info(`Next-of-kin record updated`, { prisonerId, fields: touched });
+  return getNextOfKin(prisonerId);
 }
 
 export async function addNote(prisonerId: string, authorId: string, body: string): Promise<NoteDto> {

@@ -9,7 +9,7 @@ import { piiPublic } from "../lib/pii.js";
 import { ApiError } from "../middleware/errors.js";
 import { getPrimaryCase } from "./eligibility.service.js";
 import { appendStage, toApplicationDto } from "./applications.service.js";
-import { notifyHearingScheduled } from "./notifications.service.js";
+import { sendFamilyEvent } from "./family-notifications.service.js";
 
 const MS_PER_DAY = 86_400_000;
 
@@ -29,7 +29,11 @@ export async function getCourtTracking(jailId: string): Promise<CourtTrackingRow
   const apps = await prisma.application.findMany({
     where: {
       prisoner: { jailId },
-      stage: { in: [ApplicationStage.Filed, ApplicationStage.HearingScheduled] },
+      // Concluded orders stay visible (with their outcome) so superintendents
+      // can trace what happened; only released cases leave the court queue.
+      stage: {
+        in: [ApplicationStage.Filed, ApplicationStage.HearingScheduled, ApplicationStage.OrderPassed],
+      },
     },
     include: { prisoner: true },
     orderBy: { updatedAt: "desc" },
@@ -106,11 +110,37 @@ export async function syncCourtStatus(
   }
 
   if (extra.hearingDate) {
-    void notifyHearingScheduled(app.id, extra.hearingDate as Date).catch((err) =>
+    // Prompt 11: templated family message with date + court name.
+    void sendFamilyEvent(app.id, "hearing_scheduled").catch((err) =>
       logger.error("[notify] hearing hook failed", err),
     );
   }
   const updated = await appendStage(app.id, stage, extra, actorId);
+
+  // Prompt 11: order-outcome events branch on the surety requirement. The
+  // denial event is held back inside the engine until a DLSA lawyer is assigned.
+  const outcome = extra.orderOutcome as string | undefined;
+  if (outcome) {
+    void (async () => {
+      try {
+        if (outcome === "denied") {
+          await sendFamilyEvent(app.id, "order_denied");
+        } else if (outcome === "granted") {
+          const surety = await prisma.suretyStatus.findUnique({
+            where: { applicationId: app.id },
+          });
+          if (surety?.suretyRequired) {
+            await sendFamilyEvent(app.id, "order_granted_bond_required");
+          } else {
+            await sendFamilyEvent(app.id, "order_granted_no_bond");
+          }
+        }
+      } catch (err) {
+        logger.error("[notify] order-outcome hook failed", err);
+      }
+    })();
+  }
+
   logger.info(`Court status synced`, {
     applicationId: app.id,
     cnr,
@@ -289,6 +319,16 @@ export async function upsertSuretyStatus(
     : await prisma.suretyStatus.create({
         data: { applicationId, ...data, suretyRequired: data.suretyRequired ?? true },
       });
+
+  // Prompt 11: the flip to arranged (not a re-save of an already-arranged
+  // checklist) tells the family release processing is underway.
+  const flippedToArranged =
+    input.suretyArranged === true && !(existing?.suretyArranged ?? false);
+  if (flippedToArranged) {
+    void sendFamilyEvent(applicationId, "surety_arranged").catch((err) =>
+      logger.error("[notify] surety hook failed", err),
+    );
+  }
 
   return {
     bondAmount: s.bondAmount,

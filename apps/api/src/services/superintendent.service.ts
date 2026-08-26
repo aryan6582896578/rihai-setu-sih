@@ -3,6 +3,7 @@ import {
   ApplicationStage,
   ApplicationType,
   Role,
+  type ApplicationDto,
   type AutoDraftOutcome,
   type EligiblePrisonerRow,
 } from "@rihai/shared-types";
@@ -15,9 +16,10 @@ import { audit } from "../lib/audit.js";
 import { draftGroundsNarrative, type GroundsFacts } from "../lib/llm.js";
 import { ApiError } from "../middleware/errors.js";
 import { assertJailMembership, type JailMembership } from "../middleware/auth.js";
-import { roleIsOneOf, MANAGER_ROLES } from "../middleware/roles.js";
+import { roleIsOneOf, MANAGER_ROLES, ADVANCE_ROLES } from "../middleware/roles.js";
 import { normalizeStageHistory } from "./prisoners.service.js";
 import { getPrimaryCase, recomputeForPrisoner } from "./eligibility.service.js";
+import { toApplicationDto } from "./applications.service.js";
 
 const MS_PER_DAY = 86_400_000;
 
@@ -363,4 +365,100 @@ export async function renderApplicationStatusSheet(applicationId: string): Promi
 function stageIndexLocal(stage: string): number {
   const ORDER = ["flagged", "drafted", "filed", "hearing_scheduled", "order_passed", "released"];
   return ORDER.indexOf(stage);
+}
+
+/**
+ * Create the formal bail / personal-bond DRAFT document for an existing
+ * application (flagged or drafted). Deliberately open to every advancing
+ * role — jail staff, superintendents and DLSA lawyers — because drafting is
+ * clerical work. FILING is the gated step and additionally requires lawyer
+ * review (see advanceStage in applications.service).
+ */
+export async function generateFormalDraftForApplication(
+  actor: { id: string; role: Role },
+  applicationId: string,
+): Promise<ApplicationDto> {
+  const app = await prisma.application.findUnique({
+    where: { id: applicationId },
+    include: { prisoner: true },
+  });
+  if (!app) throw ApiError.notFound("Application not found");
+
+  const membership: JailMembership = await assertJailMembership(actor, app.prisoner.jailId);
+  if (!roleIsOneOf(membership.roleAtJail, ADVANCE_ROLES)) {
+    throw ApiError.forbidden("Your role cannot generate application drafts");
+  }
+  if (stageIndexLocal(app.stage) > stageIndexLocal(ApplicationStage.Drafted)) {
+    throw ApiError.conflict(
+      `Drafts can only be generated before filing (current: ${SHEET_STAGE_LABELS[app.stage] ?? app.stage})`,
+    );
+  }
+  // Idempotent: regenerating would overwrite an approved artefact.
+  if (app.generatedDocumentUrl) {
+    return toApplicationDto({ ...app, reviewer: null });
+  }
+
+  const primaryCase = await getPrimaryCase(app.prisonerId);
+  if (!primaryCase) throw ApiError.conflict("Prisoner has no case record");
+
+  const assessment = await prisma.eligibilityAssessment.findFirst({
+    where: { prisonerId: app.prisonerId },
+    orderBy: { computedAt: "desc" },
+  });
+
+  const custodyDays = Math.floor(
+    (Date.now() - primaryCase.custodyStartDate.getTime()) / MS_PER_DAY,
+  );
+  const facts: GroundsFacts = {
+    prisonerName: decryptField(app.prisoner.fullNameEnc) ?? app.prisoner.fullName ?? "",
+    prisonerRegNo: app.prisoner.prisonerRegNo,
+    jailName: membership.jail.name,
+    caseNumber: primaryCase.caseNumber,
+    courtName: primaryCase.courtName,
+    offence: primaryCase.offence,
+    maxSentenceYears: primaryCase.maxSentenceYears,
+    custodyDays,
+    eligibilityReason: assessment?.reason ?? "Pending assessment",
+    applicationType: app.type === "personal_bond" ? "personal_bond" : "bail",
+  };
+
+  const narrative = await draftGroundsNarrative(facts);
+  const html = buildDocumentHtml({
+    facts,
+    narrative: narrative.text,
+    jailName: membership.jail.name,
+    district: membership.jail.district,
+    state: membership.jail.state,
+    dlsaLawyer: await assignedDlsaLawyerName(app.prisoner.jailId),
+  });
+
+  const stored = await storage.save(`documents/application-${app.id}.html`, html);
+
+  const byName =
+    (await prisma.user.findUnique({ where: { id: actor.id }, select: { name: true } }))?.name ??
+    "Staff";
+  const history = normalizeStageHistory(app.stageHistory);
+  const promoteToDrafted = app.stage === ApplicationStage.Flagged;
+  if (promoteToDrafted) history[ApplicationStage.Drafted] = {
+    at: new Date().toISOString(),
+    byName,
+    note: `Formal draft generated (${narrative.source})`,
+  };
+
+  const updated = await prisma.application.update({
+    where: { id: app.id },
+    data: {
+      generatedDocumentUrl: stored.url,
+      ...(promoteToDrafted ? { stage: ApplicationStage.Drafted } : {}),
+      stageHistory: history as unknown as Prisma.InputJsonValue,
+    },
+    include: { reviewer: { select: { name: true } } },
+  });
+
+  logger.info(`Formal draft generated`, {
+    applicationId: app.id,
+    llmSource: narrative.source,
+    byUser: actor.id,
+  });
+  return toApplicationDto(updated);
 }

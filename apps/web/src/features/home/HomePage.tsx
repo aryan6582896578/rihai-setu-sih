@@ -53,10 +53,11 @@ export default function HomePage() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const navLinks: { label: string; href: string; current?: boolean }[] = [
-    { label: t("nav.home"), href: "/", current: true },
+    { label: t("nav.home"), href: "#top", current: true },
     { label: t("nav.how"), href: "#how-it-works" },
+    { label: "Prisoner portal", href: "/portal/login" },
     { label: t("nav.ngo"), href: "/login" },
-    { label: t("nav.admin"), href: "/login" },
+    // { label: t("nav.admin"), href: "/login" },
     { label: t("nav.reports"), href: "/login" },
   ];
 
@@ -197,13 +198,13 @@ export default function HomePage() {
       </header>
 
       {/* ---------- Hero ---------- */}
-      <section className="relative overflow-hidden bg-[linear-gradient(120deg,#D9531E_0%,#D9531E_32%,#E88A4C_55%,#F7DFC8_100%)]">
+      <section className="relative overflow-hidden bg-[linear-gradient(120deg,#D9531E_0%,#D9531E_32%,#E88A4C_55%,#F7DFC8_100%)]" id="top">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_82%_20%,rgba(255,255,255,0.18),transparent_55%)]" />
         <div className="wrap-app relative z-[2] grid items-center gap-10 py-14 text-center sm:py-20 lg:grid-cols-[1.15fr_.85fr] lg:text-left">
           <div>
-            <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/35 bg-white/15 px-4 py-1.5 text-xs font-bold tracking-wide text-white">
+            {/* <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/35 bg-white/15 px-4 py-1.5 text-xs font-bold tracking-wide text-white">
               {t("hero.eyebrow")}
-            </span>
+            </span> */}
             <h1
               className="display mb-4 text-6xl font-extrabold leading-[0.98] text-white drop-shadow-[0_6px_30px_rgba(90,30,0,0.25)] sm:text-7xl lg:text-[6rem]"
               style={{ letterSpacing: "0.01em" }}
@@ -217,7 +218,7 @@ export default function HomePage() {
               {t("hero.desc")}
             </p>
             <div className="flex flex-wrap justify-center gap-3.5 lg:justify-start">
-              <Link to="/login" className="btn btn-primary">{t("hero.cta1")}</Link>
+              {/* <Link to="/login" className="btn btn-primary">{t("hero.cta1")}</Link> */}
               <a href="#how-it-works" className="btn btn-white">{t("hero.cta2")}</a>
             </div>
           </div>

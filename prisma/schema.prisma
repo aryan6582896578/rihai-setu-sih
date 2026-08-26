@@ -63,6 +63,10 @@ model User {
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
 
+  // Contact number for family-notification templates (e.g. the assigned DLSA
+  // lawyer's phone rendered into order_denied / bond messages).
+  phone String?
+
   // MFA (TOTP). Secret stored encrypted via the PII envelope scheme (lib/pii.ts).
   mfaSecretEnc String?  @map("mfa_secret_enc")
   mfaEnabled   Boolean  @default(false) @map("mfa_enabled")
@@ -126,6 +130,12 @@ model Prisoner {
   nextOfKinName  String?  @map("next_of_kin_name")
   nextOfKinPhone String?  @map("next_of_kin_phone")
 
+  // Family-notification consent + preferences (Prompt 11). Consent is MANDATORY
+  // before any outbound message; no trigger sends while this is false.
+  nextOfKinConsentGiven     Boolean @default(false) @map("next_of_kin_consent_given")
+  nextOfKinPreferredChannel String? @map("next_of_kin_preferred_channel") // sms | whatsapp
+  nextOfKinPreferredLocale  String? @map("next_of_kin_preferred_locale") // en | hi
+
   fullNameEnc      String? @map("full_name_enc")
   dateOfBirthEnc   String? @map("date_of_birth_enc")
   nextOfKinNameEnc String? @map("next_of_kin_name_enc")
@@ -145,6 +155,18 @@ model Prisoner {
   // Explicit prisoner consent (dataset column / staff-recorded) gating any
   // sharing of the profile with NGO employers. Never inferred or defaulted on.
   consentToShareProfile Boolean @default(false) @map("consent_to_share_profile")
+
+  // ---- Prisoner portal auth (Prompt 10) ----
+  // Prisoners are NOT Users; they authenticate against their own row.
+  pinHash           String?   @map("pin_hash")
+  pinSetAt          DateTime? @map("pin_set_at")
+  pinMustChange     Boolean   @default(false) @map("pin_must_change")
+  failedPinAttempts Int       @default(0) @map("failed_pin_attempts")
+  lockedUntil       DateTime? @map("locked_until")
+  // Never store a raw Aadhaar number. Reserved for a future UIDAI reference token.
+  aadhaarRefToken   String?   @map("aadhaar_ref_token")
+  resetOtpHash      String?   @map("reset_otp_hash")
+  resetOtpExpiresAt DateTime? @map("reset_otp_expires_at")
 
   createdAt     DateTime  @default(now()) @map("created_at")
 
@@ -342,9 +364,32 @@ model NotificationLog {
   status            String
   isRead            Boolean  @default(false) @map("is_read")
 
+  // Prompt 11: which template/locale/channel actually produced the message,
+  // and the (application_id, event_key) dedupe key that prevents re-sends.
+  templateKey String? @map("template_key")
+  locale      String?
+  channelUsed String? @map("channel_used")
+  dedupeKey   String? @map("dedupe_key")
+
   @@index([recipientUserId])
   @@index([relatedEntityType, relatedEntityId])
+  @@index([dedupeKey])
   @@map("NotificationLog")
+}
+
+// Event-specific family message copy, editable by a super_admin without a code
+// deploy. One row per event_key x channel x locale; placeholders like
+// {{prisoner_name}} are rendered at send time.
+model NotificationTemplate {
+  id              String   @id @default(cuid())
+  eventKey        String   @map("event_key")
+  channel         String // sms | whatsapp
+  locale          String // en | hi (BCP-47-ish)
+  messageTemplate String   @map("message_template")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@unique([eventKey, channel, locale])
+  @@map("NotificationTemplate")
 }
 
 // DB-backed refresh sessions (Prompt 8): rotation invalidates the old token,

@@ -3,6 +3,7 @@ import { prisma } from "../lib/prisma.js";
 import { logger } from "../lib/logger.js";
 import { notificationProvider } from "../lib/notification-provider.js";
 import { piiPublic } from "../lib/pii.js";
+import { sendFamilyEvent, type FamilyEventKey } from "./family-notifications.service.js";
 
 type RecipientType = "next_of_kin" | "jail_staff" | "dlsa_lawyer";
 
@@ -52,34 +53,36 @@ export async function notifyStageChange(
   });
   if (!app) return;
 
-  const pii = piiPublic(app.prisoner);
-  const stageText = newStage.replaceAll("_", " ");
-  const kinMessage = `RIHAI SETU update: the legal case of ${pii.fullName} (Reg ${app.prisoner.prisonerRegNo}) has moved to stage "${stageText}". This is an automated status message; the court makes all decisions.`;
-
-  await logAndSend({
-    recipientType: "next_of_kin",
-    contact: pii.nextOfKinPhone ?? null,
-    channel: "sms",
-    message: kinMessage,
-    relatedEntityType: "Application",
-    relatedEntityId: app.id,
-  });
+  // Prompt 11: family messages are templated per event, not generic. Only these
+  // stages carry a family-facing event; hearing/order/surety hooks fire from the
+  // court-sync and surety flows where their specifics (date, outcome, amount)
+  // are known.
+  const stageEvent: Partial<Record<ApplicationStage, FamilyEventKey>> = {
+    [ApplicationStage.Drafted]: "application_drafted",
+    [ApplicationStage.Filed]: "application_filed",
+    [ApplicationStage.Released]: "released",
+  };
+  const event = stageEvent[newStage];
+  if (event) {
+    try {
+      await sendFamilyEvent(applicationId, event);
+    } catch (err) {
+      logger.error("[notify] family stage event failed", err);
+    }
+  }
 
   if (app.legalAidAssignment) {
+    const pii = piiPublic(app.prisoner);
+    const stageText = newStage.replaceAll("_", " ");
     await logAndSend({
       recipientType: "dlsa_lawyer",
       userId: app.legalAidAssignment.lawyerId,
       channel: "in_app",
-      message: `Application for ${pii.fullName} (${primaryCaseNumber(app.prisonerId)}) advanced to "${stageText}".`,
+      message: `Application for ${pii.fullName} advanced to "${stageText}".`,
       relatedEntityType: "Application",
       relatedEntityId: app.id,
     });
   }
-}
-
-function primaryCaseNumber(prisonerId: string): string {
-  void prisonerId;
-  return "case on file";
 }
 
 export async function notifyStallEscalated(

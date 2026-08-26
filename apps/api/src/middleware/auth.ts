@@ -131,3 +131,107 @@ export async function loadPrisonerForUser(
   const membership = await assertJailMembership(user, prisoner.jailId);
   return { prisoner, membership };
 }
+
+// ---------------------------------------------------------------------------
+// Prisoner portal auth (Prompt 10) — a separate actor domain. Prisoners are
+// NOT Users and never hold JailAccess; their tokens carry actor_type "prisoner"
+// so they are structurally distinguishable from staff tokens.
+// ---------------------------------------------------------------------------
+
+export const PRISONER_ACTOR_TYPE = "prisoner";
+
+export interface AuthedPrisoner {
+  id: string;
+  prisonerRegNo: string;
+  fullName: string | null;
+  pinMustChange: boolean;
+}
+
+interface PrisonerAccessPayload {
+  sub: string;
+  actorType: typeof PRISONER_ACTOR_TYPE;
+  regNo: string;
+  /** "pin-setup" = temporary session that may only set a new PIN. */
+  scope?: "portal" | "pin-setup";
+}
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace Express {
+    interface Request {
+      prisoner?: AuthedPrisoner;
+    }
+  }
+}
+
+export function signPrisonerAccessToken(
+  prisoner: { id: string; prisonerRegNo: string },
+  scope: "portal" | "pin-setup" = "portal",
+): string {
+  return jwt.sign(
+    { sub: prisoner.id, actorType: PRISONER_ACTOR_TYPE, regNo: prisoner.prisonerRegNo, scope },
+    config.JWT_ACCESS_SECRET,
+    { expiresIn: config.JWT_ACCESS_TTL } as jwt.SignOptions,
+  );
+}
+
+export function verifyPrisonerAccessToken(token: string): PrisonerAccessPayload {
+  const payload = jwt.verify(token, config.JWT_ACCESS_SECRET) as PrisonerAccessPayload;
+  if (payload.actorType !== PRISONER_ACTOR_TYPE) {
+    // A staff/org token must never open a portal route.
+    throw ApiError.unauthorized("This endpoint requires a prisoner portal session");
+  }
+  return payload;
+}
+
+export function verifyPrisonerAccessTokenPayload(
+  req: AuthedRequest,
+): PrisonerAccessPayload | null {
+  const header = req.headers.authorization;
+  if (!header?.startsWith("Bearer ")) return null;
+  try {
+    return verifyPrisonerAccessToken(header.slice(7));
+  } catch {
+    return null;
+  }
+}
+
+export async function requirePrisoner(
+  req: AuthedRequest,
+  _res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const header = req.headers.authorization;
+    if (!header?.startsWith("Bearer ")) throw ApiError.unauthorized();
+    let payload: PrisonerAccessPayload;
+    try {
+      payload = verifyPrisonerAccessToken(header.slice(7));
+    } catch (err) {
+      throw err instanceof ApiError
+        ? err
+        : ApiError.unauthorized("Portal session is invalid or expired");
+    }
+    if (payload.scope === "pin-setup") {
+      // Temporary post-temp-PIN session: may ONLY set a new PIN (the set-pin
+      // route verifies its own token), never read portal content.
+      throw ApiError.forbidden(
+        "Set your own PIN first to continue",
+        "PIN_CHANGE_REQUIRED",
+      );
+    }
+    const prisoner = await prisma.prisoner.findUnique({ where: { id: payload.sub } });
+    if (!prisoner || prisoner.prisonerRegNo !== payload.regNo) {
+      throw ApiError.unauthorized("Portal session is no longer valid");
+    }
+    req.prisoner = {
+      id: prisoner.id,
+      prisonerRegNo: prisoner.prisonerRegNo,
+      fullName: prisoner.fullName,
+      pinMustChange: prisoner.pinMustChange,
+    };
+    next();
+  } catch (err) {
+    next(err);
+  }
+}

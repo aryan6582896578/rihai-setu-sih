@@ -17,7 +17,8 @@
     "db:migrate": "prisma migrate dev --schema=prisma/schema.prisma",
     "db:deploy": "prisma migrate deploy --schema=prisma/schema.prisma",
     "db:reset": "prisma migrate reset --schema=prisma/schema.prisma --force",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "db:seed:ngo": "tsx apps/api/scripts/seed-ngo.ts"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

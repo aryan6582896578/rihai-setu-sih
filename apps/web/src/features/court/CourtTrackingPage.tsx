@@ -1,11 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
-import type { CourtTrackingRow } from "@rihai/shared-types";
+import { ApplicationStage, type CourtTrackingRow } from "@rihai/shared-types";
 import { api, extractApiError } from "../../lib/api";
 import { formatDate, STAGE_LABELS } from "../../lib/format";
 import { roleFlags } from "../../lib/permissions";
 import { useAuthStore } from "../../state/authStore";
 import { EmptyState, ErrorBanner, Spinner } from "../../components/ui";
+import { SearchPagination, useSearchPage } from "../../components/SearchPagination";
+
+/** Only these stages can still receive court updates; concluded orders cannot. */
+const SYNCABLE = new Set<string>([ApplicationStage.Filed, ApplicationStage.HearingScheduled]);
 
 export default function CourtTrackingPage() {
   const { jailId = "" } = useParams();
@@ -19,12 +23,19 @@ export default function CourtTrackingPage() {
       const res = await api.get<{ data: CourtTrackingRow[] }>(`/jails/${jailId}/court-tracking`);
       return res.data.data;
     },
+    // Court statuses change from several views (profile stage moves, legal-aid
+    // syncs); poll gently so the table never sits on stale rows.
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchInterval: 45_000,
   });
 
   const invalidate = () =>
     void Promise.all([
       queryClient.invalidateQueries({ queryKey: ["court-tracking", jailId] }),
       queryClient.invalidateQueries({ queryKey: ["prisoner"] }),
+      queryClient.invalidateQueries({ queryKey: ["stall-list"] }),
+      queryClient.invalidateQueries({ queryKey: ["jail-stats"] }),
     ]);
 
   const syncOne = useMutation({
@@ -35,9 +46,17 @@ export default function CourtTrackingPage() {
     onSuccess: invalidate,
   });
 
+  const rows = query.data ?? [];
+  const sp = useSearchPage(rows, (r) =>
+    `${r.prisonerName} ${r.caseNumber} ${r.cnrNumber ?? ""} ${r.stage} ${
+      r.orderOutcome ?? ""
+    } ${r.hearingDate ?? ""}`,
+  );
+  const syncableRows = rows.filter((r) => SYNCABLE.has(r.stage));
+
   const syncAll = useMutation({
-    mutationFn: async (rows: CourtTrackingRow[]) => {
-      for (const r of rows) {
+    mutationFn: async (targets: CourtTrackingRow[]) => {
+      for (const r of targets) {
         try {
           await api.post(`/applications/${r.applicationId}/sync-court-status`);
         } catch {
@@ -51,8 +70,6 @@ export default function CourtTrackingPage() {
   if (query.isLoading) return <Spinner label="Loading court tracking…" />;
   if (query.isError) return <ErrorBanner message={extractApiError(query.error).message} />;
 
-  const rows = query.data ?? [];
-
   return (
     <div className="space-y-4">
       <div>
@@ -61,23 +78,31 @@ export default function CourtTrackingPage() {
           <div>
             <h1 className="page-title mb-1.5">Court tracking</h1>
             <p className="lede max-w-2xl">
-              Filed and in-hearing applications. Syncing pulls in the court's own hearing date / outcome —
-              <strong> it never decides bail</strong>; only the court does.
+              Filed and in-hearing applications — concluded orders stay listed with their outcome.
+              <strong> “Sync from eCourts”</strong> pulls in the court's hearing date / verdict (mock provider:
+              ~12 court days per real second): filed → hearing date arrives → next sync brings the order.
+              It never decides bail; only the court does.
             </p>
           </div>
           {canAdvance && (
-          <button
-            onClick={() => syncAll.mutate(rows)}
-            disabled={rows.length === 0 || syncAll.isPending}
-            className="btn btn-primary disabled:opacity-40"
-          >
-            {syncAll.isPending ? "Syncing all…" : `Sync all (${rows.length})`}
-          </button>
+            <button
+              onClick={() => syncAll.mutate(syncableRows)}
+              disabled={syncableRows.length === 0 || syncAll.isPending}
+              className="btn btn-primary disabled:opacity-40"
+            >
+              {syncAll.isPending
+                ? "Syncing all…"
+                : `Sync all pending (${syncableRows.length})`}
+            </button>
           )}
         </div>
       </div>
 
-      {syncOne.isError && <ErrorBanner message={extractApiError(syncOne.error).message} />}
+      {(syncOne.isError || syncAll.isError) && (
+        <ErrorBanner
+          message={extractApiError(syncOne.isError ? syncOne.error : syncAll.error).message}
+        />
+      )}
 
       {rows.length === 0 ? (
         <EmptyState
@@ -86,71 +111,93 @@ export default function CourtTrackingPage() {
           body="Applications appear here once they reach the “filed” stage."
         />
       ) : (
-        <div className="panel-tight overflow-x-auto">
-          <table className="data-table min-w-full">
-            <thead>
-              <tr>
-                <th>Prisoner</th>
-                <th>Case no</th>
-                <th>CNR</th>
-                <th>Stage</th>
-                <th>Hearing date</th>
-                <th>Order outcome</th>
-                <th>Days since filed</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.applicationId}>
-                  <td className="font-semibold text-navy">{r.prisonerName}</td>
-                  <td className="mono-cell text-bodytext">{r.caseNumber}</td>
-                  <td className="mono-cell text-bodytext">{r.cnrNumber ?? "-"}</td>
-                  <td><span className="pill pill-neutral">{STAGE_LABELS[r.stage]}</span></td>
-                  <td className="text-bodytext">{formatDate(r.hearingDate)}</td>
-                  <td>
-                    {r.orderOutcome ? (
-                      <span
-                        className={`pill ${
-                          r.orderOutcome === "granted"
-                            ? "pill-ok"
-                            : r.orderOutcome === "denied"
-                              ? "pill-full"
-                              : "pill-neutral"
-                        }`}
-                      >
-                        {r.orderOutcome}
-                      </span>
-                    ) : (
-                      <span className="text-[#a7adb6]">pending</span>
-                    )}
-                    {r.orderOutcome === "granted" && (
-                      <Link
-                        to={`/jails/${jailId}/legal-aid`}
-                        className="ml-2 whitespace-nowrap text-[11px] font-bold text-emerald-700 hover:underline"
-                      >
-                        Surety checklist →
-                      </Link>
-                    )}
-                  </td>
-                  <td className="text-bodytext">{r.daysSinceFiled ?? "-"}</td>
-                  <td className="text-right">
-                    {canAdvance ? (
-                      <button
-                        onClick={() => syncOne.mutate(r.applicationId)}
-                        disabled={syncOne.isPending}
-                        className="btn btn-outline btn-sm whitespace-nowrap"
-                      >
-                        {syncOne.isPending && syncOne.variables === r.applicationId ? "Syncing…" : "Sync from eCourts (mock)"}
-                      </button>
-                    ) : (
-                      <span className="text-xs text-[#c3c8cf]">—</span>
-                    )}
-                  </td>
+        <div className="space-y-3">
+          <SearchPagination
+            q={sp.q}
+            setQ={sp.setQ}
+            page={sp.page}
+            setPage={sp.setPage}
+            totalPages={sp.totalPages}
+            total={sp.total}
+            noun="court cases"
+          />
+          <div className="panel-tight overflow-x-auto">
+            <table className="data-table min-w-full">
+              <thead>
+                <tr>
+                  <th>Prisoner</th>
+                  <th>Case no</th>
+                  <th>CNR</th>
+                  <th>Stage</th>
+                  <th>Hearing date</th>
+                  <th>Order outcome</th>
+                  <th>Days since filed</th>
+                  <th></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {sp.paged.map((r) => {
+                  const syncable = SYNCABLE.has(r.stage);
+                  return (
+                    <tr key={r.applicationId}>
+                      <td className="font-semibold text-navy">{r.prisonerName}</td>
+                      <td className="mono-cell text-bodytext">{r.caseNumber}</td>
+                      <td className="mono-cell text-bodytext">{r.cnrNumber ?? "-"}</td>
+                      <td><span className="pill pill-neutral">{STAGE_LABELS[r.stage]}</span></td>
+                      <td className="text-bodytext">{formatDate(r.hearingDate)}</td>
+                      <td>
+                        {r.orderOutcome ? (
+                          <span
+                            className={`pill ${
+                              r.orderOutcome === "granted"
+                                ? "pill-ok"
+                                : r.orderOutcome === "denied"
+                                  ? "pill-full"
+                                  : "pill-neutral"
+                            }`}
+                          >
+                            {r.orderOutcome}
+                          </span>
+                        ) : (
+                          <span className="text-[#a7adb6]">pending</span>
+                        )}
+                        {r.orderOutcome === "granted" && (
+                          <Link
+                            to={`/jails/${jailId}/legal-aid`}
+                            className="ml-2 whitespace-nowrap text-[11px] font-bold text-emerald-700 hover:underline"
+                          >
+                            Surety checklist →
+                          </Link>
+                        )}
+                      </td>
+                      <td className="text-bodytext">{r.daysSinceFiled ?? "-"}</td>
+                      <td className="text-right">
+                        {canAdvance ? (
+                          syncable ? (
+                            <button
+                              onClick={() => syncOne.mutate(r.applicationId)}
+                              disabled={syncOne.isPending}
+                              className="btn btn-outline btn-sm whitespace-nowrap"
+                            >
+                              {syncOne.isPending && syncOne.variables === r.applicationId
+                                ? "Syncing…"
+                                : "Sync from eCourts (mock)"}
+                            </button>
+                          ) : (
+                            <span className="text-xs text-[#c3c8cf]" title="Order already passed — nothing left to sync">
+                              concluded
+                            </span>
+                          )
+                        ) : (
+                          <span className="text-xs text-[#c3c8cf]">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

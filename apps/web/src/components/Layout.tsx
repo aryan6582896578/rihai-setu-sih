@@ -6,6 +6,7 @@ import { useUnreadCount } from "../features/notifications/NotificationsPage";
 import { api, extractApiError } from "../lib/api";
 import { useLang, LangToggle } from "../lib/i18n";
 import { useAuthStore } from "../state/authStore";
+import SessionKeepAlive from "./SessionKeepAlive";
 
 const NAV_LINKS: { to: string; labelKey: string; roles?: string[] }[] = [
   { to: "/jails", labelKey: "nav.jails" },
@@ -195,6 +196,8 @@ export default function Layout() {
       <main className="wrap-app w-full flex-1 py-6 sm:py-8">
         <Outlet />
       </main>
+
+      <SessionKeepAlive />
 
       {mfaOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(20,15,10,0.5)] p-4" onClick={() => setMfaOpen(false)}>

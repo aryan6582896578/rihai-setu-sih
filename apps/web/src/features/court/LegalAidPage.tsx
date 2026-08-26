@@ -11,6 +11,7 @@ import { formatDate, STAGE_LABELS } from "../../lib/format";
 import { roleFlags } from "../../lib/permissions";
 import { useAuthStore } from "../../state/authStore";
 import { EmptyState, ErrorBanner, Spinner } from "../../components/ui";
+import { SearchPagination, useSearchPage } from "../../components/SearchPagination";
 
 export default function LegalAidPage() {
   const user = useAuthStore((s) => s.user);
@@ -57,6 +58,11 @@ function AssignmentQueue({ jailId, canEdit }: { jailId: string; canEdit: boolean
     },
   });
 
+  const queue = query.data?.queue ?? [];
+  const sp = useSearchPage(queue, (r) =>
+    `${r.prisonerName} ${r.prisonerRegNo} ${r.caseNumber} ${STAGE_LABELS[r.stage]}`,
+  );
+
   const invalidate = () => {
     setError(null);
     void queryClient.invalidateQueries({ queryKey: ["legal-aid-unassigned", jailId] });
@@ -77,7 +83,6 @@ function AssignmentQueue({ jailId, canEdit }: { jailId: string; canEdit: boolean
   if (query.isLoading) return <Spinner label="Loading queue…" />;
   if (query.isError) return <ErrorBanner message={extractApiError(query.error).message} />;
 
-  const queue = query.data?.queue ?? [];
   const lawyers = query.data?.lawyers ?? [];
 
   return (
@@ -89,19 +94,26 @@ function AssignmentQueue({ jailId, canEdit }: { jailId: string; canEdit: boolean
       {queue.length === 0 ? (
         <EmptyState icon="🤝" title="Assignment queue is clear" body="Every active application has a legal aid counsel." />
       ) : (
-        <div className="panel-tight overflow-x-auto">
-          <table className="data-table min-w-full">
-            <thead>
-              <tr>
-                <th>Prisoner</th>
-                <th>Case no</th>
-                <th>Stage</th>
-                <th>Opened</th>
-                {canEdit && <th>Assign</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {queue.map((r) => (
+        <div className="space-y-3">
+          <SearchPagination
+            q={sp.q} setQ={sp.setQ}
+            page={sp.page} setPage={sp.setPage}
+            totalPages={sp.totalPages} total={sp.total}
+            noun="cases"
+          />
+          <div className="panel-tight overflow-x-auto">
+            <table className="data-table min-w-full">
+              <thead>
+                <tr>
+                  <th>Prisoner</th>
+                  <th>Case no</th>
+                  <th>Stage</th>
+                  <th>Opened</th>
+                  {canEdit && <th>Assign</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {sp.paged.map((r: UnassignedRow) => (
                 <tr key={r.applicationId}>
                   <td>
                     <p className="font-semibold text-navy">{r.prisonerName}</p>
@@ -155,9 +167,10 @@ function AssignmentQueue({ jailId, canEdit }: { jailId: string; canEdit: boolean
                   </td>
                   )}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
@@ -193,10 +206,13 @@ function SuretyChecklist({ jailId, canEdit }: { jailId: string; canEdit: boolean
     onError: (e) => setError(extractApiError(e).message),
   });
 
+  const rows = query.data ?? [];
+  const sp = useSearchPage(rows, (r) =>
+    `${r.prisonerName} ${r.stage} ${r.orderOutcome ?? ""} ${r.notes ?? ""}`,
+  );
+
   if (query.isLoading) return <Spinner label="Loading granted orders…" />;
   if (query.isError) return <ErrorBanner message={extractApiError(query.error).message} />;
-
-  const rows = query.data ?? [];
 
   return (
     <div className="space-y-3">
@@ -213,7 +229,13 @@ function SuretyChecklist({ jailId, canEdit }: { jailId: string; canEdit: boolean
         />
       ) : (
         <div className="space-y-3">
-          {rows.map((r) => (
+          <SearchPagination
+            q={sp.q} setQ={sp.setQ}
+            page={sp.page} setPage={sp.setPage}
+            totalPages={sp.totalPages} total={sp.total}
+            noun="granted orders"
+          />
+          {sp.paged.map((r) => (
             <SuretyRow key={r.applicationId} row={r} canEdit={canEdit} onSave={(patch) => save.mutate({ applicationId: r.applicationId, ...patch })} busy={save.isPending} />
           ))}
         </div>

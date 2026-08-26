@@ -420,3 +420,50 @@ export interface RecommendationDto {
   job: JobPostingDto;
   appliedAlready: boolean;
 }
+
+// ---------- Prisoner portal (Prompt 10) ----------
+
+export interface PortalPrisonerDto {
+  prisonerId: string;
+  fullName: string;
+  prisonerRegNo: string;
+  jailName: string;
+}
+
+export interface PortalLoginResponse {
+  accessToken: string;
+  pinChangeRequired: boolean;
+  prisoner: PortalPrisonerDto;
+}
+
+export type PortalEligibilityStatus = EligibilityStatus | "none";
+
+export interface PortalProfileDto {
+  prisonerId: string;
+  fullName: string;
+  prisonerRegNo: string;
+  photoUrl: string | null;
+  gender: string;
+  jailName: string;
+  jailDistrict: string;
+  admissionDate: string | null;
+  custodyDurationLabel: string;
+  eligibility: {
+    status: PortalEligibilityStatus;
+    headline: string;
+    plainReason: string;
+    computedAt: string | null;
+  };
+  applications: ApplicationDto[];
+}
+
+export type PortalDocumentKind = "skill_certificate" | "application_document";
+
+export interface PortalDocumentDto {
+  id: string;
+  kind: PortalDocumentKind;
+  title: string;
+  detail: string;
+  issuedAt: string | null;
+  url: string;
+}

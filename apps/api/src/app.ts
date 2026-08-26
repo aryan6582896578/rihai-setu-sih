@@ -27,6 +27,7 @@ import { notificationsRouter } from "./routes/notifications.routes.js";
 import { courtJailRouter } from "./routes/court.routes.js";
 import { applicationCourtRouter } from "./routes/application-court.routes.js";
 import { adminRouter } from "./routes/admin.routes.js";
+import { portalRouter } from "./routes/portal.routes.js";
 import {
   ngoRouter,
   employmentPrisonerRouter,
@@ -83,6 +84,7 @@ app.use("/api/v1/applications", applicationsRouter);
 app.use("/api/v1/applications", applicationActionsRouter);
 app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/skills", skillsCatalogRouter);
+app.use("/api/v1/portal", portalRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

@@ -29,6 +29,11 @@ export default function JailDetailPage() {
         throw new Error(extractApiError(err).message);
       }
     },
+    // KPIs must track reality after staff act in other views — refetch on
+    // mount and poll gently instead of serving stale cache.
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchInterval: 45_000,
   });
 
   const stallCountQuery = useQuery({
@@ -58,7 +63,8 @@ export default function JailDetailPage() {
   const stats = statsQuery.data!;
   const canManageStaff =
     user?.role === Role.SuperAdmin || user?.role === Role.JailSuperintendent;
-  const stalledCount = stallCountQuery.data?.length ?? 0;
+  // The badge tracks stalls still awaiting action — escalated ones are done.
+  const stalledCount = (stallCountQuery.data ?? []).filter((r) => !r.escalated).length;
   const tone = occupancyTone(stats.capacityPct);
   const capPillCls =
     tone === "red" ? "pill-full" : tone === "amber" ? "pill-warn" : "pill-ok";

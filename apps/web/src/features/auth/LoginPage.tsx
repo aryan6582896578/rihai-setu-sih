@@ -7,9 +7,9 @@ import { useLang, LangToggle } from "../../lib/i18n";
 import { useAuthStore } from "../../state/authStore";
 
 const DEMO_ACCOUNTS = [
+  { key: "demo.admin.role", email: "superadmin@rihai.gov.in" },
   { key: "demo.super.role", email: "superintendent1@rihai.gov.in" },
   { key: "demo.staff.role", email: "staff1a@rihai.gov.in" },
-  { key: "demo.admin.role", email: "superadmin@rihai.gov.in" },
   { key: "demo.dlsa.role", email: "dlsa@rihai.gov.in" },
   { key: "demo.ngo.role", email: "ngo1@rihai.gov.in" },
 ];
@@ -228,6 +228,14 @@ export default function LoginPage() {
                 >
                   {t("login.forgot")}
                 </button>
+
+                <Link
+                  to="/portal/login"
+                  className="block w-full text-center text-[13px] font-semibold text-bodytext hover:text-navy"
+                >
+                  Are you a prisoner (in custody or released)? Use the{" "}
+                  <span className="text-terracotta">prisoner portal</span> →
+                </Link>
 
                 {forgotOpen && (
                   <div className="rounded-lg border border-peach bg-[#FFF6EC] p-4">

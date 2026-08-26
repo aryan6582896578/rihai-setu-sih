@@ -53,6 +53,72 @@ adminRouter.post(
   }),
 );
 
+// ---- Prompt 11 — family notification templates (super_admin only) ----
+// Edit message copy without a code deploy. Seeded EN/HI rows are created at
+// startup; these endpoints read/update them.
+
+const templatePatchSchema = z.object({
+  id: z.string().min(1),
+  messageTemplate: z.string().trim().min(5).max(2000),
+});
+
+adminRouter.get(
+  "/notification-templates",
+  requireRoles(Role.SuperAdmin),
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const eventKey = req.query.eventKey as string | undefined;
+    const locale = req.query.locale as string | undefined;
+    const rows = await prisma.notificationTemplate.findMany({
+      where: {
+        ...(eventKey ? { eventKey } : {}),
+        ...(locale ? { locale } : {}),
+      },
+      orderBy: [{ eventKey: "asc" }, { locale: "asc" }, { channel: "asc" }],
+    });
+    res.json({
+      data: rows.map((t) => ({
+        id: t.id,
+        eventKey: t.eventKey,
+        channel: t.channel,
+        locale: t.locale,
+        messageTemplate: t.messageTemplate,
+        updatedAt: t.updatedAt.toISOString(),
+      })),
+    });
+  }),
+);
+
+adminRouter.patch(
+  "/notification-templates",
+  requireRoles(Role.SuperAdmin),
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const body = templatePatchSchema.parse(req.body);
+    const updated = await prisma.notificationTemplate.update({
+      where: { id: body.id },
+      data: { messageTemplate: body.messageTemplate },
+    });
+    audit({
+      actorId: req.user!.id,
+      actorName: req.user!.name,
+      action: "notification_template.write",
+      entityType: "NotificationTemplate",
+      entityId: updated.id,
+      fieldsTouched: [`${updated.eventKey}/${updated.channel}/${updated.locale}`],
+      ipAddress: req.ip ?? undefined,
+    });
+    res.json({
+      data: {
+        id: updated.id,
+        eventKey: updated.eventKey,
+        channel: updated.channel,
+        locale: updated.locale,
+        messageTemplate: updated.messageTemplate,
+        updatedAt: updated.updatedAt.toISOString(),
+      },
+    });
+  }),
+);
+
 adminRouter.get(
   "/ingestion",
   asyncHandler(async (req: AuthedRequest, res) => {

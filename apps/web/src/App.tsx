@@ -5,6 +5,11 @@ import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import HomePage from "./features/home/HomePage";
 import LoginPage from "./features/auth/LoginPage";
+import PortalLoginPage from "./features/portal/PortalLoginPage";
+import PortalLayout from "./features/portal/PortalLayout";
+import PortalProfilePage from "./features/portal/PortalProfilePage";
+import PortalJobsPage from "./features/portal/PortalJobsPage";
+import PortalDocumentsPage from "./features/portal/PortalDocumentsPage";
 import JailsPage from "./features/jails/JailsPage";
 import JailDetailPage from "./features/jails/JailDetailPage";
 import PrisonersPage from "./features/prisoners/PrisonersPage";
@@ -31,6 +36,12 @@ export default function App() {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/portal/login" element={<PortalLoginPage />} />
+      <Route element={<PortalLayout />}>
+        <Route path="/portal/profile" element={<PortalProfilePage />} />
+        <Route path="/portal/jobs" element={<PortalJobsPage />} />
+        <Route path="/portal/documents" element={<PortalDocumentsPage />} />
+      </Route>
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>
           <Route path="/jails" element={<JailsPage />} />

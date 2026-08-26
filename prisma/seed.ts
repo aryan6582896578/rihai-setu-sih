@@ -1,12 +1,19 @@
 ﻿import "dotenv/config";
 import bcrypt from "bcryptjs";
+import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import * as XLSX from "xlsx";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 import { evaluateSection479 } from "../apps/api/src/domain/section479.js";
 import { piiWriteFragment } from "../apps/api/src/lib/pii.js";
 
 const prisma = new PrismaClient();
+
+// Datasets generated from NCRB Prison Statistics India 2024 (Tables 1.2 / 1.7),
+// scaled down 10x with ratios preserved. prison_occupancy equals the row count
+// per prison, so live DB counts reproduce the exact overcrowding percentages.
+const TRACKING_FILE = "psi2024_overcrowded_jails_scaled.xlsx";
+const PASSPORT_FILE = "psi2024_skill_passport_scaled.xlsx";
 
 interface TrackingRow {
   prisoner_id: string;
@@ -16,21 +23,23 @@ interface TrackingRow {
   prison_state: string;
   prison_district: string;
   prison_capacity: number;
+  prison_occupancy: number;
+  occupancy_rate_pct: number;
   gender: string;
   age: number;
   primary_offence_section: string;
   offence_category_name: string;
-  max_sentence_months: number;
+  max_sentence_months: number | null;
   death_or_life_flag: boolean;
   prior_conviction_flag: boolean;
   pending_case_count: number;
   custody_start_date: string;
   net_custody_days: number;
-  statutory_threshold_days: number;
+  statutory_threshold_days: number | null;
   dlsa_unit_id: string;
-  pro_bono_lawyer_id: string;
-  pro_bono_lawyer_name: string;
-  pro_bono_assigned_date: string;
+  pro_bono_lawyer_id: string | null;
+  pro_bono_lawyer_name: string | null;
+  pro_bono_assigned_date: string | null;
   legal_aid_status: string;
   bail_status: string;
   last_hearing_date: string;
@@ -75,22 +84,39 @@ function parseDate(v: unknown): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+async function chunked<T>(items: T[], fn: (chunk: T[]) => Promise<unknown>, size = 400) {
+  for (let i = 0; i < items.length; i += size) {
+    await fn(items.slice(i, i + size));
+  }
+}
+
 async function main() {
   const passwordHash = await bcrypt.hash("Passw0rd!23", 10);
 
-  const tracking = loadSheet("undertrial_prisoner_tracking_600_ncrb.xlsx") as unknown as TrackingRow[];
-  const passports = loadSheet("prisoner_skill_passport_rehab_600_ncrb.xlsx") as unknown as PassportRow[];
-  console.log(`Dataset loaded: ${tracking.length} undertrials, ${passports.length} skill passports`);
+  const tracking = loadSheet(TRACKING_FILE) as unknown as TrackingRow[];
+  const passports = loadSheet(PASSPORT_FILE) as unknown as PassportRow[];
+  console.log(
+    `Dataset loaded: ${tracking.length} undertrials, ${passports.length} skill passports`,
+  );
 
-  // clean slate
+  // ---------- clean slate (FK-safe order; includes NGO pipeline + audit + ingestion) ----------
   await prisma.notificationLog.deleteMany();
-  await prisma.occupancySnapshot.deleteMany();
   await prisma.stallAlert.deleteMany();
+  await prisma.jobApplication.deleteMany();
+  await prisma.jobPosting.deleteMany();
+  await prisma.legalAidAssignment.deleteMany();
+  await prisma.suretyStatus.deleteMany();
   await prisma.enrollment.deleteMany();
   await prisma.note.deleteMany();
   await prisma.eligibilityAssessment.deleteMany();
   await prisma.application.deleteMany();
   await prisma.caseRecord.deleteMany();
+  await prisma.dataRequest.deleteMany();
+  await prisma.refreshSession.deleteMany();
+  await prisma.notificationTemplate.deleteMany();
+  await prisma.auditLog.deleteMany();
+  await prisma.ingestionRow.deleteMany();
+  await prisma.ingestionBatch.deleteMany();
   await prisma.prisoner.deleteMany();
   await prisma.jailAccess.deleteMany();
   await prisma.trainingProgram.deleteMany();
@@ -99,11 +125,14 @@ async function main() {
 
   // ---------- jails from dataset prisons ----------
   const prisonMap = new Map<string, TrackingRow>();
+  const occupancyTarget = new Map<string, number>();
   for (const r of tracking) {
     if (!prisonMap.has(r.prison_id)) prisonMap.set(r.prison_id, r);
+    occupancyTarget.set(r.prison_id, Math.max(occupancyTarget.get(r.prison_id) ?? 0, Number(r.prison_occupancy ?? r.prison_capacity ?? 0)));
   }
 
   const jails: { id: string; code: string; name: string; capacity: number }[] = [];
+  let jseq = 1;
   for (const [code, r] of prisonMap) {
     const jail = await prisma.jail.create({
       data: {
@@ -112,15 +141,15 @@ async function main() {
         state: r.prison_state,
         district: r.prison_district,
         sanctionedCapacity: r.prison_capacity ?? 500,
-        contactPhone: "+91-000-0000000",
+        contactPhone: `+91-0${String(100 + jseq++).padStart(8, "0")}`,
       },
     });
     jails.push({ id: jail.id, code: jail.code, name: jail.name, capacity: jail.sanctionedCapacity });
   }
-  console.log(`Jails: ${jails.length}`);
+  console.log(`Jails: ${jails.map((j) => `${j.name} (${j.code})`).join(", ")}`);
 
   // ---------- users ----------
-  await prisma.user.create({
+  const superAdmin = await prisma.user.create({
     data: { name: "Ananya Deshpande", email: "superadmin@rihai.gov.in", passwordHash, role: "super_admin", isActive: true },
   });
 
@@ -156,17 +185,14 @@ async function main() {
     }
     usersByJail.set(jail.id, created);
 
-    for (const u of created) {
-      await prisma.jailAccess.create({
-        data: { userId: u.id, jailId: jail.id, roleAtJail: u.role as never },
-      });
-    }
+    await prisma.jailAccess.createMany({
+      data: created.map((u) => ({ userId: u.id, jailId: jail.id, roleAtJail: u.role as never })),
+    });
 
-    // super admin also gets an access row on the first jail for convenience
-    if (i === 0) {
-      const sa = await prisma.user.findUniqueOrThrow({ where: { email: "superadmin@rihai.gov.in" } });
-      await prisma.jailAccess.create({ data: { userId: sa.id, jailId: jail.id, roleAtJail: "super_admin" } });
-    }
+    // super admin gets an access row on every jail so no view is scoped away
+    await prisma.jailAccess.create({
+      data: { userId: superAdmin.id, jailId: jail.id, roleAtJail: "super_admin" },
+    });
   }
 
   const dlsaLawyer = await prisma.user.create({
@@ -191,73 +217,76 @@ async function main() {
       });
       programByKey.set(key, created.id);
     }
-    void p.certifying_agency;
   }
-  const programList = await prisma.trainingProgram.findMany();
-  console.log(`Training programs: ${programList.length}`);
+  console.log(`Training programs: ${programByKey.size}`);
 
-  // ---------- prisoners + cases + assessments ----------
+  // ---------- prisoners + cases + assessments (bulk, explicit ids) ----------
   const passportByPid = new Map(passports.map((p) => [p.prisoner_id, p]));
   const jailIdByCode = new Map(jails.map((j) => [j.code, j.id]));
 
-  let createdPrisoners = 0;
-  let createdCases = 0;
+  const prisonerValues: Prisma.PrisonerCreateManyInput[] = [];
+  const caseValues: Prisma.CaseRecordCreateManyInput[] = [];
+  const assessmentValues: Prisma.EligibilityAssessmentCreateManyInput[] = [];
+  const applicationValues: Prisma.ApplicationCreateManyInput[] = [];
+  const enrollmentValues: Prisma.EnrollmentCreateManyInput[] = [];
+  const noteValues: Prisma.NoteCreateManyInput[] = [];
 
   for (const t of tracking) {
     const jailId = jailIdByCode.get(t.prison_id);
     if (!jailId) continue;
 
+    const staffList = usersByJail.get(jailId)!;
     const passport = passportByPid.get(t.prisoner_id);
     const fullName =
       passport?.candidate_alias_or_name?.trim() ||
-      `Undertrial ${t.prisoner_id.slice(-4)}`;
+      `Undertrial ${t.prisoner_id.slice(-5)}`;
     const age = Number(t.age ?? 30);
+    const prisonerId = randomUUID();
 
-    const prisoner = await prisma.prisoner.create({
-      data: {
-        jailId,
-        prisonerRegNo: t.prisoner_id,
-        gender: (t.gender ?? "male").toLowerCase(),
-        admissionDate: parseDate(t.custody_start_date) ?? daysAgo(30),
-        createdAt: parseDate(t.custody_start_date) ?? daysAgo(30),
-        // Tier-1 PII is written encrypted (Prompt 8); plaintext columns stay NULL.
-        ...piiWriteFragment({
-          fullName,
-          dateOfBirth: new Date(new Date().getFullYear() - age, 0, 15),
-        }),
-        // Employment facts surfaced to NGO partners (staff-mediated).
-        ...(passport
-          ? {
-              educationBaseline: passport.education_baseline || null,
-              machinerySkills: passport.specific_machinery_skills || null,
-              targetDomain: passport.target_job_domain || null,
-            }
-          : {}),
-        consentToShareProfile: !!passport?.consent_to_share_profile,
-      },
+    const admission = parseDate(t.custody_start_date) ?? daysAgo(30);
+
+    prisonerValues.push({
+      id: prisonerId,
+      jailId,
+      prisonerRegNo: t.prisoner_id,
+      gender: (t.gender ?? "male").toLowerCase(),
+      admissionDate: admission,
+      createdAt: admission,
+      // Tier-1 PII encrypted (Prompt 8); plaintext columns stay NULL.
+      ...piiWriteFragment({
+        fullName,
+        dateOfBirth: new Date(new Date().getFullYear() - age, 0, 15),
+      }),
+      ...(passport
+        ? {
+            educationBaseline: passport.education_baseline || null,
+            machinerySkills: passport.specific_machinery_skills || null,
+            targetDomain: passport.target_job_domain || null,
+          }
+        : {}),
+      consentToShareProfile: !!passport?.consent_to_share_profile,
     });
 
-    const maxYears = Math.max(1, Math.round(Number(t.max_sentence_months ?? 36) / 12));
-    const custodyStart = parseDate(t.custody_start_date) ?? daysAgo(60);
+    const maxYears = t.max_sentence_months == null ? 20 : Math.max(1, Math.round(Number(t.max_sentence_months) / 12));
+    const custodyStart = admission;
     const fto = !t.prior_conviction_flag;
     const deathLife = !!t.death_or_life_flag;
     const pending = Number(t.pending_case_count ?? 0);
 
-    await prisma.caseRecord.create({
-      data: {
-        prisonerId: prisoner.id,
-        cnrNumber: t.case_cnr || null,
-        caseNumber: `CASE/${String(t.prisoner_id).slice(-6)}`,
-        courtName: `District Court (${t.prison_district})`,
-        offence: `${t.primary_offence_section}${t.offence_category_name ? ` - ${t.offence_category_name}` : ""}`,
-        maxSentenceYears: maxYears,
-        carriesDeathOrLife: deathLife,
-        isFirstTimeOffender: fto,
-        pendingCaseCount: pending,
-        custodyStartDate: custodyStart,
-        caseStatus: "undertrial",
-        updatedAt: parseDate(t.last_hearing_date) ?? custodyStart,
-      },
+    caseValues.push({
+      id: randomUUID(),
+      prisonerId,
+      cnrNumber: t.case_cnr || null,
+      caseNumber: `CASE/${t.prisoner_id.slice(-8)}`,
+      courtName: `District Court (${t.prison_district})`,
+      offence: `${t.primary_offence_section}${t.offence_category_name ? ` - ${t.offence_category_name}` : ""}`,
+      maxSentenceYears: maxYears,
+      carriesDeathOrLife: deathLife,
+      isFirstTimeOffender: fto,
+      pendingCaseCount: pending,
+      custodyStartDate: custodyStart,
+      caseStatus: "undertrial",
+      updatedAt: parseDate(t.last_hearing_date) ?? custodyStart,
     });
 
     const result = evaluateSection479({
@@ -267,13 +296,12 @@ async function main() {
       isFirstTimeOffender: fto,
       pendingCaseCount: pending,
     });
-    await prisma.eligibilityAssessment.create({
-      data: {
-        prisonerId: prisoner.id,
-        status: result.status,
-        reason: result.reason,
-        computedAt: custodyStart,
-      },
+    assessmentValues.push({
+      id: randomUUID(),
+      prisonerId,
+      status: result.status,
+      reason: result.reason,
+      computedAt: custodyStart,
     });
 
     // ---------- application from bail_status / hearing dates ----------
@@ -283,7 +311,7 @@ async function main() {
 
     let stage: string | null = null;
     let filedDate: Date | null = null;
-    let hearingDate: Date | null = nextHearing;
+    const hearingDate: Date | null = nextHearing;
 
     if (bailStatus.toLowerCase().includes("hearing")) {
       stage = "hearing_scheduled";
@@ -291,13 +319,11 @@ async function main() {
     } else if (bailStatus.toLowerCase().includes("file")) {
       stage = "filed";
       filedDate = lastHearing ?? daysAgo(25);
-    } else if (result.status === "eligible" && rand() < 0.35) {
-      stage = rand() < 0.5 ? "flagged" : "drafted";
+    } else if (result.status === "eligible" && Math.random() < 0.35) {
+      stage = Math.random() < 0.5 ? "flagged" : "drafted";
     }
 
     if (stage) {
-      const staffList = usersByJail.get(jailId)!;
-      const reviewer = staffList[0];
       const needsReview = stage !== "flagged";
       const history: Record<string, string> = {};
       history.flagged = (filedDate ?? custodyStart).toISOString();
@@ -307,21 +333,19 @@ async function main() {
       }
       if (stage === "hearing_scheduled") history.hearing_scheduled = (nextHearing ?? daysAgo(10)).toISOString();
 
-      await prisma.application.create({
-        data: {
-          prisonerId: prisoner.id,
-          type: Math.random() < 0.6 ? "bail" : "personal_bond",
-          stage: stage as never,
-          generatedDocumentUrl:
-            stage !== "flagged" ? `/uploads/demo/application-${prisoner.id.slice(-6)}.html` : null,
-          filedDate,
-          hearingDate,
-          orderOutcome: null,
-          reviewedBy: needsReview ? reviewer.id : null,
-          reviewedAt: needsReview ? lastHearing ?? daysAgo(15) : null,
-          updatedAt: lastHearing ?? daysAgo(12),
-          stageHistory: history as never,
-        },
+      applicationValues.push({
+        id: randomUUID(),
+        prisonerId,
+        type: Math.random() < 0.6 ? "bail" : "personal_bond",
+        stage: stage as never,
+        generatedDocumentUrl: stage !== "flagged" ? `/uploads/demo/application-${prisonerId.slice(-6)}.html` : null,
+        filedDate,
+        hearingDate,
+        orderOutcome: null,
+        reviewedBy: needsReview ? staffList[0].id : null,
+        reviewedAt: needsReview ? lastHearing ?? daysAgo(15) : null,
+        updatedAt: lastHearing ?? daysAgo(12),
+        stageHistory: history as never,
       });
     }
 
@@ -331,17 +355,16 @@ async function main() {
       const programId = key ? programByKey.get(key) : undefined;
       if (programId) {
         const cs = String(passport.course_completion_status ?? "").toLowerCase();
-        const status = cs.includes("complet") ? "completed" : cs.includes("progress") || cs.includes("ongoing") ? "in_progress" : "enrolled";
-        const progress = status === "completed" ? 100 : status === "in_progress" ? Math.min(95, Math.round(Number(passport.workshop_production_hours ?? 0) / 8)) : 0;
-        await prisma.enrollment.create({
-          data: {
-            prisonerId: prisoner.id,
-            programId,
-            status: status as never,
-            progressPct: progress,
-            certificateUrl: status === "completed" ? `/uploads/certificates/cert-${passport.passport_id}.html` : null,
-            completedAt: status === "completed" ? parseDate(t.pro_bono_assigned_date) : null,
-          },
+        const status = cs.includes("certified") ? "completed" : cs.includes("progress") ? "in_progress" : "enrolled";
+        const progress =
+          status === "completed" ? 100 : status === "in_progress" ? Math.min(95, Math.round(Number(passport.workshop_production_hours ?? 0) / 6)) : 0;
+        enrollmentValues.push({
+          prisonerId,
+          programId,
+          status: status as never,
+          progressPct: progress,
+          certificateUrl: status === "completed" ? `/uploads/certificates/cert-${passport.passport_id}.html` : null,
+          completedAt: status === "completed" ? parseDate(t.pro_bono_assigned_date) : null,
         });
       }
 
@@ -351,54 +374,77 @@ async function main() {
         `Conduct grade: ${passport.conduct_grade}; soft skills: ${passport.soft_skills_completed}`,
         `Target domain: ${passport.target_job_domain} (expected wage INR ${passport.expected_minimum_wage_inr})`,
       ].join("\n");
-      const staffList = usersByJail.get(jailId)!;
-      await prisma.note.create({
-        data: {
-          prisonerId: prisoner.id,
-          authorId: staffList[staffList.length - 1].id,
-          body: `SKILL PASSPORT ${passport.passport_id}\n${noteLines}`,
-        },
+      noteValues.push({
+        prisonerId,
+        authorId: staffList[staffList.length - 1].id,
+        body: `SKILL PASSPORT ${passport.passport_id}\n${noteLines}`,
       });
     }
 
     if (String(t.medical_needs ?? "None").toLowerCase() !== "none") {
-      const staffList = usersByJail.get(jailId)!;
-      await prisma.note.create({
-        data: {
-          prisonerId: prisoner.id,
-          authorId: staffList[0].id,
-          body: `Medical flag: ${t.medical_needs}. Security risk: ${t.security_risk}.`,
-        },
+      noteValues.push({
+        prisonerId,
+        authorId: staffList[0].id,
+        body: `Medical flag: ${t.medical_needs}. Security risk: ${t.security_risk}.`,
       });
     }
-
-    createdPrisoners++;
-    createdCases++;
   }
 
-  function rand(): number {
-    return Math.random();
-  }
+  await chunked(prisonerValues, (c) => prisma.prisoner.createMany({ data: c }));
+  await chunked(caseValues, (c) => prisma.caseRecord.createMany({ data: c }));
+  await chunked(assessmentValues, (c) => prisma.eligibilityAssessment.createMany({ data: c }));
+  await chunked(applicationValues, (c) => prisma.application.createMany({ data: c }));
+  await chunked(enrollmentValues, (c) => prisma.enrollment.createMany({ data: c }));
+  await chunked(noteValues, (c) => prisma.note.createMany({ data: c }));
 
-  // ---------- occupancy snapshots (45 days) ----------
+  // ---------- occupancy snapshots (45 days, ramps up to the dataset occupancy) ----------
+  const snapshotValues: Prisma.OccupancySnapshotCreateManyInput[] = [];
   for (const jail of jails) {
-    const current = await prisma.prisoner.count({ where: { jailId: jail.id } });
+    const target = occupancyTarget.get(jail.code) ?? 0;
+    const ramp = Math.max(3, Math.ceil(target * 0.05));
     for (let d = 45; d >= 1; d--) {
       const date = new Date(Date.now() - d * 86_400_000);
       date.setUTCHours(0, 0, 0, 0);
-      const occ = Math.max(1, current - Math.ceil((d / 45) * 3));
-      await prisma.occupancySnapshot.upsert({
-        where: { jailId_date: { jailId: jail.id, date } },
-        update: {},
-        create: {
-          jailId: jail.id,
-          date,
-          occupancy: Math.min(occ, jail.capacity),
-          undertrialCount: Math.round(occ * 0.75),
-          convictCount: Math.max(0, occ - Math.round(occ * 0.75)),
-        },
+      const occ = Math.max(1, target - Math.ceil((d / 45) * ramp));
+      snapshotValues.push({
+        jailId: jail.id,
+        date,
+        occupancy: occ,
+        undertrialCount: Math.round(occ * 0.9),
+        convictCount: occ - Math.round(occ * 0.9),
       });
     }
+  }
+  await chunked(snapshotValues, (c) => prisma.occupancySnapshot.createMany({ data: c }));
+
+  // ---------- prisoner portal demo accounts ----------
+  // First prisoner of EVERY jail gets the shared demo PIN (2468) so /portal/login
+  // works immediately after seeding. API startup re-asserts the same state.
+  const demoPinHash = await bcrypt.hash("2468", 10);
+  let kinSeq = 1;
+  let demoCount = 0;
+  for (const jail of jails) {
+    const first = await prisma.prisoner.findFirst({
+      where: { jailId: jail.id },
+      orderBy: { prisonerRegNo: "asc" },
+      select: { id: true },
+    });
+    if (!first) continue;
+    await prisma.prisoner.update({
+      where: { id: first.id },
+      data: {
+        pinHash: demoPinHash,
+        pinSetAt: new Date(),
+        pinMustChange: false,
+        failedPinAttempts: 0,
+        lockedUntil: null,
+        ...piiWriteFragment({
+          nextOfKinName: "Family contact (demo)",
+          nextOfKinPhone: `+919876504${String(300 + kinSeq++)}`,
+        }),
+      },
+    });
+    demoCount++;
   }
 
   const counts = {
@@ -411,9 +457,12 @@ async function main() {
     enrollments: await prisma.enrollment.count(),
     notes: await prisma.note.count(),
     snapshots: await prisma.occupancySnapshot.count(),
+    portalDemoAccounts: demoCount,
+    jobPostings: await prisma.jobPosting.count(),
+    auditLogs: await prisma.auditLog.count(),
   };
 
-  console.log("Seed complete (dataset-driven):");
+  console.log("Seed complete (PSI-2024 scaled datasets):");
   console.table(counts);
 }
 
@@ -423,5 +472,3 @@ main()
     process.exit(1);
   })
   .finally(() => prisma.$disconnect());
-
-

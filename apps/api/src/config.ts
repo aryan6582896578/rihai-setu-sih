@@ -18,6 +18,11 @@ const envSchema = z.object({
   LOGIN_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(5),
   LOGIN_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60_000),
   RECOMMENDER_URL: z.string().url().default("http://127.0.0.1:8000"),
+  // Twilio (Prompt 11) — all four blank => logging-only fallback provider.
+  TWILIO_ACCOUNT_SID: z.string().trim().default(""),
+  TWILIO_AUTH_TOKEN: z.string().trim().default(""),
+  TWILIO_SMS_FROM: z.string().trim().default(""),
+  TWILIO_WHATSAPP_FROM: z.string().trim().default(""),
 });
 
 const parsed = envSchema.safeParse(process.env);

@@ -129,12 +129,24 @@ export async function advanceStage(
     throw ApiError.conflict("Stages can only move forward — application history cannot be rewritten");
   }
 
-  if (target === ApplicationStage.Filed && !app.reviewedBy) {
-    throw new ApiError(
-      409,
-      "REVIEW_REQUIRED",
-      "This application must be marked Reviewed by a DLSA lawyer or superintendent before it can be filed",
-    );
+  if (target === ApplicationStage.Filed) {
+    // Two-step gate: a formal draft must EXIST and be APPROVED before anything
+    // reaches the court. Drafts are clerical (any advancing role); approval is
+    // the lawyer/superintendent checkpoint.
+    if (!app.generatedDocumentUrl) {
+      throw new ApiError(
+        409,
+        "DRAFT_REQUIRED",
+        "Generate the formal draft document first — filing in court requires an existing draft",
+      );
+    }
+    if (!app.reviewedBy) {
+      throw new ApiError(
+        409,
+        "REVIEW_REQUIRED",
+        "This draft must be approved (marked Reviewed) by a DLSA lawyer or superintendent before it can be filed",
+      );
+    }
   }
 
   if (target === ApplicationStage.Released) {

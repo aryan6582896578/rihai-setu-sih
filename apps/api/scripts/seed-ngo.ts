@@ -5,8 +5,9 @@ import { prisma } from "../src/lib/prisma.js";
 /**
  * Idempotent seeder for the NGO employment pipeline:
  * - 2 ngo_partner demo users (password Passw0rd!23)
- * - 12 active JobPostings (6 per NGO) whose skill tags all come from the
- *   canonical dictionary in backend-ai/recommender-service/app/data/skill_dictionary.json,
+ * - 12 active JobPostings (6 per NGO) located around the PSI-2024 scaled jails
+ *   (West Delhi, Bhopal, Pune, Jammu, Shillong, Nashik). Skill tags all come from
+ *   the canonical dictionary in backend-ai/recommender-service/app/data/skill_dictionary.json,
  *   so the Python ranker accepts every job without validation errors.
  */
 
@@ -33,23 +34,10 @@ const JOBS: JobSeed[] = [
     requiredSkills: ["tailoring", "machine_sewing", "fabric_cutting"],
     preferredSkills: ["quality_check"],
     jobCategory: "textile",
-    district: "Rampur",
+    district: "West Delhi",
     minExperienceMonths: 6,
     openings: 4,
     wageInfo: "\u20B918,000\u201322,000/month",
-  },
-  {
-    title: "Bakery Assistant",
-    description:
-      "Assist bakers with mixing, proofing and baking while keeping the work area clean and safe.",
-    requiredSkills: ["baking", "food_preparation"],
-    preferredSkills: ["kitchen_hygiene", "packaging"],
-    requiredCertificates: ["Food Safety"],
-    jobCategory: "bakery",
-    district: "Thane",
-    minExperienceMonths: 3,
-    openings: 3,
-    wageInfo: "\u20B916,000\u201319,000/month",
   },
   {
     title: "Warehouse Support Associate",
@@ -58,22 +46,10 @@ const JOBS: JobSeed[] = [
     requiredSkills: ["inventory_handling", "packaging"],
     preferredSkills: ["barcode_scanning", "safety_practices"],
     jobCategory: "logistics",
-    district: "Mumbai",
+    district: "Noida",
     minExperienceMonths: 0,
     openings: 6,
     wageInfo: "\u20B915,000\u201318,000/month",
-  },
-  {
-    title: "Carpentry Workshop Hand",
-    description:
-      "Support carpentry operations including cutting, joining and finishing wooden pieces.",
-    requiredSkills: ["carpentry", "wood_cutting", "tool_handling"],
-    preferredSkills: ["wood_finishing", "precision_measurement"],
-    jobCategory: "carpentry",
-    district: "Bilaspur",
-    minExperienceMonths: 3,
-    openings: 2,
-    wageInfo: "\u20B917,000\u201320,000/month",
   },
   {
     title: "Electrical Maintenance Helper",
@@ -82,7 +58,7 @@ const JOBS: JobSeed[] = [
     requiredSkills: ["basic_wiring", "electrical_maintenance"],
     preferredSkills: ["circuit_breaker_installation", "electrical_testing"],
     jobCategory: "electrical",
-    district: "Rampur",
+    district: "Bhopal",
     minExperienceMonths: 6,
     openings: 2,
     wageInfo: "\u20B918,000\u201321,000/month",
@@ -93,7 +69,7 @@ const JOBS: JobSeed[] = [
     requiredSkills: ["organic_farming", "plant_care"],
     preferredSkills: ["produce_sorting", "horticulture"],
     jobCategory: "agriculture",
-    district: "Solapur",
+    district: "Indore",
     minExperienceMonths: 0,
     openings: 5,
     wageInfo: "\u20B914,000\u201317,000/month",
@@ -105,9 +81,22 @@ const JOBS: JobSeed[] = [
     requiredSkills: ["garment_finishing", "fabric_handling", "machine_threading"],
     preferredSkills: ["embroidery", "quality_check"],
     jobCategory: "textile",
-    district: "Kolar",
+    district: "Pune",
     minExperienceMonths: 3,
     openings: 4,
+    wageInfo: "\u20B916,000\u201319,000/month",
+  },
+  {
+    title: "Bakery Assistant",
+    description:
+      "Assist bakers with mixing, proofing and baking while keeping the work area clean and safe.",
+    requiredSkills: ["baking", "food_preparation"],
+    preferredSkills: ["kitchen_hygiene", "packaging"],
+    requiredCertificates: ["Food Safety"],
+    jobCategory: "bakery",
+    district: "Nashik",
+    minExperienceMonths: 3,
+    openings: 3,
     wageInfo: "\u20B916,000\u201319,000/month",
   },
   {
@@ -123,25 +112,13 @@ const JOBS: JobSeed[] = [
     wageInfo: "\u20B915,000\u201317,000/month",
   },
   {
-    title: "Data Entry Executive",
-    description:
-      "Enter records into spreadsheets and office software accurately and on schedule.",
-    requiredSkills: ["data_entry", "typing"],
-    preferredSkills: ["ms_office", "spreadsheet_basics", "tally_basics"],
-    jobCategory: "clerical",
-    district: "Thane",
-    minExperienceMonths: 6,
-    openings: 2,
-    wageInfo: "\u20B918,000\u201320,000/month",
-  },
-  {
     title: "Welding Fabricator",
     description:
       "Fabricate and weld metal components to specification using standard workshop tools.",
     requiredSkills: ["welding", "precision_measurement"],
     preferredSkills: ["tool_handling", "safety_practices"],
     jobCategory: "fabrication",
-    district: "Bilaspur",
+    district: "Jammu",
     minExperienceMonths: 6,
     openings: 3,
     wageInfo: "\u20B919,000\u201324,000/month",
@@ -153,7 +130,7 @@ const JOBS: JobSeed[] = [
     requiredSkills: ["handloom_weaving", "loom_setup", "yarn_handling"],
     preferredSkills: ["textile_dyeing", "design_basics"],
     jobCategory: "textile",
-    district: "Kolar",
+    district: "Shillong",
     minExperienceMonths: 3,
     openings: 3,
     wageInfo: "\u20B915,000\u201318,000/month",
@@ -165,10 +142,34 @@ const JOBS: JobSeed[] = [
     requiredSkills: ["screen_printing", "ink_mixing"],
     preferredSkills: ["signage_production", "labelling"],
     jobCategory: "printing",
-    district: "Solapur",
+    district: "Nashik",
     minExperienceMonths: 0,
     openings: 2,
     wageInfo: "\u20B915,000\u201318,000/month",
+  },
+  {
+    title: "Carpentry Workshop Hand",
+    description:
+      "Support carpentry operations including cutting, joining and finishing wooden pieces.",
+    requiredSkills: ["carpentry", "wood_cutting", "tool_handling"],
+    preferredSkills: ["wood_finishing", "precision_measurement"],
+    jobCategory: "carpentry",
+    district: "Bhopal",
+    minExperienceMonths: 3,
+    openings: 2,
+    wageInfo: "\u20B917,000\u201320,000/month",
+  },
+  {
+    title: "Data Entry Executive",
+    description:
+      "Enter records into spreadsheets and office software accurately and on schedule.",
+    requiredSkills: ["data_entry", "typing"],
+    preferredSkills: ["ms_office", "spreadsheet_basics", "tally_basics"],
+    jobCategory: "clerical",
+    district: "West Delhi",
+    minExperienceMonths: 6,
+    openings: 2,
+    wageInfo: "\u20B918,000\u201320,000/month",
   },
 ];
 
