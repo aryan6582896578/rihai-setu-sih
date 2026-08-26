@@ -1,0 +1,140 @@
+{
+  "timestamp": "2026-08-26T20:59:03.180815",
+  "dataset_used": "datasets/undertrials_master_600.csv",
+  "time_series_records": 120,
+  "models": {
+    "30d": {
+      "best_model": "Ridge",
+      "MAE": 81.05,
+      "RMSE": 104.08,
+      "CV_MAE": 215.85,
+      "all_model_scores": {
+        "Ridge": {
+          "mae": 81.05,
+          "rmse": 104.08,
+          "r2": 0.7429
+        },
+        "GradientBoosting": {
+          "mae": 432.01,
+          "rmse": 445.13,
+          "r2": -3.7034
+        },
+        "RandomForest": {
+          "mae": 319.48,
+          "rmse": 339.42,
+          "r2": -1.7347
+        }
+      },
+      "feature_importance": {
+        "capacity": -19.0495,
+        "population": 106.4898,
+        "undertrial_population": 119.1214,
+        "convict_population": 55.6446,
+        "occupancy_rate": -15.056,
+        "overcrowding_gap": -0.9482,
+        "sec479_eligible": 15.1702,
+        "sec479_approaching": -18.7004,
+        "stuck_at_surety": -13.0998,
+        "intake_rate": 9.6833,
+        "release_rate": 15.0801,
+        "net_flow": -0.2034,
+        "seasonal_factor": 11.168,
+        "ut_share": 14.9746,
+        "pop_lag_1": 106.9765,
+        "pop_lag_2": 39.783,
+        "pop_lag_3": 92.1845,
+        "pop_rolling_3m": 84.8786,
+        "pop_momentum": -0.2663
+      }
+    },
+    "60d": {
+      "best_model": "Ridge",
+      "MAE": 87.41,
+      "RMSE": 117.69,
+      "CV_MAE": 273.45,
+      "all_model_scores": {
+        "Ridge": {
+          "mae": 87.41,
+          "rmse": 117.69,
+          "r2": 0.6205
+        },
+        "GradientBoosting": {
+          "mae": 318.36,
+          "rmse": 368.8,
+          "r2": -2.7263
+        },
+        "RandomForest": {
+          "mae": 354.19,
+          "rmse": 369.58,
+          "r2": -2.7421
+        }
+      },
+      "feature_importance": {
+        "capacity": -27.1502,
+        "population": 111.3509,
+        "undertrial_population": 125.3077,
+        "convict_population": 55.1587,
+        "occupancy_rate": 5.6428,
+        "overcrowding_gap": -24.7683,
+        "sec479_eligible": -21.2356,
+        "sec479_approaching": -2.4587,
+        "stuck_at_surety": 13.62,
+        "intake_rate": 14.1948,
+        "release_rate": 19.5791,
+        "net_flow": 1.7438,
+        "seasonal_factor": -3.6505,
+        "ut_share": 24.2829,
+        "pop_lag_1": 111.7748,
+        "pop_lag_2": 50.5088,
+        "pop_lag_3": 53.0095,
+        "pop_rolling_3m": 91.6046,
+        "pop_momentum": 10.2059
+      }
+    },
+    "90d": {
+      "best_model": "Ridge",
+      "MAE": 112.53,
+      "RMSE": 144.43,
+      "CV_MAE": 287.02,
+      "all_model_scores": {
+        "Ridge": {
+          "mae": 112.53,
+          "rmse": 144.43,
+          "r2": 0.4246
+        },
+        "GradientBoosting": {
+          "mae": 415.21,
+          "rmse": 440.45,
+          "r2": -4.3513
+        },
+        "RandomForest": {
+          "mae": 393.27,
+          "rmse": 418.64,
+          "r2": -3.8346
+        }
+      },
+      "feature_importance": {
+        "capacity": -32.486,
+        "population": 129.7667,
+        "undertrial_population": 154.8426,
+        "convict_population": 34.8545,
+        "occupancy_rate": 8.5257,
+        "overcrowding_gap": -31.3203,
+        "sec479_eligible": -17.0708,
+        "sec479_approaching": 1.9884,
+        "stuck_at_surety": 0.7954,
+        "intake_rate": 17.2,
+        "release_rate": 27.8427,
+        "net_flow": -0.6747,
+        "seasonal_factor": -17.5502,
+        "ut_share": 17.1621,
+        "pop_lag_1": 130.3203,
+        "pop_lag_2": 19.7326,
+        "pop_lag_3": 30.5617,
+        "pop_rolling_3m": 93.6943,
+        "pop_momentum": 0.7398
+      }
+    }
+  },
+  "prisons_analyzed": 5
+}

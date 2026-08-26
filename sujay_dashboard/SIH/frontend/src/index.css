@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+body {
+  background-color: #f5f6f8;
+  color: #1f2d3d;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+.card {
+  background: #ffffff;
+  border: 1px solid #e3e7ec;
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cdd4dc;
+  border-radius: 6px;
+}
