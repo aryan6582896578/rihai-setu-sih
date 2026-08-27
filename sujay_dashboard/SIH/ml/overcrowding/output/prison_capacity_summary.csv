@@ -1,0 +1,6 @@
+prison_id,prison_name,state,district,capacity,current_population,undertrial_population,convict_population,occupancy_rate,overcrowding_level,available_beds,overcrowding_gap,sec479_eligible_undertrials,sec479_approaching_undertrials,stuck_at_surety,stuck_at_court,post_relief_population,post_relief_occupancy_rate,capacity_relieved_pct,avg_custody_days,high_risk_count
+PRIS-DL-01,Tihar Central Prison No. 4,Delhi,West Delhi,740,1485,1129,356,200.7,Severe,0,745,18,6,8,10,1467,198.24,2.46,0,0
+PRIS-MH-01,Mumbai Central Prison (Arthur Road),Maharashtra,Mumbai City,804,1310,996,314,162.9,Severe,0,506,25,3,13,6,1285,159.83,3.07,0,0
+PRIS-MH-05,Nashik Road Central Prison,Maharashtra,Nashik,3178,2640,2006,634,83.1,Normal,538,0,23,4,12,9,2617,82.35,0.75,0,0
+PRIS-MH-06,Yerwada Open Prison & Semi-Open Annex,Maharashtra,Pune,1500,865,657,208,57.7,Normal,635,0,14,1,5,6,851,56.73,0.97,0,0
+PRIS-UP-01,Dasna District Jail (Ghaziabad),Uttar Pradesh,Ghaziabad,1706,2150,1634,516,126.0,Severe,0,444,23,4,10,7,2127,124.68,1.32,0,0
