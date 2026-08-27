@@ -3,6 +3,7 @@ import { NavLink, Navigate, Outlet, useNavigate } from "react-router-dom";
 import { usePortalAuthStore } from "../../state/portalAuthStore";
 import { LangToggle, useLang } from "../../lib/i18n";
 import logoImg from "../../public/rihai_setu_logo.png";
+import ChatbotWidget from "../../components/ChatbotWidget";
 
 /** Guard + chrome for the prisoner portal (Prompt 10). Separate from the staff Layout. */
 export default function PortalLayout(): ReactNode {
@@ -78,6 +79,8 @@ export default function PortalLayout(): ReactNode {
       <main className="wrap-app w-full flex-1 py-6 sm:py-8">
         <Outlet />
       </main>
+
+      <ChatbotWidget mode="portal" />
 
       <footer className="mt-8 border-t border-[#f0e4d3] bg-white py-4">
         <p className="wrap-app text-center text-xs text-bodytext">

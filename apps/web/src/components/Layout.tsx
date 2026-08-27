@@ -7,6 +7,7 @@ import { api, extractApiError } from "../lib/api";
 import { useLang, LangToggle } from "../lib/i18n";
 import { useAuthStore } from "../state/authStore";
 import SessionKeepAlive from "./SessionKeepAlive";
+import ChatbotWidget from "./ChatbotWidget";
 import logoImg from "../public/rihai_setu_logo.png";
 
 const NAV_LINKS: { to: string; labelKey: string; roles?: string[] }[] = [
@@ -192,6 +193,8 @@ export default function Layout() {
       </main>
 
       <SessionKeepAlive />
+
+      {user && <ChatbotWidget mode="staff" />}
 
       {mfaOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(20,15,10,0.5)] p-4" onClick={() => setMfaOpen(false)}>

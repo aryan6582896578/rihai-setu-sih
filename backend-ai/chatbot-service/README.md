@@ -1,17 +1,17 @@
 # RIHAI SETU Scoped RAG Chatbot
 
 This standalone FastAPI service answers scoped questions about RIHAI SETU,
-employment, skills, training, rehabilitation and general access to legal-aid
-services. It retrieves passages from an approved local knowledge base and asks
-Ollama to answer only from those passages. It requires no cloud API key or
-database.
+undertrial review, Section 479 of the BNSS, legal-aid access, employment,
+skills, training and rehabilitation. It retrieves passages from an approved
+local knowledge base and asks Groq, or optional local Ollama, to answer only
+from those passages. It does not require its own database.
 
-The knowledge base contains six official Government of India/NALSA PDFs plus a
+The knowledge base contains seven official Government of India/NALSA PDFs plus a
 curated description of the implemented RIHAI SETU website. A local BM25 text
 index provides retrieval. Groq provides fast grounded generation when a key is
 configured, while Ollama remains an optional offline fallback. Unrelated
-questions are declined. Personal legal, bail, court, medical, emergency and
-self-harm questions are safety-routed before retrieval.
+questions are declined. Personal legal, bail, Section 479 eligibility, court,
+medical, emergency and self-harm questions are safety-routed before retrieval.
 
 ## Run locally
 
@@ -40,13 +40,18 @@ The browser should call Express, and Express should call this service. Do not
 expose this service directly to the browser in production.
 
 ```text
-Browser -> Express /api/v1/chat/ask -> FAQ chatbot /api/v1/chat/ask
+Authenticated staff -> Express /api/v1/chat/ask        -> Python /api/v1/chat/ask
+Authenticated citizen -> Express /api/v1/portal/chat/ask -> Python /api/v1/chat/ask
 ```
+
+Both Express endpoints enforce their own authentication domain. The React
+application never receives the Groq key and never calls Python directly.
 
 Set this in the Express environment:
 
 ```text
 CHATBOT_URL=http://127.0.0.1:8001
+CHATBOT_TIMEOUT_MS=90000
 ```
 
 ### List quick-action questions
