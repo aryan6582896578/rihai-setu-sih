@@ -1,4 +1,4 @@
-﻿import path from "node:path";
+import path from "node:path";
 import fs from "node:fs";
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -39,6 +39,11 @@ import {
   overcrowdingRollupRouter,
 } from "./routes/overcrowding.routes.js";
 
+import { verifyRouter } from "./routes/verify.routes.js";
+import { prisma } from "./lib/prisma.js";
+import { buildCertificateHtml } from "./services/certificates.service.js";
+import { renderApplicationStatusSheet } from "./services/superintendent.service.js";
+
 const uploadsDir = path.resolve(process.cwd(), process.cwd().endsWith("apps\\api") || process.cwd().endsWith("apps/api") ? "../../uploads" : "uploads");
 fs.mkdirSync(uploadsDir, { recursive: true });
 
@@ -61,8 +66,61 @@ export function createApp() {
   app.get("/healthz", (_req, res) => {
     res.json({ status: "ok" });
   });
-  app.use("/uploads", express.static(uploadsDir));
 
+  // Uploads serving with dynamic rendering fallback for missing files / demo certs & docs
+  app.use("/uploads", (req, res, next) => {
+    const relative = req.path.replace(/^\//, "");
+    const diskPath = path.join(uploadsDir, relative);
+    if (fs.existsSync(diskPath) && fs.statSync(diskPath).isFile()) {
+      return express.static(uploadsDir)(req, res, next);
+    }
+    void (async () => {
+      try {
+        const matches = req.path.match(/(cm[a-z0-9]+|SP-PSI-[0-9]+|application-[a-zA-Z0-9_-]+|cert-[a-zA-Z0-9_-]+)/g) ?? [];
+        const keyword = matches[0] ?? "";
+
+        // Certificate request
+        if (req.path.includes("certificate")) {
+          const cert = await prisma.enrollment.findFirst({
+            where: {
+              status: "completed",
+              ...(keyword ? { OR: [{ id: keyword }, { certificateUrl: { contains: keyword } }] } : {}),
+            },
+            select: { id: true },
+          });
+          const certId = cert?.id ?? (await prisma.enrollment.findFirst({ where: { status: "completed" }, select: { id: true } }))?.id;
+          if (certId) {
+            const html = await buildCertificateHtml(certId);
+            res.type("html").send(html);
+            return;
+          }
+        }
+
+        // Application document request
+        if (req.path.includes("application") || req.path.includes("demo")) {
+          const appRecord = await prisma.application.findFirst({
+            where: {
+              ...(keyword ? { OR: [{ id: keyword }, { generatedDocumentUrl: { contains: keyword } }] } : {}),
+            },
+            select: { id: true },
+          });
+          const appId = appRecord?.id ?? (await prisma.application.findFirst({ select: { id: true } }))?.id;
+          if (appId) {
+            const html = await renderApplicationStatusSheet(appId);
+            res.type("html").send(html);
+            return;
+          }
+        }
+
+        next();
+      } catch {
+        next();
+      }
+    })();
+  });
+
+  app.use("/api/v1/verify", verifyRouter);
+  app.use("/verify", verifyRouter);
   app.use("/api/v1/auth", authRouter);
   app.use("/api/v1/jails", jailsRouter);
   app.use("/api/v1/jails/:jailId/prisoners", prisonersNestedRouter);

@@ -5,10 +5,10 @@ import type { Role } from "@rihai/shared-types";
  * the API would reject. Effective role = JailAccess role_at_jail (global role
  * only matters for super_admin cross-jail access, handled by the backend).
  */
-export const EDITOR_ROLES: Role[] = ["super_admin", "jail_superintendent", "jail_staff"];
-export const ADVANCE_ROLES: Role[] = [...EDITOR_ROLES, "dlsa_lawyer"];
+export const EDITOR_ROLES: Role[] = ["super_admin", "jail_superintendent"];
+export const ADVANCE_ROLES: Role[] = ["super_admin", "jail_superintendent", "dlsa_lawyer"];
 export const REVIEW_ROLES: Role[] = ["super_admin", "jail_superintendent", "dlsa_lawyer"];
-export const ESCALATION_ROLES: Role[] = ["super_admin", "jail_superintendent", "jail_staff"];
+export const ESCALATION_ROLES: Role[] = ["super_admin", "jail_superintendent"];
 export const MANAGER_ROLES: Role[] = ["super_admin", "jail_superintendent"];
 
 export interface RoleFlags {

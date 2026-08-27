@@ -17,7 +17,8 @@ export default function JailDetailPage() {
   const { jailId = "" } = useParams();
   const user = useAuthStore((s) => s.user);
   const { t } = useLang();
-  const [tab, setTab] = useState<TabKey>("overview");
+  const isDlsaLawyer = user?.role === Role.DlsaLawyer;
+  const [tab, setTab] = useState<TabKey>(isDlsaLawyer ? "stalls" : "overview");
 
   const statsQuery = useQuery({
     queryKey: ["jail-stats", jailId],
@@ -29,8 +30,6 @@ export default function JailDetailPage() {
         throw new Error(extractApiError(err).message);
       }
     },
-    // KPIs must track reality after staff act in other views — refetch on
-    // mount and poll gently instead of serving stale cache.
     staleTime: 0,
     refetchOnMount: "always",
     refetchInterval: 45_000,
@@ -42,8 +41,6 @@ export default function JailDetailPage() {
       const res = await api.get<{ data: StallRow[] }>(`/jails/${jailId}/stall-list`);
       return res.data.data;
     },
-    // The badge must track reality: recompute whenever the page mounts and poll
-    // gently instead of serving a stale cache after updates happen elsewhere.
     staleTime: 0,
     refetchOnMount: "always",
     refetchInterval: 45_000,
@@ -63,14 +60,13 @@ export default function JailDetailPage() {
   const stats = statsQuery.data!;
   const canManageStaff =
     user?.role === Role.SuperAdmin || user?.role === Role.JailSuperintendent;
-  // The badge tracks stalls still awaiting action — escalated ones are done.
   const stalledCount = (stallCountQuery.data ?? []).filter((r) => !r.escalated).length;
   const tone = occupancyTone(stats.capacityPct);
   const capPillCls =
     tone === "red" ? "pill-full" : tone === "amber" ? "pill-warn" : "pill-ok";
 
   const tabs: { key: TabKey; label: string; badge?: number; visible: boolean }[] = [
-    { key: "overview", label: t("jailtab.overview"), visible: true },
+    { key: "overview", label: t("jailtab.overview"), visible: !isDlsaLawyer },
     { key: "staff", label: t("jailtab.staff"), visible: canManageStaff },
     { key: "stalls", label: t("jailtab.stalls"), badge: stalledCount, visible: true },
   ];
@@ -87,19 +83,25 @@ export default function JailDetailPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
-          <Link to={`/jails/${jailId}/prisoners`} className="btn btn-outline btn-sm">
-            {t("btn.prisoners")} ({stats.totalPrisoners})
-          </Link>
+          {!isDlsaLawyer && (
+            <Link to={`/jails/${jailId}/prisoners`} className="btn btn-outline btn-sm">
+              {t("btn.prisoners")} ({stats.totalPrisoners})
+            </Link>
+          )}
           <Link to={`/jails/${jailId}/court-tracking`} className="btn btn-ghost btn-sm">{t("link.court")}</Link>
           <Link to={`/jails/${jailId}/legal-aid`} className="btn btn-ghost btn-sm">{t("link.legalaid")}</Link>
-          <Link to={`/jails/${jailId}/overcrowding`} className="btn btn-ghost btn-sm">{t("link.overcrowding")}</Link>
-          <Link to={`/jails/${jailId}/compliance-report`} className="btn btn-ghost btn-sm">{t("link.compliance")}</Link>
+          {!isDlsaLawyer && (
+            <>
+              <Link to={`/jails/${jailId}/overcrowding`} className="btn btn-ghost btn-sm">{t("link.overcrowding")}</Link>
+              <Link to={`/jails/${jailId}/compliance-report`} className="btn btn-ghost btn-sm">{t("link.compliance")}</Link>
+            </>
+          )}
           {canManageStaff && (
             <Link to={`/jails/${jailId}/superintendent`} className="btn btn-ghost btn-sm">
               {t("btn.superportal")}{stalledCount > 0 ? ` · ${stalledCount} ${t("stalled.count")}` : ""}
             </Link>
           )}
-          <span className={capPillCls}>{stats.capacityPct}% capacity</span>
+          {!isDlsaLawyer && <span className={capPillCls}>{stats.capacityPct}% capacity</span>}
         </div>
       </div>
 

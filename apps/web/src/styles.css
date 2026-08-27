@@ -172,7 +172,7 @@ body {
   /* ---------- Mini stats ---------- */
   .mini-stat {
     box-shadow: var(--shadow-card);
-    @apply rounded-xl border-t-[3px] border-peach bg-white p-4 sm:p-5;
+    @apply flex flex-col justify-between rounded-xl border-t-[3px] border-peach bg-white p-4 sm:p-5 transition-shadow hover:shadow-md;
   }
   .mini-stat.warn-border {
     @apply border-t-saffron;
@@ -181,14 +181,14 @@ body {
     @apply border-t-terracotta;
   }
   .mini-stat .k {
-    @apply mb-2 text-[11px] font-bold uppercase tracking-[0.08em] text-bodytext;
+    @apply block mb-1 text-[11px] font-bold uppercase tracking-[0.08em] text-bodytext;
   }
   .mini-stat .v {
-    font-family: var(--font-display);
-    @apply text-[1.7rem] font-bold leading-tight text-navy;
+    font-family: var(--font-body);
+    @apply block text-[1.3rem] sm:text-[1.5rem] font-extrabold leading-snug text-navy my-1 break-words;
   }
   .mini-stat .sub {
-    @apply mt-1 text-[11.5px] text-[#9aa1ab];
+    @apply block mt-1 text-[11.5px] font-medium text-[#7a828e];
   }
 
   /* ---------- Forms ---------- */
@@ -218,7 +218,18 @@ body {
   .status-active {
     @apply rounded-full bg-emerald-100 px-3 py-1 text-[11.5px] font-bold text-emerald-700;
   }
-  .empty-tab {
-    @apply px-5 py-14 text-center text-bodytext;
+  /* ---------- Card Flip 3D ---------- */
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  .transform-style-3d {
+    transform-style: preserve-3d;
+  }
+  .backface-hidden {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+  .rotate-y-180 {
+    transform: rotateY(180deg);
   }
 }

@@ -1,27 +1,37 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useLang, LangToggle } from "../../lib/i18n";
+import logoImg from "../../public/rihai_setu_logo.png";
+import l1Logo from "../../public/l1.png";
+import l2Logo from "../../public/l2.png";
+import l3Logo from "../../public/l3.png";
+import l5Logo from "../../public/l5.png";
+import l6Logo from "../../public/l6.png";
 
 const FEATURES = [
   {
+    step: "01",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M11 4a7 7 0 100 14 7 7 0 000-14z" strokeWidth="2"/><path d="M21 21l-4.35-4.35" strokeWidth="2" strokeLinecap="round"/></svg>
     ),
     key: "feat1",
   },
   {
+    step: "02",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2h9l5 5v15H6z" strokeWidth="2"/><path d="M9 12h8M9 16h8M9 8h4" strokeWidth="2" strokeLinecap="round"/></svg>
     ),
     key: "feat2",
   },
   {
+    step: "03",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 21h8" strokeWidth="2" strokeLinecap="round"/><path d="M13 3l8 8-3 3-8-8z" strokeWidth="2"/><path d="M8 8l8 8-3 3-8-8z" strokeWidth="2"/></svg>
     ),
     key: "feat3",
   },
   {
+    step: "04",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 21s-7-4.5-9.5-9C.9 8.5 2.5 4 6.5 4c2 0 3.5 1.2 4.5 2.6C12 5.2 13.5 4 15.5 4c4 0 5.6 4.5 4 8-2.5 4.5-9.5 9-9.5 9z" strokeWidth="2"/></svg>
     ),
@@ -29,20 +39,167 @@ const FEATURES = [
   },
 ];
 
+function FlipFeatureCard(props: {
+  f: typeof FEATURES[0];
+  t: (key: string) => string;
+}) {
+  const [flipped, setFlipped] = useState(false);
+  const { f, t } = props;
+
+  return (
+    <div
+      onClick={() => setFlipped((v) => !v)}
+      className="perspective-1000 h-[340px] w-full cursor-pointer"
+    >
+      <div
+        className={`relative h-full w-full transform-style-3d transition-transform duration-500 ${
+          flipped ? "rotate-y-180" : ""
+        }`}
+      >
+        {/* ---- FRONT SIDE ---- */}
+        <div className="backface-hidden absolute inset-0 flex flex-col justify-between rounded-card border-[2px] border-terracotta/40 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-[3px] hover:border-terracotta hover:shadow-[0_10px_26px_rgba(217,83,30,0.22)]">
+          <div>
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-terracotta text-white [&_svg]:h-5 [&_svg]:w-5 [&_svg]:stroke-white">
+                {f.icon}
+              </div>
+              <span className="font-mono text-sm font-extrabold text-terracotta">{f.step}</span>
+            </div>
+            <h4 className="display mb-2 text-base font-bold text-navy">{t(`${f.key}.h`)}</h4>
+            <p className="text-[13px] leading-relaxed text-bodytext">{t(`${f.key}.p`)}</p>
+          </div>
+          <div className="mt-4 border-t border-[#f7efe4] pt-3">
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-terracotta hover:underline">
+              {t("know.more")}
+            </span>
+          </div>
+        </div>
+
+        {/* ---- BACK SIDE ---- */}
+        <div className="rotate-y-180 backface-hidden absolute inset-0 flex flex-col justify-between rounded-card border-[3px] border-terracotta bg-[#FFF9F2] p-6 shadow-[0_10px_26px_rgba(217,83,30,0.22)]">
+          <div>
+            <div className="mb-3 flex items-center justify-between">
+              <span className="font-mono text-xs font-extrabold text-terracotta">{f.step} · DETAILS</span>
+            </div>
+            <h4 className="display mb-3 text-[14.5px] font-bold text-navy">{t(`${f.key}.detail`)}</h4>
+            <ul className="space-y-2 text-xs leading-relaxed text-bodytext">
+              <li className="flex gap-2">
+                <span className="font-bold text-terracotta">•</span>
+                <span>{t(`${f.key}.point1`)}</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="font-bold text-terracotta">•</span>
+                <span>{t(`${f.key}.point2`)}</span>
+              </li>
+            </ul>
+          </div>
+          <div className="mt-4 border-t border-[#f2e6d6] pt-3">
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-navy hover:text-terracotta">
+              {t("know.back")}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PlatformWorkflowDiagram() {
+  const steps = [
+    {
+      num: "01",
+      title: "Statutory Eligibility Engine",
+      desc: "Deterministic rule engine evaluates custody days against BNSS §479 thresholds (1/3rd or 1/2 max sentence).",
+      tag: "Section 479 Gate",
+      color: "bg-terracotta",
+    },
+    {
+      num: "02",
+      title: "DLSA Advocate Verification",
+      desc: "Legal aid counsel reviews pre-filled bail narratives and digitally signs petitions — never auto-filed.",
+      tag: "Lawyer Guarded",
+      color: "bg-navy",
+    },
+    {
+      num: "03",
+      title: "Court Registry & Escalation",
+      desc: "Tracked across trial court hearing calendars; delayed matters (>14 days) auto-escalate to DLSA Secretary.",
+      tag: "Court Monitoring",
+      color: "bg-terracotta",
+    },
+    {
+      num: "04",
+      title: "Skill Passport & Livelihood",
+      desc: "In-custody trade training certificates issue a digital Skill Passport with employer match post-release.",
+      tag: "Vocational Match",
+      color: "bg-emerald-700",
+    },
+  ];
+
+  return (
+    <div className="rounded-2xl border-[2px] border-terracotta/35 bg-white p-6 sm:p-7 shadow-md">
+      <div className="mb-5 flex items-center justify-between border-b border-[#f4ece1] pb-3.5">
+        <div>
+          <h4 className="display text-base font-extrabold text-navy">Platform Workflow Pipeline</h4>
+          <p className="text-xs font-semibold text-terracotta">End-to-End Legal & Rehabilitation Process</p>
+        </div>
+        <span className="rounded-full border border-peach bg-[#FFF3E4] px-2.5 py-0.5 text-[10.5px] font-extrabold text-terracotta">
+          4 Stages
+        </span>
+      </div>
+
+      {/* Workflow Step Nodes */}
+      <div className="relative space-y-3.5">
+        {/* Connecting Vertical Line */}
+        <div className="absolute left-[19px] top-6 bottom-6 w-[2px] bg-gradient-to-b from-terracotta via-navy to-emerald-600 opacity-30" />
+
+        {steps.map((step) => (
+          <div
+            key={step.num}
+            className="group relative flex items-start gap-4 rounded-xl border border-[#F0E6D8] bg-[#FAF7F2] p-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-terracotta/60 hover:bg-white hover:shadow-sm"
+          >
+            {/* Step Node Circle */}
+            <div className={`relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${step.color} font-mono text-xs font-extrabold text-white shadow-sm`}>
+              {step.num}
+            </div>
+
+            {/* Step Content */}
+            <div className="flex-1 text-left">
+              <div className="mb-1 flex flex-wrap items-center justify-between gap-1.5">
+                <h5 className="display text-[14px] font-bold text-navy transition-colors group-hover:text-terracotta">
+                  {step.title}
+                </h5>
+                <span className="rounded-md border border-[#E9DFD1] bg-white px-2 py-0.5 text-[10px] font-extrabold text-bodytext">
+                  {step.tag}
+                </span>
+              </div>
+              <p className="text-[12.5px] leading-relaxed text-bodytext">
+                {step.desc}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function HeroArt() {
   return (
     <svg viewBox="0 0 420 420" className="w-full max-w-[320px] drop-shadow-[0_18px_30px_rgba(60,20,0,0.28)] sm:max-w-[380px]" xmlns="http://www.w3.org/2000/svg">
       <circle cx="210" cy="210" r="185" fill="rgba(255,255,255,0.14)" />
       <circle cx="210" cy="210" r="150" fill="rgba(255,255,255,0.10)" />
+      <circle cx="210" cy="210" r="115" fill="rgba(255,255,255,0.08)" />
       <g transform="translate(90,90)">
-        <rect x="0" y="90" width="46" height="110" rx="6" fill="#FFF3E4" />
-        <rect x="60" y="60" width="46" height="140" rx="6" fill="#FFDDB0" />
-        <rect x="120" y="20" width="46" height="180" rx="6" fill="#FFFFFF" />
-        <rect x="180" y="70" width="46" height="130" rx="6" fill="#FFDDB0" />
-        <path d="M0 210 Q113 240 240 210" stroke="#fff" strokeWidth="3" fill="none" opacity=".6" />
-        <circle cx="20" cy="80" r="9" fill="#4C7A3B" />
-        <circle cx="143" cy="10" r="9" fill="#4C7A3B" />
-        <circle cx="200" cy="60" r="9" fill="#4C7A3B" />
+        <rect x="0" y="90" width="46" height="110" rx="8" fill="#FFF3E4" />
+        <rect x="60" y="60" width="46" height="140" rx="8" fill="#FFDDB0" />
+        <rect x="120" y="20" width="46" height="180" rx="8" fill="#FFFFFF" />
+        <rect x="180" y="70" width="46" height="130" rx="8" fill="#FFDDB0" />
+        <path d="M-10 215 Q120 250 250 215" stroke="#FFFFFF" strokeWidth="4" fill="none" opacity=".85" strokeLinecap="round" />
+        <circle cx="23" cy="80" r="9" fill="#2E7D32" />
+        <circle cx="83" cy="50" r="9" fill="#2E7D32" />
+        <circle cx="143" cy="10" r="9" fill="#2E7D32" />
+        <circle cx="203" cy="60" r="9" fill="#2E7D32" />
       </g>
     </svg>
   );
@@ -55,7 +212,7 @@ export default function HomePage() {
   const navLinks: { label: string; href: string; current?: boolean }[] = [
     { label: t("nav.home"), href: "#top", current: true },
     { label: t("nav.how"), href: "#how-it-works" },
-    { label: "Prisoner portal", href: "/portal/login" },
+    { label: t("nav.applicant_portal"), href: "/portal/login" },
     { label: t("nav.ngo"), href: "/login" },
     // { label: t("nav.admin"), href: "/login" },
     { label: t("nav.reports"), href: "/login" },
@@ -68,42 +225,17 @@ export default function HomePage() {
     { num: t("stat4.num"), label: t("stat4.label"), src: t("stat4.src") },
   ];
 
-  const updates = [
-    {
-      head: t("upd1.h"),
-      items: [
-        { txt: t("upd1.i1"), time: "22 Aug 2026" },
-        { txt: t("upd1.i2"), time: "21 Aug 2026" },
-        { txt: t("upd1.i3"), time: "19 Aug 2026" },
-      ],
-    },
-    {
-      head: t("upd2.h"),
-      items: [
-        { txt: t("upd2.i1"), time: "21 Aug 2026" },
-        { txt: t("upd2.i2"), time: "18 Aug 2026" },
-        { txt: t("upd2.i3"), time: "15 Aug 2026" },
-      ],
-    },
-    {
-      head: t("upd3.h"),
-      items: [
-        { txt: t("upd3.i1"), time: "20 Aug 2026" },
-        { txt: t("upd3.i2"), time: "17 Aug 2026" },
-        { txt: t("upd3.i3"), time: "12 Aug 2026" },
-      ],
-    },
-  ];
-
   return (
     <div className="min-h-screen bg-cream">
       {/* ---------- Navbar ---------- */}
       <header className="sticky top-0 z-40 border-b border-[#eee4d6] bg-white">
         <div className="wrap-app flex items-center justify-between py-3">
           <Link to="/" className="flex items-center gap-3">
-            <span className="display flex h-11 w-11 items-center justify-center rounded-[10px] bg-gradient-to-br from-terracotta to-saffron text-[17px] font-extrabold text-white">
-              RS
-            </span>
+            <img
+              src={logoImg}
+              alt="RIHAI SETU"
+              className="h-11 w-11 rounded-[10px] object-cover shadow-sm"
+            />
             <span className="leading-tight">
               <span className="display block text-[19px] font-extrabold tracking-tight text-navy">
                 {t("brand.name")}
@@ -198,13 +330,11 @@ export default function HomePage() {
       </header>
 
       {/* ---------- Hero ---------- */}
-      <section className="relative overflow-hidden bg-[linear-gradient(120deg,#D9531E_0%,#D9531E_32%,#E88A4C_55%,#F7DFC8_100%)]" id="top">
+      <section className="relative overflow-hidden bg-[linear-gradient(135deg,#B71C1C_0%,#D9531E_40%,#F57C00_80%,#FFE0B2_100%)]" id="top">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_82%_20%,rgba(255,255,255,0.18),transparent_55%)]" />
         <div className="wrap-app relative z-[2] grid items-center gap-10 py-14 text-center sm:py-20 lg:grid-cols-[1.15fr_.85fr] lg:text-left">
           <div>
-            {/* <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/35 bg-white/15 px-4 py-1.5 text-xs font-bold tracking-wide text-white">
-              {t("hero.eyebrow")}
-            </span> */}
+
             <h1
               className="display mb-4 text-6xl font-extrabold leading-[0.98] text-white drop-shadow-[0_6px_30px_rgba(90,30,0,0.25)] sm:text-7xl lg:text-[6rem]"
               style={{ letterSpacing: "0.01em" }}
@@ -218,7 +348,6 @@ export default function HomePage() {
               {t("hero.desc")}
             </p>
             <div className="flex flex-wrap justify-center gap-3.5 lg:justify-start">
-              {/* <Link to="/login" className="btn btn-primary">{t("hero.cta1")}</Link> */}
               <a href="#how-it-works" className="btn btn-white">{t("hero.cta2")}</a>
             </div>
           </div>
@@ -238,7 +367,7 @@ export default function HomePage() {
       </div>
 
       {/* Stats */}
-      <div className="bg-white">
+      <div id="reports" className="bg-white">
         <div className="wrap-app grid grid-cols-1 gap-y-8 py-10 sm:grid-cols-2 sm:gap-x-6 lg:grid-cols-4 lg:py-13">
           {stats.map((s, i) => (
             <div key={s.label} className={`sm:px-5 ${i % 2 === 1 ? "sm:border-l sm:border-[#eee4d6]" : ""} ${i > 0 ? "lg:border-l lg:border-[#eee4d6]" : ""}`}>
@@ -251,98 +380,139 @@ export default function HomePage() {
       </div>
 
       {/* About */}
-      <section id="how-it-works" className="py-16 sm:py-20">
+      <section id="about" className="py-16 sm:py-20">
         <div className="wrap-app grid items-start gap-10 lg:grid-cols-[1.1fr_.9fr] lg:gap-12">
           <div>
             <div className="kicker mb-3">{t("about.kicker")}</div>
             <h2 className="display mb-4 text-3xl font-bold text-navy sm:text-[2rem]">{t("about.h2")}</h2>
             <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-bodytext">{t("about.p")}</p>
             <ul className="grid gap-2.5 sm:grid-cols-2">
-              {[t("about.links.1"), t("about.links.2"), t("about.links.3"), t("about.links.4")].map((l) => (
-                <li key={l}>
-                  <Link to="/login" className="flex items-center gap-2 border-b border-dashed border-[#eadfcd] py-2 text-sm font-semibold text-navy hover:text-terracotta">
-                    <span className="font-extrabold text-terracotta">→</span> {l}
-                  </Link>
+              {[
+                { label: t("about.links.1"), href: "#about" },
+                { label: t("about.links.2"), href: "#roles" },
+                { label: t("about.links.3"), href: "#how-it-works" },
+                { label: t("about.links.4"), href: "#reports" },
+              ].map((item) => (
+                <li key={item.label}>
+                  <a href={item.href} className="flex items-center gap-2 border-b border-dashed border-[#eadfcd] py-2 text-sm font-semibold text-navy hover:text-terracotta transition-colors">
+                    <span className="font-extrabold text-terracotta">→</span> {item.label}
+                  </a>
                 </li>
               ))}
             </ul>
           </div>
-          <div className="card-shadow rounded-card border border-[#f1e6d5] bg-white p-6">
-            <h4 className="display mb-3 text-base font-bold text-navy">{t("about.card.h")}</h4>
-            <p className="mb-2 text-sm text-bodytext">• {t("about.card.p1")}</p>
-            <p className="mb-2 text-sm text-bodytext">• {t("about.card.p2")}</p>
-            <p className="text-sm text-bodytext">• {t("about.card.p3")}</p>
+          <div>
+            <PlatformWorkflowDiagram />
           </div>
         </div>
       </section>
 
       {/* Features */}
-      <section className="bg-white py-16 sm:py-20">
+      <section id="how-it-works" className="border-y border-[#EBE3D7] bg-[#FAF7F2] py-16 sm:py-20">
         <div className="wrap-app">
           <div className="mx-auto mb-11 max-w-xl text-center">
             <div className="kicker mb-2.5">{t("feat.kicker")}</div>
             <h2 className="display text-3xl font-bold text-navy sm:text-[2.1rem]">{t("feat.h2")}</h2>
           </div>
-          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
             {FEATURES.map((f) => (
-              <div key={f.key} className="card-shadow rounded-card border-t-[3px] border-saffron bg-white p-6">
-                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-peach [&_svg]:h-6 [&_svg]:w-6 [&_svg]:stroke-terracotta">
-                  {f.icon}
-                </div>
-                <h4 className="display mb-2 text-[15.5px] font-bold text-navy">{t(`${f.key}.h`)}</h4>
-                <p className="mb-3 text-[13.5px] leading-relaxed text-bodytext">{t(`${f.key}.p`)}</p>
-                <a href="#how-it-works" className="text-xs font-bold text-terracotta hover:underline">{t("know.more")}</a>
-              </div>
+              <FlipFeatureCard key={f.key} f={f} t={t} />
             ))}
           </div>
         </div>
       </section>
 
-      {/* Gold banner */}
-      <section className="pb-16 pt-2 sm:pb-20">
+      {/* Rehabilitation Banner */}
+      <section className="py-12 sm:py-16">
         <div className="wrap-app">
-          <div className="overflow-hidden rounded-[18px] border-[6px] border-saffron bg-white p-0.5">
-            <div className="flex flex-col gap-6 rounded-[14px] bg-[linear-gradient(115deg,#2c1a10,#5a2c14_45%,#D9531E_100%)] px-6 py-10 text-white sm:flex-row sm:items-center sm:justify-between sm:p-12">
-              <div>
-                <h3 className="display mb-2 max-w-lg text-2xl font-bold sm:text-[1.7rem]">{t("banner.h")}</h3>
-                <p className="max-w-md text-sm text-[#ffdfc2]">{t("banner.p")}</p>
+          <div className="relative overflow-hidden rounded-[24px] border-[2px] border-terracotta/40 bg-gradient-to-br from-navy via-[#232D3B] to-[#121820] p-8 shadow-xl sm:p-12 text-white">
+            {/* Background Ambient Glow */}
+            <div className="pointer-events-none absolute -right-20 -top-20 h-80 w-80 rounded-full bg-terracotta/20 blur-3xl" />
+            <div className="pointer-events-none absolute -left-20 -bottom-20 h-80 w-80 rounded-full bg-saffron/15 blur-3xl" />
+
+            <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+                {/* Official RIHAI SETU Logo Icon */}
+                <div className="flex h-22 w-22 sm:h-24 sm:w-24 shrink-0 items-center justify-center rounded-2xl border border-white/25 bg-white/10 backdrop-blur-md p-2.5 shadow-lg">
+                  <img src={logoImg} alt="RIHAI SETU Logo" className="h-full w-full rounded-xl object-cover" />
+                </div>
+                <div>
+                  <div className="mb-2 flex flex-wrap items-center gap-2.5">
+                    <span className="rounded-full bg-terracotta px-3.5 py-1 text-xs font-extrabold uppercase tracking-widest text-white">
+                      Vocational Rehabilitation
+                    </span>
+                    <span className="text-xs sm:text-sm font-semibold text-[#ffc696]">Skill Passport System</span>
+                  </div>
+                  <h3 className="display max-w-xl text-2xl font-extrabold tracking-tight text-white sm:text-3xl lg:text-[2.1rem] leading-snug">
+                    {t("banner.h")}
+                  </h3>
+                </div>
               </div>
-              <Link to="/login" className="btn btn-primary shrink-0 self-start sm:self-auto">{t("banner.cta")}</Link>
+
+              <div className="flex flex-col sm:flex-row items-start lg:items-center gap-6 border-t border-white/15 lg:border-t-0 pt-6 lg:pt-0">
+                <p className="max-w-md text-sm sm:text-[15px] font-medium leading-relaxed text-slate-200">
+                  {t("banner.p")}
+                </p>
+                <Link
+                  to="/portal/login"
+                  className="btn btn-primary shrink-0 justify-center px-7 py-3.5 text-base font-bold shadow-[0_8px_22px_rgba(217,83,30,0.45)]"
+                >
+                  {t("banner.cta")} →
+                </Link>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Updates */}
-      <section className="bg-white py-16 sm:py-20">
+      {/* Stakeholders & Partners */}
+      <div id="roles" className="border-y border-[#f0e4d3] bg-[#FAF7F2] py-14 sm:py-16">
         <div className="wrap-app">
-          <div className="kicker mb-8 text-center">{t("updates.kicker")}</div>
-          <div className="grid gap-5 md:grid-cols-3">
-            {updates.map((u) => (
-              <div key={u.head} className="card-shadow overflow-hidden rounded-card bg-white">
-                <div className="display bg-navy px-4.5 py-3.5 text-sm font-bold text-white">{u.head}</div>
-                <ul className="px-4 py-3.5">
-                  {u.items.map((it) => (
-                    <li key={it.txt} className="border-b border-[#f2ece2] py-2.5 text-[13.5px] text-heading last:border-none">
-                      {it.txt}
-                      <time className="mt-0.5 block text-[11.5px] text-bodytext">{it.time}</time>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Partners */}
-      <div className="border-y border-[#f0e4d3] bg-cream py-11">
-        <div className="wrap-app">
-          <div className="kicker mb-6 text-center">{t("partners.kicker")}</div>
-          <div className="flex flex-wrap justify-center gap-6">
-            {["NALSA", "DLSA", "eCourts", "NCRB", "Digital India", "Ministry of Law & Justice"].map((b) => (
-              <div key={b} className="card-shadow flex h-[78px] w-[78px] items-center justify-center rounded-full bg-white p-1.5 text-center text-[10px] font-extrabold leading-tight text-navy">
-                {b}
+          <div className="kicker mb-8 text-center">{t("partners.kicker")}</div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-8 justify-items-center sm:grid-cols-3 lg:grid-cols-6 lg:gap-6">
+            {[
+              {
+                title: "Legal Experts",
+                image: l1Logo,
+              },
+              {
+                title: "Justice System Stakeholders",
+                image: l2Logo,
+              },
+              {
+                title: "Rehabilitation Partners",
+                image: l3Logo,
+              },
+              {
+                title: "Technology & Research",
+                icon: (
+                  <svg className="h-9 w-9 stroke-terracotta" fill="none" viewBox="0 0 24 24" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="5" y="5" width="14" height="14" rx="3" />
+                    <path d="M9 1v4M15 1v4M9 19v4M15 19v4M1 9h4M1 15h4M19 9h4M19 15h4" />
+                    <text x="12" y="14" textAnchor="middle" fill="#D9531E" stroke="none" fontSize="6.5" fontWeight="900" fontFamily="sans-serif">AI</text>
+                  </svg>
+                ),
+              },
+              {
+                title: "Civil Society & NGOs",
+                image: l5Logo,
+              },
+              {
+                title: "Government Departments",
+                image: l6Logo,
+              },
+            ].map((item) => (
+              <div key={item.title} className="group flex cursor-pointer flex-col items-center text-center">
+                <div className="mb-3.5 flex h-24 w-24 items-center justify-center rounded-full border border-[#EBE3D7] bg-white p-3.5 shadow-md transition-all duration-300 group-hover:-translate-y-1.5 group-hover:border-terracotta/60 group-hover:shadow-xl group-hover:shadow-terracotta/15">
+                  {item.image ? (
+                    <img src={item.image} alt={item.title} className="h-full w-full object-contain" />
+                  ) : (
+                    item.icon
+                  )}
+                </div>
+                <p className="max-w-[125px] text-xs font-bold leading-snug text-navy transition-colors group-hover:text-terracotta">
+                  {item.title}
+                </p>
               </div>
             ))}
           </div>
@@ -359,35 +529,67 @@ export default function HomePage() {
       </div>
 
       {/* Footer */}
-      <footer className="bg-navy pt-12 text-[#c3cad5]">
-        <div className="wrap-app grid gap-8 border-b border-white/[0.08] pb-10 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1fr]">
+      <footer className="bg-navy pt-14 text-[#c3cad5]">
+        <div className="wrap-app grid gap-10 border-b border-white/[0.1] pb-12 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div>
-            <div className="flex items-center gap-3">
-              <span className="display flex h-11 w-11 items-center justify-center rounded-[10px] bg-gradient-to-br from-terracotta to-saffron text-[17px] font-extrabold text-white">RS</span>
-              <span className="display text-lg font-extrabold text-white">{t("brand.name")}</span>
+            <div className="mb-4 flex items-center gap-3.5">
+              <img src={logoImg} alt="RIHAI SETU Logo" className="h-12 w-12 rounded-2xl bg-white p-1.5 object-cover shadow-md border border-white/30" />
+              <div>
+                <span className="display block text-xl font-extrabold tracking-tight text-white">{t("brand.name")}</span>
+                <span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-terracotta">{t("brand.tag")}</span>
+              </div>
             </div>
-            <p className="mb-0 mt-3.5 text-[13px] text-[#9aa4b2]">{t("hero.sub")}</p>
-            <p className="mt-3 text-xs text-[#9aa4b2]">
-              <strong className="text-white">{t("footer.hours.k")}</strong> {t("footer.hours.v")}
-            </p>
+            <p className="mb-4 text-[13.5px] leading-relaxed text-[#a0abbd] max-w-sm">{t("hero.sub")}</p>
+            <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-[#a0abbd]">
+              <strong className="text-white font-semibold">{t("footer.hours.k")}</strong> {t("footer.hours.v")}
+            </div>
           </div>
+
           {[
             { h: t("footer.about.h"), links: [t("footer.about.1"), t("footer.about.2"), t("footer.about.3"), t("footer.about.4")] },
             { h: t("footer.legal.h"), links: [t("footer.legal.1"), t("footer.legal.2"), t("footer.legal.3"), t("footer.legal.4")] },
             { h: t("footer.access.h"), links: [t("footer.access.1"), t("footer.access.2"), t("footer.access.3"), t("footer.access.4")] },
           ].map((col) => (
             <div key={col.h}>
-              <h5 className="mb-3.5 text-xs font-semibold uppercase tracking-[0.1em] text-[#8993a3]">{col.h}</h5>
-              <ul className="space-y-2.5 text-sm">
-                {col.links.map((l) => (
-                  <li key={l}>
-                    <Link to="/login" className="hover:text-saffron">{l}</Link>
-                  </li>
-                ))}
+              <h5 className="mb-4 text-xs font-extrabold uppercase tracking-[0.12em] text-saffron">{col.h}</h5>
+              <ul className="space-y-3 text-sm">
+                {col.links.map((l, i) => {
+                  const target = i === 0 ? "#about" : i === 1 ? "#how-it-works" : i === 2 ? "#roles" : "/portal/login";
+                  return (
+                    <li key={l}>
+                      {target.startsWith("#") ? (
+                        <a href={target} className="inline-flex items-center gap-1.5 hover:text-saffron transition-colors group">
+                          <span className="text-terracotta text-xs group-hover:translate-x-0.5 transition-transform">›</span>
+                          {l}
+                        </a>
+                      ) : (
+                        <Link to={target} className="inline-flex items-center gap-1.5 hover:text-saffron transition-colors group">
+                          <span className="text-terracotta text-xs group-hover:translate-x-0.5 transition-transform">›</span>
+                          {l}
+                        </Link>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ))}
         </div>
+
+        {/* Institutional Tech Badges Strip */}
+        <div className="wrap-app border-b border-white/[0.08] py-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <span className="text-xs font-semibold text-[#808c9e] uppercase tracking-wider">Ecosystem Interoperability Standards</span>
+            <div className="flex flex-wrap gap-2.5">
+              {["NALSA Data Schema", "eCourts API v2", "NCRB Prison Stats", "Digital India Identity", "BNSS §479 Engine"].map((badge) => (
+                <span key={badge} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-bold text-slate-300 transition-colors hover:border-terracotta/50 hover:bg-terracotta/10 hover:text-white">
+                  {badge}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
         <div className="wrap-app flex flex-wrap justify-between gap-2 py-5 text-xs text-[#7c8595]">
           <span>{t("footer.copyright")}</span>
         </div>

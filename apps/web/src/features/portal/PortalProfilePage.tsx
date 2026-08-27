@@ -4,17 +4,10 @@ import { STAGE_ORDER, ApplicationStage } from "@rihai/shared-types";
 import { portalApi } from "../../lib/portalApi";
 import { Spinner, EmptyState, ErrorBanner } from "../../components/ui";
 import { formatDate } from "../../lib/format";
-
-const STAGE_PLAIN: Record<ApplicationStage, string> = {
-  [ApplicationStage.Flagged]: "Flagged for help",
-  [ApplicationStage.Drafted]: "Papers being prepared",
-  [ApplicationStage.Filed]: "Filed in court",
-  [ApplicationStage.HearingScheduled]: "Hearing date fixed",
-  [ApplicationStage.OrderPassed]: "Court order passed",
-  [ApplicationStage.Released]: "Released",
-};
+import { useLang } from "../../lib/i18n";
 
 export default function PortalProfilePage() {
+  const { t } = useLang();
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["portal-profile"],
     queryFn: async () => {
@@ -22,6 +15,18 @@ export default function PortalProfilePage() {
       return res.data.data;
     },
   });
+
+  const getStageLabel = (stage: ApplicationStage): string => {
+    switch (stage) {
+      case ApplicationStage.Flagged: return t("portal.stage.flagged");
+      case ApplicationStage.Drafted: return t("portal.stage.drafted");
+      case ApplicationStage.Filed: return t("portal.stage.filed");
+      case ApplicationStage.HearingScheduled: return t("portal.stage.hearing");
+      case ApplicationStage.OrderPassed: return t("portal.stage.order");
+      case ApplicationStage.Released: return t("portal.stage.released");
+      default: return stage;
+    }
+  };
 
   if (isLoading) return <Spinner label="Loading your profile…" />;
   if (isError) return <ErrorBanner message={extractMsg(error)} />;
@@ -35,7 +40,7 @@ export default function PortalProfilePage() {
   return (
     <div className="space-y-6">
       <div>
-        <p className="kicker">Prisoner portal · read-only</p>
+        <p className="kicker">{t("portal.profile.kicker")}</p>
         <h1 className="page-title">{data.fullName}</h1>
         <p className="lede">
           Reg no <span className="font-mono font-bold text-navy">{data.prisonerRegNo}</span> ·{" "}
@@ -45,24 +50,24 @@ export default function PortalProfilePage() {
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="mini-stat">
-          <span className="k">Time in custody</span>
-          <span className="v">{data.custodyDurationLabel}</span>
-          <span className="sub">Since {formatDate(data.admissionDate)}</span>
+          <p className="k">{t("portal.profile.custody")}</p>
+          <p className="v">{data.custodyDurationLabel}</p>
+          <p className="sub">{t("portal.profile.since")} {formatDate(data.admissionDate)}</p>
         </div>
         <div className={`mini-stat ${data.eligibility.status === "eligible" ? "" : "warn-border"}`}>
-          <span className="k">Section 479 check</span>
-          <span className="v">{data.eligibility.headline}</span>
-          <span className="sub">Checked nightly by the system</span>
+          <p className="k">{t("portal.profile.s479")}</p>
+          <p className="v">{data.eligibility.headline}</p>
+          <p className="sub">{t("portal.profile.nightly")}</p>
         </div>
         <div className="mini-stat">
-          <span className="k">Case applications</span>
-          <span className="v">{data.applications.length}</span>
-          <span className="sub">Handled with DLSA lawyers</span>
+          <p className="k">{t("portal.profile.apps")}</p>
+          <p className="v">{data.applications.length}</p>
+          <p className="sub">{t("portal.profile.dlsahint")}</p>
         </div>
       </div>
 
       <section className="panel">
-        <h2 className="display mb-1 text-base font-bold text-navy">What Section 479 means for you</h2>
+        <h2 className="display mb-1 text-base font-bold text-navy">{t("portal.profile.s479title")}</h2>
         <p
           className={`pill mt-2 inline-flex ${
             data.eligibility.status === "eligible"
@@ -78,20 +83,20 @@ export default function PortalProfilePage() {
           {data.eligibility.plainReason}
         </p>
         {data.eligibility.computedAt && (
-          <p className="mt-2 text-xs text-bodytext">Last checked: {formatDate(data.eligibility.computedAt)}</p>
+          <p className="mt-2 text-xs text-bodytext">{t("portal.profile.lastchecked")}: {formatDate(data.eligibility.computedAt)}</p>
         )}
         <p className="info-note mt-4">
-          This is only a screening. The court — never this system — decides every release.
+          {t("portal.profile.disclaimer")}
         </p>
       </section>
 
       <section className="panel">
-        <h2 className="display mb-4 text-base font-bold text-navy">Your application progress</h2>
+        <h2 className="display mb-4 text-base font-bold text-navy">{t("portal.profile.progresstitle")}</h2>
         {!latest ? (
           <EmptyState
             icon="📄"
-            title="No application yet"
-            body="When the legal team starts your release paperwork it will appear here step by step."
+            title={t("portal.profile.noapp")}
+            body={t("portal.profile.noappbody")}
           />
         ) : (
           <>
@@ -115,7 +120,7 @@ export default function PortalProfilePage() {
                     )}
                     <div className="ml-2 sm:ml-0 sm:mt-2 sm:text-center">
                       <p className={`text-xs font-bold ${isCurrent || done ? "text-terracotta" : "text-bodytext"}`}>
-                        {STAGE_PLAIN[stage]}
+                        {getStageLabel(stage)}
                       </p>
                       {date && <p className="text-[10.5px] text-[#a7adb6]">{formatDate(date)}</p>}
                     </div>
@@ -133,7 +138,7 @@ export default function PortalProfilePage() {
                     {app.type === "personal_bond" ? "Personal bond" : "Bail application"}
                   </span>
                   <span className={`pill ${app.stage === ApplicationStage.Released ? "pill-ok" : "pill-neutral"}`}>
-                    {STAGE_PLAIN[app.stage]}
+                    {getStageLabel(app.stage)}
                   </span>
                   <span className="text-xs text-bodytext">Updated {formatDate(app.updatedAt)}</span>
                 </div>

@@ -1,12 +1,15 @@
 import type { ReactNode } from "react";
 import { NavLink, Navigate, Outlet, useNavigate } from "react-router-dom";
 import { usePortalAuthStore } from "../../state/portalAuthStore";
+import { LangToggle, useLang } from "../../lib/i18n";
+import logoImg from "../../public/rihai_setu_logo.png";
 
 /** Guard + chrome for the prisoner portal (Prompt 10). Separate from the staff Layout. */
 export default function PortalLayout(): ReactNode {
   const prisoner = usePortalAuthStore((s) => s.prisoner);
   const clear = usePortalAuthStore((s) => s.clear);
   const navigate = useNavigate();
+  const { t } = useLang();
 
   if (!prisoner) return <Navigate to="/portal/login" replace />;
 
@@ -18,40 +21,55 @@ export default function PortalLayout(): ReactNode {
   return (
     <div className="flex min-h-screen flex-col bg-cream">
       <header className="sticky top-0 z-40 border-b border-[#eee4d6] bg-white">
-        <div className="wrap-app flex flex-wrap items-center justify-between gap-3 py-3">
-          <div className="flex items-center gap-3">
-            <span className="display flex h-11 w-11 items-center justify-center rounded-[10px] bg-gradient-to-br from-terracotta to-saffron text-[17px] font-extrabold text-white">
-              RS
-            </span>
-            <span className="leading-tight">
-              <span className="display block text-[19px] font-extrabold tracking-tight text-navy">
-                RIHAI SETU
+        <div className="wrap-app flex flex-wrap items-center justify-between gap-4 py-3 sm:py-3.5">
+          <div className="flex flex-wrap items-center gap-5 sm:gap-8">
+            <NavLink to="/portal/profile" className="flex items-center gap-3">
+              <img
+                src={logoImg}
+                alt="RIHAI SETU"
+                className="h-11 w-11 rounded-[10px] object-cover shadow-sm"
+              />
+              <span className="leading-tight">
+                <span className="display block text-[19px] font-extrabold tracking-tight text-navy">
+                  RIHAI SETU
+                </span>
+                <span className="block text-[10.5px] uppercase tracking-[0.11em] text-bodytext">
+                  {t("portal.nav.tag")}
+                </span>
               </span>
-              <span className="block text-[10.5px] uppercase tracking-[0.11em] text-bodytext">
-                Your portal
-              </span>
-            </span>
+            </NavLink>
+
+            <nav className="flex items-center gap-5 text-sm font-semibold sm:gap-6" aria-label="Portal sections">
+              {[
+                { to: "/portal/profile", label: t("portal.nav.profile") },
+                { to: "/portal/jobs", label: t("portal.nav.jobs") },
+                { to: "/portal/documents", label: t("portal.nav.documents") },
+              ].map((l) => (
+                <NavLink
+                  key={l.to}
+                  to={l.to}
+                  className={({ isActive }) =>
+                    `border-b-2 px-0.5 py-1.5 transition-colors ${
+                      isActive
+                        ? "border-terracotta text-terracotta font-bold"
+                        : "border-transparent text-bodytext hover:border-terracotta/40 hover:text-navy"
+                    }`
+                  }
+                >
+                  {l.label}
+                </NavLink>
+              ))}
+            </nav>
           </div>
 
-          <nav className="tabbar order-3 w-full sm:order-none sm:w-auto" aria-label="Portal sections">
-            {[
-              { to: "/portal/profile", label: "My profile" },
-              { to: "/portal/jobs", label: "Jobs for me" },
-              { to: "/portal/documents", label: "Documents" },
-            ].map((l) => (
-              <NavLink key={l.to} to={l.to} className={({ isActive }) => (isActive ? "active" : "")}>
-                {l.label}
-              </NavLink>
-            ))}
-          </nav>
-
-          <div className="flex items-center gap-2 sm:gap-4">
-            <div className="hidden text-right leading-tight lg:block">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <LangToggle />
+            <div className="hidden text-right leading-tight sm:block">
               <p className="text-[13px] font-bold text-navy">{prisoner.fullName}</p>
               <p className="font-mono text-[11.5px] text-bodytext">{prisoner.prisonerRegNo}</p>
             </div>
             <button onClick={handleLogout} className="btn btn-outline btn-sm">
-              Log out
+              {t("app.logout")}
             </button>
           </div>
         </div>
@@ -63,8 +81,7 @@ export default function PortalLayout(): ReactNode {
 
       <footer className="mt-8 border-t border-[#f0e4d3] bg-white py-4">
         <p className="wrap-app text-center text-xs text-bodytext">
-          RIHAI SETU speeds up paperwork only — a judge and the court always make every release
-          decision.
+          {t("portal.footer")}
         </p>
       </footer>
     </div>

@@ -1,4 +1,4 @@
-﻿import { Router } from "express";
+import { Router } from "express";
 import multer from "multer";
 import path from "node:path";
 import crypto from "node:crypto";
@@ -61,6 +61,9 @@ prisonersNestedRouter.get(
   "/",
   requireJailAccess,
   asyncHandler(async (req, res) => {
+    if (req.user?.role === Role.DlsaLawyer || req.access?.roleAtJail === Role.DlsaLawyer) {
+      throw ApiError.forbidden("DLSA Lawyers are restricted to Stall List, Court Tracking, and Legal Aid views");
+    }
     const q = listQuerySchema.parse(req.query);
     const result: PrisonerListItemPaginated = await listPrisoners(req.params.jailId!, q);
     audit({
@@ -141,6 +144,9 @@ prisonersNestedRouter.post(
 prisonersRouter.get(
   "/:id",
   asyncHandler(async (req, res) => {
+    if (req.user?.role === Role.DlsaLawyer) {
+      throw ApiError.forbidden("DLSA Lawyers are restricted to Stall List, Court Tracking, and Legal Aid views");
+    }
     await loadPrisonerForUser(req.user!, req.params.id!);
     res.json({
       data: await getPrisonerDetail(req.params.id!, {
@@ -157,8 +163,6 @@ const personalSchema = z.object({
   dateOfBirth: z.coerce.date().optional(),
   gender: z.enum(["male", "female", "other"]).optional(),
   admissionDate: z.coerce.date().optional(),
-  // Next-of-kin contact — Tier-1 PII, stored envelope-encrypted. Recorded by
-  // staff; also the delivery target for the portal's OTP PIN reset (Prompt 10).
   nextOfKinName: z.string().trim().min(2).max(120).optional(),
   nextOfKinPhone: z.string().trim().min(6).max(24).optional(),
 });

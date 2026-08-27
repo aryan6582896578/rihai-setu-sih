@@ -32,6 +32,13 @@ export class LoggingNotificationProvider implements NotificationProvider {
  * WhatsApp numbers use the "whatsapp:" address prefix on both To and From;
  * SMS uses bare E.164 numbers.
  */
+function formatE164(phone: string): string {
+  const cleaned = phone.trim().replace(/[^\d+]/g, "");
+  if (cleaned.startsWith("+")) return cleaned;
+  if (cleaned.length === 10) return `+91${cleaned}`;
+  return `+${cleaned}`;
+}
+
 export class TwilioNotificationProvider implements NotificationProvider {
   async send(to: string, channel: NotificationChannel, message: string): Promise<NotificationSendResult> {
     if (channel === "in_app") return { status: "logged" };
@@ -44,7 +51,9 @@ export class TwilioNotificationProvider implements NotificationProvider {
       return { status: "failed", providerError: `No TWILIO_${channel.toUpperCase()}_FROM configured` };
     }
 
-    const toAddr = channel === "whatsapp" && !to.startsWith("whatsapp:") ? `whatsapp:${to}` : to;
+    const rawPhone = to.replace(/^whatsapp:/, "");
+    const formatted = formatE164(rawPhone);
+    const toAddr = channel === "whatsapp" ? `whatsapp:${formatted}` : formatted;
 
     const body = new URLSearchParams({ To: toAddr, From: from, Body: message });
     const auth = Buffer.from(`${config.TWILIO_ACCOUNT_SID}:${config.TWILIO_AUTH_TOKEN}`).toString("base64");

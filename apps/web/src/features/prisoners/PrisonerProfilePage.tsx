@@ -1,4 +1,4 @@
-﻿import { useRef, useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -15,8 +15,8 @@ import { formatDate, formatDateTime, STAGE_LABELS, eligibilityBadge } from "../.
 import { useAuthStore } from "../../state/authStore";
 import { EmptyState, ErrorBanner, Spinner } from "../../components/ui";
 
-const EDITOR_ROLES = ["super_admin", "jail_superintendent", "jail_staff"];
-const ADVANCE_ROLES = [...EDITOR_ROLES, "dlsa_lawyer"];
+const EDITOR_ROLES = ["super_admin", "jail_superintendent"];
+const ADVANCE_ROLES = ["super_admin", "jail_superintendent", "dlsa_lawyer"];
 const REVIEW_ROLES = ["super_admin", "jail_superintendent", "dlsa_lawyer"];
 
 const STAGE_PILLS: Partial<Record<ApplicationStage, string>> = {
@@ -48,6 +48,24 @@ export default function PrisonerProfilePage() {
   });
 
   const refresh = () => void queryClient.invalidateQueries({ queryKey: ["prisoner", prisonerId] });
+
+  if (user?.role === "dlsa_lawyer") {
+    return (
+      <div className="space-y-4">
+        <Link to={`/jails/${jailId}`} className="crumb">← Jail portal</Link>
+        <div className="rounded-card border border-amber-200 bg-amber-50 p-6 text-center">
+          <h2 className="display text-lg font-bold text-navy mb-2">Access Restricted</h2>
+          <p className="text-sm text-bodytext mb-4">
+            DLSA Lawyer accounts are restricted from viewing personal prisoner profiles.
+          </p>
+          <div className="flex justify-center gap-3">
+            <Link to={`/jails/${jailId}/court-tracking`} className="btn btn-primary btn-sm">Court Tracking</Link>
+            <Link to={`/jails/${jailId}/legal-aid`} className="btn btn-outline btn-sm">Legal Aid</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (query.isLoading) return <Spinner label="Loading profile…" />;
   if (query.isError)

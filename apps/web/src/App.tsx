@@ -23,6 +23,7 @@ import RollupPage from "./features/overcrowding/RollupPage";
 import NotificationsPage from "./features/notifications/NotificationsPage";
 import ComplianceReportPage from "./features/compliance/ComplianceReportPage";
 import DataIngestionPage from "./features/admin/DataIngestionPage";
+import CertificateVerificationPage from "./features/verify/CertificateVerificationPage";
 
 export default function App() {
   const status = useAuthStore((s) => s.status);
@@ -37,6 +38,7 @@ export default function App() {
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/portal/login" element={<PortalLoginPage />} />
+      <Route path="/verify/certificate/:id" element={<CertificateVerificationPage />} />
       <Route element={<PortalLayout />}>
         <Route path="/portal/profile" element={<PortalProfilePage />} />
         <Route path="/portal/jobs" element={<PortalJobsPage />} />

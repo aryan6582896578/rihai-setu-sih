@@ -17,7 +17,7 @@ import {
 import { prisma } from "../lib/prisma.js";
 import { logger } from "../lib/logger.js";
 import { storage } from "../lib/storage.js";
-import { blindIndex, decryptField, piiPublic, piiWriteFragment } from "../lib/pii.js";
+import { decryptField, piiPublic, piiWriteFragment } from "../lib/pii.js";
 import { audit } from "../lib/audit.js";
 import { ApiError } from "../middleware/errors.js";
 import { getPrimaryCase, recomputeForPrisoner } from "./eligibility.service.js";
@@ -89,12 +89,7 @@ export async function listPrisoners(
   jailId: string,
   q: ListPrisonersQuery,
 ): Promise<Paginated<PrisonerListItem>> {
-  // Tier-1 names are encrypted at rest; exact-name search goes through the HMAC
-  // blind index. Reg-no and case-number (Tier-2) stay ILIKE-searchable.
-  const nameIdx = blindIndex(q.search);
-  const searchClause = q.search
-    ? Prisma.sql` AND (p.name_idx = ${nameIdx} OR p.prisoner_reg_no ILIKE ${"%" + q.search + "%"} OR c.case_number ILIKE ${"%" + q.search + "%"})`
-    : Prisma.empty;
+  const searchTerm = q.search?.trim();
 
   const eligibilityClause =
     q.eligibility === "pending"
@@ -126,7 +121,60 @@ export async function listPrisoners(
     ) a ON TRUE
   `;
 
-  const whereBase = Prisma.sql`FROM "Prisoner" p ${lateral} WHERE p.jail_id = ${jailId} ${searchClause} ${eligibilityClause} ${stageClause}`;
+  const now = new Date();
+
+  // If search query is provided, fetch matching candidates for the jail, decrypt names,
+  // and perform comprehensive substring matching against fullName, prisonerRegNo, caseNumber, and offence.
+  if (searchTerm) {
+    const whereBase = Prisma.sql`FROM "Prisoner" p ${lateral} WHERE p.jail_id = ${jailId} ${eligibilityClause} ${stageClause}`;
+
+    const rowsRaw = await prisma.$queryRaw<ListRowRaw[]>(Prisma.sql`
+      SELECT p.id, p.full_name_enc, p.full_name, p.prisoner_reg_no,
+             c.case_number, c.offence, c.custody_start_date,
+             ea.status AS elig_status, ea.reason AS elig_reason,
+             a.stage AS app_stage
+      ${whereBase}
+      ORDER BY p.name_idx ASC NULLS LAST, p.prisoner_reg_no ASC
+    `);
+
+    const lowerTerm = searchTerm.toLowerCase();
+
+    const allMapped: PrisonerListItem[] = rowsRaw.map((r) => {
+      const custodyDays = r.custody_start_date
+        ? Math.floor((now.getTime() - r.custody_start_date.getTime()) / MS_PER_DAY)
+        : 0;
+      return {
+        id: r.id,
+        fullName: decryptField(r.full_name_enc) ?? r.full_name ?? "",
+        prisonerRegNo: r.prisoner_reg_no,
+        caseNumber: r.case_number ?? "-",
+        offence: r.offence ?? "-",
+        custodyDays,
+        custodyDurationLabel: r.custody_start_date ? custodyLabel(custodyDays) : "-",
+        eligibility:
+          r.elig_status !== null
+            ? { status: r.elig_status, reason: r.elig_reason ?? undefined }
+            : { status: "pending" },
+        applicationStage: (r.app_stage as ApplicationStage | null) ?? null,
+      };
+    });
+
+    const filtered = allMapped.filter((item) => {
+      const fn = (item.fullName || "").toLowerCase();
+      const pr = (item.prisonerRegNo || "").toLowerCase();
+      const cn = (item.caseNumber || "").toLowerCase();
+      const off = (item.offence || "").toLowerCase();
+      return fn.includes(lowerTerm) || pr.includes(lowerTerm) || cn.includes(lowerTerm) || off.includes(lowerTerm);
+    });
+
+    const total = filtered.length;
+    const startIndex = (q.page - 1) * q.pageSize;
+    const data = filtered.slice(startIndex, startIndex + q.pageSize);
+
+    return { data, page: q.page, pageSize: q.pageSize, total };
+  }
+
+  const whereBase = Prisma.sql`FROM "Prisoner" p ${lateral} WHERE p.jail_id = ${jailId} ${eligibilityClause} ${stageClause}`;
 
   const [rowsRaw, countRows] = await Promise.all([
     prisma.$queryRaw<ListRowRaw[]>(Prisma.sql`
@@ -141,7 +189,6 @@ export async function listPrisoners(
     prisma.$queryRaw<{ n: bigint }[]>(Prisma.sql`SELECT COUNT(*) AS n ${whereBase}`),
   ]);
 
-  const now = new Date();
   const data: PrisonerListItem[] = rowsRaw.map((r) => {
     const custodyDays = r.custody_start_date
       ? Math.floor((now.getTime() - r.custody_start_date.getTime()) / MS_PER_DAY)

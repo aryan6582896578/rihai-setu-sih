@@ -3,6 +3,7 @@ import type { PortalDocumentDto } from "@rihai/shared-types";
 import { portalApi } from "../../lib/portalApi";
 import { Spinner, EmptyState, ErrorBanner } from "../../components/ui";
 import { formatDate } from "../../lib/format";
+import { useLang } from "../../lib/i18n";
 
 function apiOriginUrl(relative: string | null | undefined): string | null {
   if (!relative) return null;
@@ -11,6 +12,7 @@ function apiOriginUrl(relative: string | null | undefined): string | null {
 }
 
 export default function PortalDocumentsPage() {
+  const { t } = useLang();
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["portal-documents"],
     queryFn: async () => {
@@ -29,39 +31,38 @@ export default function PortalDocumentsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <p className="kicker">Prisoner portal</p>
-        <h1 className="page-title">Certificates &amp; documents</h1>
+        <p className="kicker">{t("portal.docs.kicker")}</p>
+        <h1 className="page-title">{t("portal.docs.title")}</h1>
         <p className="lede">
-          Your Skill Passport certificates and copies of court paperwork that has been filed and
-          checked by a lawyer.
+          {t("portal.docs.lede")}
         </p>
       </div>
 
       <section className="panel">
-        <h2 className="display mb-4 text-base font-bold text-navy">Skill Passport certificates</h2>
+        <h2 className="display mb-4 text-base font-bold text-navy">{t("portal.docs.certstitle")}</h2>
         {certificates.length === 0 ? (
-          <EmptyState icon="🎓" title="No certificates yet" body="Complete a training program to earn your first certificate." />
+          <EmptyState icon="🎓" title={t("portal.docs.nocerts")} body={t("portal.docs.nocertsbody")} />
         ) : (
           <ul className="grid gap-3 sm:grid-cols-2">
             {certificates.map((doc) => (
-              <DocCard key={doc.id} doc={doc} />
+              <DocCard key={doc.id} doc={doc} t={t} />
             ))}
           </ul>
         )}
       </section>
 
       <section className="panel">
-        <h2 className="display mb-4 text-base font-bold text-navy">Application documents</h2>
+        <h2 className="display mb-4 text-base font-bold text-navy">{t("portal.docs.appstitle")}</h2>
         {applications.length === 0 ? (
           <EmptyState
             icon="📁"
-            title="Nothing here yet"
-            body="Once your release papers are filed in court and reviewed by a lawyer, a copy appears here. Drafts stay private until then."
+            title={t("portal.docs.noapps")}
+            body={t("portal.docs.noappsbody")}
           />
         ) : (
           <ul className="grid gap-3 sm:grid-cols-2">
             {applications.map((doc) => (
-              <DocCard key={doc.id} doc={doc} />
+              <DocCard key={doc.id} doc={doc} t={t} />
             ))}
           </ul>
         )}
@@ -70,21 +71,32 @@ export default function PortalDocumentsPage() {
   );
 }
 
-function DocCard({ doc }: { doc: PortalDocumentDto }) {
-  const url = apiOriginUrl(doc.url);
+function DocCard({ doc, t }: { doc: PortalDocumentDto; t: (key: string) => string }) {
+  const isCert = doc.kind === "skill_certificate";
+  const targetUrl = isCert ? `/verify/certificate/${doc.id}` : apiOriginUrl(doc.url);
+
   return (
-    <li className="rounded-card border border-[#f1e6d5] bg-white p-5 transition hover:border-saffron">
-      <span className={`pill ${doc.kind === "skill_certificate" ? "pill-ok" : "pill-neutral"} mb-2 inline-flex`}>
-        {doc.kind === "skill_certificate" ? "Certificate" : "Court document"}
-      </span>
-      <p className="display text-[15px] font-bold text-navy">{doc.title}</p>
-      <p className="mt-0.5 text-xs capitalize text-bodytext">{doc.detail}</p>
-      <div className="mt-3 flex items-center justify-between gap-2">
+    <li className="rounded-card border border-[#f1e6d5] bg-white p-5 transition hover:border-saffron flex flex-col justify-between">
+      <div>
+        <span className={`pill ${isCert ? "pill-ok" : "pill-neutral"} mb-2 inline-flex`}>
+          {isCert ? t("portal.docs.certlabel") : t("portal.docs.doclabel")}
+        </span>
+        <p className="display text-[15px] font-bold text-navy">{doc.title}</p>
+        <p className="mt-0.5 text-xs capitalize text-bodytext">{doc.detail}</p>
+      </div>
+      <div className="mt-4 flex items-center justify-between gap-2 border-t border-[#f7efe4] pt-3">
         <span className="text-xs text-bodytext">{formatDate(doc.issuedAt)}</span>
-        {url && (
-          <a href={url} target="_blank" rel="noreferrer" className="btn btn-outline btn-sm">
-            Open ↗
+        {targetUrl ? (
+          <a
+            href={targetUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="btn btn-outline btn-sm cursor-pointer"
+          >
+            {t("portal.docs.open")}
           </a>
+        ) : (
+          <span className="text-xs italic text-bodytext">Pending</span>
         )}
       </div>
     </li>

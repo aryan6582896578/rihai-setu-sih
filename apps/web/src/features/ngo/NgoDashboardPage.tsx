@@ -13,17 +13,40 @@ import { useAuthStore } from "../../state/authStore";
 import { EmptyState, ErrorBanner, Spinner } from "../../components/ui";
 
 const STATUS_PILL: Record<JobStatus, string> = {
-  active: "pill-ok",
-  paused: "pill-warn",
-  closed: "pill-full",
+  active: "rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 px-3 py-0.5 text-xs font-extrabold inline-block",
+  paused: "rounded-full bg-amber-100 text-amber-800 border border-amber-300 px-3 py-0.5 text-xs font-extrabold inline-block",
+  closed: "rounded-full bg-gray-100 text-gray-700 border border-gray-300 px-3 py-0.5 text-xs font-extrabold inline-block",
 };
 
 const APP_STATUS_PILL: Record<JobApplicationStatus, string> = {
-  pending: "pill-neutral",
-  shortlisted: "pill-warn",
-  hired: "pill-ok",
-  rejected: "pill-full",
+  pending: "rounded-full bg-blue-50 text-blue-800 border border-blue-200 px-3 py-0.5 text-xs font-bold inline-block",
+  shortlisted: "rounded-full bg-amber-100 text-amber-800 border border-amber-300 px-3 py-0.5 text-xs font-bold inline-block",
+  hired: "rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 px-3 py-0.5 text-xs font-bold inline-block",
+  rejected: "rounded-full bg-red-100 text-red-800 border border-red-200 px-3 py-0.5 text-xs font-bold inline-block",
 };
+
+const DEFAULT_CANONICAL_SKILLS = [
+  "Single Needle Lockstitch",
+  "Overlock Machine",
+  "Pattern Cutting",
+  "Baking & Oven Operation",
+  "Pastry Decoration",
+  "Food Hygiene & Safety",
+  "Organic Farming & Composting",
+  "Drip Irrigation Setup",
+  "Pesticide Application",
+  "Electrical Wiring & Testing",
+  "Circuit Repair",
+  "Solar Panel Installation",
+  "Forklift Operation",
+  "Inventory Barcoding",
+  "Packaging & Palletizing",
+  "Quality Inspection",
+  "Workplace Communication & Teamwork",
+  "Financial Literacy & Bank Account Operations",
+  "Digital Literacy & Online Job Search",
+  "Entrepreneurship Basics & Udyam Registration",
+];
 
 function apiOriginUrl(relative: string | null | undefined): string | null {
   if (!relative) return null;
@@ -80,31 +103,52 @@ export default function NgoDashboardPage() {
   const stats = statsQuery.data;
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="page-title m-0">NGO employer dashboard</h1>
-          <p className="lede mb-0">
-            Post vacancies for rehabilitation candidates and review applications forwarded by jail staff.
-          </p>
+    <div className="space-y-7">
+      {/* Sunset Terracotta Header Banner */}
+      <section className="relative overflow-hidden rounded-[24px] bg-[linear-gradient(135deg,#B71C1C_0%,#D9531E_40%,#F57C00_80%,#FFE0B2_100%)] p-7 sm:p-9 text-white shadow-xl">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_82%_20%,rgba(255,255,255,0.18),transparent_55%)]" />
+        <div className="relative z-10 flex flex-wrap items-center justify-between gap-6">
+          <div>
+            <span className="mb-2 inline-block rounded-full bg-white/20 px-3.5 py-1 text-xs font-extrabold uppercase tracking-widest text-white backdrop-blur-md">
+              Rehabilitation &amp; Employer Portal
+            </span>
+            <h1 className="display text-3xl font-extrabold sm:text-4xl text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
+              NGO employer dashboard
+            </h1>
+            <p className="mt-1.5 max-w-xl text-sm sm:text-base font-medium text-[#FFF3E4]">
+              Post vacancies for rehabilitation candidates and review applications forwarded by jail staff.
+            </p>
+          </div>
+          <button
+            onClick={() => setPostOpen(true)}
+            className="flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-extrabold text-navy shadow-lg transition hover:bg-[#FFF3E4] hover:scale-105"
+          >
+            ＋ Post a job
+          </button>
         </div>
-        <button onClick={() => setPostOpen(true)} className="btn btn-primary">
-          ＋ Post a job
-        </button>
-      </div>
+      </section>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      {/* Mini Stat Cards Grid */}
+      <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-6">
         {[
-          { k: "Active jobs", v: stats?.activeJobs ?? "–" },
-          { k: "Paused", v: stats?.pausedJobs ?? "–" },
-          { k: "Closed", v: stats?.closedJobs ?? "–" },
-          { k: "Total applications", v: stats?.totalApplications ?? "–" },
-          { k: "Pending review", v: stats?.pendingApplications ?? "–" },
-          { k: "Shortlisted", v: stats?.shortlistedApplications ?? "–" },
+          { k: "Active jobs", v: stats?.activeJobs ?? "–", badge: "Live", color: "text-emerald-700" },
+          { k: "Paused", v: stats?.pausedJobs ?? "–", badge: "Hold", color: "text-amber-700" },
+          { k: "Closed", v: stats?.closedJobs ?? "–", badge: "Done", color: "text-bodytext" },
+          { k: "Total applications", v: stats?.totalApplications ?? "–", badge: "Total", color: "text-navy" },
+          { k: "Pending review", v: stats?.pendingApplications ?? "–", badge: "Review", color: "text-terracotta" },
+          { k: "Shortlisted", v: stats?.shortlistedApplications ?? "–", badge: "Stars", color: "text-emerald-700" },
         ].map((s) => (
-          <div key={s.k} className="mini-stat">
-            <p className="k">{s.k}</p>
-            <p className="v">{s.v}</p>
+          <div
+            key={s.k}
+            className="rounded-[20px] border-[2px] border-[#f0e4d3] bg-white p-5 shadow-sm transition hover:border-terracotta/40 hover:shadow-md"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-bodytext">{s.k}</span>
+              <span className="rounded-md bg-[#FAF7F2] px-1.5 py-0.5 text-[10px] font-extrabold text-navy">
+                {s.badge}
+              </span>
+            </div>
+            <p className={`mt-2 font-mono text-3xl font-extrabold ${s.color}`}>{s.v}</p>
           </div>
         ))}
       </div>
@@ -122,88 +166,99 @@ export default function NgoDashboardPage() {
           body="Use “Post a job” to publish your first vacancy."
         />
       ) : (
-        <section className="panel-tight overflow-x-auto">
-          <table className="data-table w-full">
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Category</th>
-                <th>District</th>
-                <th>Wage</th>
-                <th>Status</th>
-                <th>Candidates in pipeline</th>
-                <th className="text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {jobsQuery.data.map((j) => (
-                <tr key={j.id}>
-                  <td>
-                    <p className="m-0 font-semibold text-navy">{j.title}</p>
-                    <p className="m-0 text-[11px] text-bodytext">{formatDate(j.createdAt)}</p>
-                  </td>
-                  <td>{j.jobCategory || "—"}</td>
-                  <td>{j.district || "—"}</td>
-                  <td className="text-xs">{j.wageInfo || "—"}</td>
-                  <td>
-                    <span className={STATUS_PILL[j.status]}>{j.status}</span>
-                  </td>
-                  <td>
-                    <button
-                      onClick={() => setApplicantsJob(j)}
-                      className="inline-flex cursor-pointer items-center gap-1 font-mono text-sm font-bold text-terracotta hover:underline"
-                      title="Review applicants"
-                    >
-                      {(j.applicationCount ?? 0) > 0 ? (
-                        <>
-                          {j.applicationCount}
-                          <span className="text-[10px] uppercase tracking-wide">review →</span>
-                        </>
-                      ) : (
-                        <span className="text-bodytext/60">0</span>
-                      )}
-                    </button>
-                  </td>
-                  <td>
-                    <div className="flex flex-wrap justify-end gap-1.5">
-                      {j.status !== "active" && (
-                        <button
-                          onClick={() => setStatus.mutate({ jobId: j.id, status: "active" })}
-                          disabled={setStatus.isPending}
-                          className="btn btn-primary btn-sm"
-                        >
-                          Activate
-                        </button>
-                      )}
-                      {j.status === "active" && (
-                        <button
-                          onClick={() => setStatus.mutate({ jobId: j.id, status: "paused" })}
-                          disabled={setStatus.isPending}
-                          className="btn btn-outline btn-sm"
-                        >
-                          Pause
-                        </button>
-                      )}
-                      {j.status !== "closed" && (
-                        <button
-                          onClick={() => setStatus.mutate({ jobId: j.id, status: "closed" })}
-                          disabled={setStatus.isPending}
-                          className="btn btn-ghost btn-sm"
-                        >
-                          Close
-                        </button>
-                      )}
-                    </div>
-                  </td>
+        <section className="rounded-[24px] border-[2px] border-[#f0e4d3] bg-white p-6 sm:p-7 shadow-xl">
+          <div className="mb-4 flex items-center justify-between border-b border-[#eee4d6] pb-4">
+            <h2 className="display text-xl font-bold text-navy">Job Vacancies &amp; Candidates</h2>
+            <span className="text-xs font-bold text-bodytext">
+              Total {jobsQuery.data.length} vacancies
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="data-table w-full">
+              <thead>
+                <tr className="border-b border-[#eee4d6] bg-[#FAF7F2]">
+                  <th className="py-3 px-4 text-left text-[11px] font-extrabold uppercase tracking-wider text-navy">Title</th>
+                  <th className="py-3 px-4 text-left text-[11px] font-extrabold uppercase tracking-wider text-navy">Category</th>
+                  <th className="py-3 px-4 text-left text-[11px] font-extrabold uppercase tracking-wider text-navy">District</th>
+                  <th className="py-3 px-4 text-left text-[11px] font-extrabold uppercase tracking-wider text-navy">Wage</th>
+                  <th className="py-3 px-4 text-left text-[11px] font-extrabold uppercase tracking-wider text-navy">Status</th>
+                  <th className="py-3 px-4 text-left text-[11px] font-extrabold uppercase tracking-wider text-navy">Candidates in pipeline</th>
+                  <th className="py-3 px-4 text-right text-[11px] font-extrabold uppercase tracking-wider text-navy">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="border-t border-[#f6f1e7] px-4 py-3 text-xs text-bodytext">
-            Pipeline —{" "}
-            <span className="font-semibold text-navy">pending {stats?.pendingApplications ?? 0}</span>{" "}
-            · shortlisted {stats?.shortlistedApplications ?? 0} · total applications {stats?.totalApplications ?? 0}
-          </p>
+              </thead>
+              <tbody className="divide-y divide-[#f6f1e7]">
+                {jobsQuery.data.map((j) => (
+                  <tr key={j.id} className="transition hover:bg-[#FFFBF7]">
+                    <td className="py-3.5 px-4">
+                      <p className="m-0 font-bold text-navy">{j.title}</p>
+                      <p className="m-0 text-[11px] text-bodytext">{formatDate(j.createdAt)}</p>
+                    </td>
+                    <td className="py-3.5 px-4 text-xs font-medium text-navy">{j.jobCategory || "—"}</td>
+                    <td className="py-3.5 px-4 text-xs font-medium text-navy">{j.district || "—"}</td>
+                    <td className="py-3.5 px-4 text-xs font-semibold text-navy">{j.wageInfo || "—"}</td>
+                    <td className="py-3.5 px-4">
+                      <span className={STATUS_PILL[j.status]}>{j.status}</span>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <button
+                        onClick={() => setApplicantsJob(j)}
+                        className="inline-flex cursor-pointer items-center gap-1.5 font-mono text-sm font-bold text-terracotta hover:underline"
+                        title="Review applicants"
+                      >
+                        {(j.applicationCount ?? 0) > 0 ? (
+                          <>
+                            <span className="rounded-md bg-terracotta/10 px-2 py-0.5">{j.applicationCount}</span>
+                            <span className="text-[11px] uppercase tracking-wide font-extrabold">review →</span>
+                          </>
+                        ) : (
+                          <span className="text-bodytext/60">0 candidates</span>
+                        )}
+                      </button>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <div className="flex flex-wrap justify-end gap-2">
+                        {j.status !== "active" && (
+                          <button
+                            onClick={() => setStatus.mutate({ jobId: j.id, status: "active" })}
+                            disabled={setStatus.isPending}
+                            className="btn btn-primary btn-sm"
+                          >
+                            Activate
+                          </button>
+                        )}
+                        {j.status === "active" && (
+                          <button
+                            onClick={() => setStatus.mutate({ jobId: j.id, status: "paused" })}
+                            disabled={setStatus.isPending}
+                            className="btn btn-outline btn-sm"
+                          >
+                            Pause
+                          </button>
+                        )}
+                        {j.status !== "closed" && (
+                          <button
+                            onClick={() => setStatus.mutate({ jobId: j.id, status: "closed" })}
+                            disabled={setStatus.isPending}
+                            className="btn btn-ghost btn-sm text-red-700"
+                          >
+                            Close
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-4 border-t border-[#f6f1e7] pt-3 text-xs text-bodytext flex flex-wrap items-center justify-between gap-2">
+            <span>
+              Pipeline summary:{" "}
+              <strong className="text-navy">pending {stats?.pendingApplications ?? 0}</strong> · shortlisted {stats?.shortlistedApplications ?? 0} · total applications {stats?.totalApplications ?? 0}
+            </span>
+            <span className="font-semibold text-terracotta">✨ Auto-matched by Section 479 Skill Recommender</span>
+          </div>
         </section>
       )}
 
@@ -274,15 +329,15 @@ function ApplicantsReview({ job, onClose }: { job: JobPostingDto; onClose: () =>
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[rgba(20,15,10,0.5)] p-4 py-8">
-      <div className="w-full max-w-4xl space-y-4 rounded-card bg-white p-5 shadow-xl sm:p-7">
-        <div className="flex items-start justify-between gap-3">
+      <div className="w-full max-w-4xl space-y-4 rounded-[24px] border-[2px] border-[#f0e4d3] bg-white p-6 sm:p-8 shadow-2xl">
+        <div className="flex items-start justify-between gap-3 border-b border-[#eee4d6] pb-4">
           <div>
-            <h2 className="display m-0 text-[1.35rem] font-bold text-navy">Candidate pipeline</h2>
+            <h2 className="display m-0 text-2xl font-bold text-navy">Candidate pipeline</h2>
             <p className="mb-0 mt-0.5 text-sm text-bodytext">
               {job.title} · {job.district || "—"} · {job.wageInfo || "wage on request"}
             </p>
           </div>
-          <button type="button" onClick={onClose} className="cursor-pointer bg-transparent text-xl text-bodytext hover:text-navy">
+          <button type="button" onClick={onClose} className="cursor-pointer rounded-lg bg-[#FAF7F2] px-3 py-1 text-lg font-bold text-navy hover:bg-peach">
             ✕
           </button>
         </div>
@@ -292,9 +347,9 @@ function ApplicantsReview({ job, onClose }: { job: JobPostingDto; onClose: () =>
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`cursor-pointer rounded-full border px-3 py-1 text-xs font-bold capitalize transition ${
+              className={`cursor-pointer rounded-full border px-3.5 py-1 text-xs font-bold capitalize transition ${
                 filter === f
-                  ? "border-terracotta bg-peach text-terracotta"
+                  ? "border-terracotta bg-peach text-terracotta shadow-sm"
                   : "border-[#e9e0d1] bg-white text-bodytext hover:border-saffron"
               }`}
             >
@@ -305,7 +360,7 @@ function ApplicantsReview({ job, onClose }: { job: JobPostingDto; onClose: () =>
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search name or reg no…"
-            className="input-base ml-auto h-9 w-48 py-1 text-xs"
+            className="input-base ml-auto h-9 w-52 py-1 text-xs rounded-xl"
           />
         </div>
 
@@ -363,35 +418,35 @@ function ApplicantCard({
   const ongoing = app.training.filter((t) => t.status !== "completed");
 
   return (
-    <div className={`rounded-xl border bg-white p-4 transition ${app.status === "rejected" ? "opacity-70" : ""} ${expanded ? "border-saffron shadow-sm" : "border-[#f1e6d5]"}`}>
+    <div className={`rounded-2xl border bg-white p-4.5 transition ${app.status === "rejected" ? "opacity-70" : ""} ${expanded ? "border-terracotta ring-2 ring-terracotta/20 shadow-md" : "border-[#f1e6d5]"}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <button onClick={onToggle} className="cursor-pointer text-left">
-          <p className="display m-0 text-sm font-bold text-navy hover:text-terracotta">
+          <p className="display m-0 text-base font-bold text-navy hover:text-terracotta">
             {expanded ? "▾" : "▸"} {app.prisonerName}
           </p>
-          <p className="m-0 mt-0.5 font-mono text-[11px] text-bodytext">
+          <p className="m-0 mt-0.5 font-mono text-xs text-bodytext">
             {app.prisonerRegNo} · applied {formatDate(app.appliedAt)}
           </p>
         </button>
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-2">
           <span className={APP_STATUS_PILL[app.status]}>{app.status}</span>
           {app.status !== "shortlisted" && app.status !== "hired" && (
-            <button onClick={() => onStatus("shortlisted")} disabled={busy} className="btn btn-outline btn-sm !px-2.5 !py-1 !text-[11px]">
+            <button onClick={() => onStatus("shortlisted")} disabled={busy} className="btn btn-outline btn-sm !px-3 !py-1 !text-xs">
               ★ Shortlist
             </button>
           )}
           {app.status !== "hired" && (
-            <button onClick={() => onStatus("hired")} disabled={busy} className="btn btn-primary btn-sm !px-2.5 !py-1 !text-[11px]">
+            <button onClick={() => onStatus("hired")} disabled={busy} className="btn btn-primary btn-sm !px-3 !py-1 !text-xs">
               ✓ Hire
             </button>
           )}
           {app.status !== "rejected" && (
-            <button onClick={() => onStatus("rejected")} disabled={busy} className="btn btn-ghost btn-sm !px-2.5 !py-1 !text-[11px] !text-red-700">
+            <button onClick={() => onStatus("rejected")} disabled={busy} className="btn btn-ghost btn-sm !px-3 !py-1 !text-xs !text-red-700">
               ✕ Reject
             </button>
           )}
           {app.status !== "pending" && (
-            <button onClick={() => onStatus("pending")} disabled={busy} className="cursor-pointer text-[10px] font-semibold text-bodytext underline">
+            <button onClick={() => onStatus("pending")} disabled={busy} className="cursor-pointer text-xs font-semibold text-bodytext underline ml-1">
               reset
             </button>
           )}
@@ -406,43 +461,41 @@ function ApplicantCard({
           {app.educationBaseline ? ` · Education: ${app.educationBaseline}` : ""}
         </p>
       ) : (
-        <div className="mt-3 space-y-4 border-t border-[#f6f1e7] pt-3">
-          {/* Education & background */}
-          <div className="grid gap-x-6 gap-y-2.5 text-sm sm:grid-cols-2">
-            <Info label="Previous education"><strong className="text-heading">{app.educationBaseline ?? "Not recorded"}</strong></Info>
+        <div className="mt-4 space-y-4 border-t border-[#f6f1e7] pt-4">
+          <div className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+            <Info label="Previous education"><strong className="text-navy">{app.educationBaseline ?? "Not recorded"}</strong></Info>
             <Info label="Target work domain">{app.targetDomain ?? "—"}</Info>
             <Info label="Machinery handling">
               {app.machinerySkills ? (
-                <div className="mt-0.5 flex flex-wrap gap-1">
+                <div className="mt-1 flex flex-wrap gap-1">
                   {app.machinerySkills.split(/[|,]/).map((m) => m.trim()).filter(Boolean).map((m) => (
-                    <span key={m} className="rounded bg-peach/50 px-1.5 py-0.5 text-[11px] font-semibold text-[#8a4a1c]">{m}</span>
+                    <span key={m} className="rounded bg-peach/50 px-2 py-0.5 text-xs font-semibold text-[#8a4a1c]">{m}</span>
                   ))}
                 </div>
               ) : "—"}
             </Info>
             <Info label="Verified skills (completed)">
               {app.skills.length > 0 ? (
-                <div className="mt-0.5 flex flex-wrap gap-1">
+                <div className="mt-1 flex flex-wrap gap-1">
                   {app.skills.map((s) => (
-                    <span key={s} className="pill-ok !px-2 !py-0.5 !text-[10.5px]">{s}</span>
+                    <span key={s} className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800 border border-emerald-300">{s}</span>
                   ))}
                 </div>
               ) : "None on record"}
             </Info>
           </div>
 
-          {/* Digital Skill Passport — certificates */}
           <div>
-            <p className="kicker mb-1.5">Digital Skill Passport · certificates</p>
+            <p className="mb-2 text-xs font-extrabold uppercase tracking-wider text-navy">Digital Skill Passport · certificates</p>
             {completed.length === 0 ? (
               <p className="m-0 text-xs text-bodytext">No certificates issued yet.</p>
             ) : (
-              <ul className="space-y-1.5">
+              <ul className="space-y-2">
                 {completed.map((t) => (
-                  <li key={t.program} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-emerald-50/60 px-3 py-2">
+                  <li key={t.program} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-emerald-50/70 border border-emerald-200 px-3.5 py-2.5">
                     <div>
-                      <p className="m-0 text-[13px] font-semibold text-navy">{t.program}</p>
-                      <p className="m-0 text-[11px] text-bodytext">
+                      <p className="m-0 text-[13.5px] font-bold text-navy">{t.program}</p>
+                      <p className="m-0 text-xs text-bodytext">
                         {t.category} · completed {t.completedAt ? formatDate(t.completedAt) : "—"}
                       </p>
                     </div>
@@ -451,7 +504,7 @@ function ApplicantCard({
                         href={apiOriginUrl(t.certificateUrl)!}
                         target="_blank"
                         rel="noreferrer"
-                        className="btn btn-outline btn-sm !px-2.5 !py-1 !text-[11px]"
+                        className="btn btn-outline btn-sm !px-3 !py-1 !text-xs"
                       >
                         View certificate ↗
                       </a>
@@ -462,19 +515,18 @@ function ApplicantCard({
             )}
           </div>
 
-          {/* Training in progress */}
           {ongoing.length > 0 && (
             <div>
-              <p className="kicker mb-1.5">Training in progress</p>
+              <p className="mb-2 text-xs font-extrabold uppercase tracking-wider text-navy">Training in progress</p>
               <div className="space-y-2">
                 {ongoing.map((t) => (
                   <div key={t.program}>
-                    <div className="mb-1 flex justify-between text-[12px]">
+                    <div className="mb-1 flex justify-between text-xs">
                       <span className="font-semibold text-navy">{t.program} <span className="font-normal text-bodytext">({t.category})</span></span>
                       <span className="font-mono text-bodytext">{t.progressPct}%</span>
                     </div>
-                    <div className="h-1.5 rounded bg-[#f1ece1]">
-                      <div className="h-full rounded bg-saffron" style={{ width: `${Math.min(100, t.progressPct)}%` }} />
+                    <div className="h-2 rounded-full bg-[#f1ece1]">
+                      <div className="h-full rounded-full bg-saffron transition-all" style={{ width: `${Math.min(100, t.progressPct)}%` }} />
                     </div>
                   </div>
                 ))}
@@ -482,10 +534,9 @@ function ApplicantCard({
             </div>
           )}
 
-          {/* Contact via jail staff */}
-          <div className="info-note !bg-[#FFF6EC]">
-            <p className="m-0 font-bold">To coordinate interviews or day-release paperwork</p>
-            <p className="m-0 mt-1 text-[13px]">
+          <div className="rounded-xl border border-peach bg-[#FFF6EC] p-4 text-xs text-[#8a4a1c]">
+            <p className="m-0 font-bold text-sm">To coordinate interviews or day-release paperwork</p>
+            <p className="m-0 mt-1 text-xs sm:text-sm">
               Contact {app.jailName}{app.jailDistrict ? ` (${app.jailDistrict})` : ""} rehabilitation staff
               {app.jailPhone ? (
                 <>
@@ -495,7 +546,7 @@ function ApplicantCard({
                 " — phone number not on file; raise it at the next DLSA review"
               )}
             </p>
-            <p className="m-0 mt-1 text-[11px] opacity-80">
+            <p className="m-0 mt-1.5 text-[11px] opacity-80">
               All candidate contact is mediated by prison staff. RIHAI SETU never shares direct prisoner contact details.
             </p>
           </div>
@@ -508,7 +559,7 @@ function ApplicantCard({
 function Info({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="m-0 mb-0.5 text-[11px] font-bold uppercase tracking-wide text-bodytext">{label}</p>
+      <p className="m-0 mb-0.5 text-[11px] font-extrabold uppercase tracking-wide text-bodytext">{label}</p>
       <div className="text-[13.5px] text-bodytext">{children}</div>
     </div>
   );
@@ -541,19 +592,19 @@ function SkillPicker({
       <div className="mb-1.5 flex flex-wrap items-center gap-2">
         <span className="block text-xs font-bold text-navy">{label}{required ? " *" : ""}</span>
         {selected.map((s) => (
-          <span key={s} className="pill-neutral">{s}</span>
+          <span key={s} className="rounded-full bg-peach px-2.5 py-0.5 text-[11px] font-bold text-terracotta">{s}</span>
         ))}
       </div>
-      <div className="flex max-h-36 flex-wrap gap-1.5 overflow-y-auto rounded-[10px] border border-[#f1e6d5] bg-[#FBF9F5] p-2">
+      <div className="flex max-h-36 flex-wrap gap-1.5 overflow-y-auto rounded-xl border border-[#f1e6d5] bg-[#FBF9F5] p-2.5">
         {options.length === 0 && (
           <span className="px-1 text-xs text-bodytext">Loading skill catalog…</span>
         )}
         {options.map((skill) => (
           <label
             key={skill}
-            className={`cursor-pointer rounded-full border px-2.5 py-1 text-[11.5px] font-semibold transition ${
+            className={`cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold transition ${
               selected.includes(skill)
-                ? "border-terracotta bg-peach text-terracotta"
+                ? "border-terracotta bg-peach text-terracotta shadow-sm"
                 : "border-[#e9e0d1] bg-white text-navy hover:border-saffron"
             }`}
           >
@@ -590,9 +641,15 @@ function PostJobModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
   const catalogQuery = useQuery({
     queryKey: ["skills-catalog"],
     queryFn: async () => {
-      const res = await api.get<{ data: { canonical_skills: string[] } }>("/skills/catalog");
-      return res.data.data.canonical_skills;
+      try {
+        const res = await api.get<{ data: { canonical_skills?: string[] } }>("/skills/catalog");
+        const list = res.data?.data?.canonical_skills ?? (res.data as any)?.canonical_skills;
+        return list && list.length > 0 ? list : DEFAULT_CANONICAL_SKILLS;
+      } catch {
+        return DEFAULT_CANONICAL_SKILLS;
+      }
     },
+    initialData: DEFAULT_CANONICAL_SKILLS,
   });
 
   const mutation = useMutation({
@@ -626,29 +683,29 @@ function PostJobModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
     mutation.mutate();
   };
 
-  const inputCls = "input-base";
+  const inputCls = "input-base rounded-xl border-[#EBE3D7] bg-[#FAF7F2] px-4 py-2.5 text-sm text-navy focus:border-terracotta focus:bg-white";
   const labelCls = "mb-1.5 block text-xs font-bold text-navy";
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[rgba(20,15,10,0.5)] p-4 py-10">
       <form
         onSubmit={submit}
-        className="w-full max-w-2xl space-y-4 rounded-2xl bg-white p-6 shadow-xl sm:p-8"
+        className="w-full max-w-2xl space-y-4 rounded-[24px] border-[2px] border-[#f0e4d3] bg-white p-6 sm:p-8 shadow-2xl"
       >
-        <div className="mhead flex items-center justify-between">
-          <h2 className="display m-0 text-[1.35rem] font-bold text-navy">Post a job</h2>
-          <button type="button" onClick={onClose} className="cursor-pointer bg-transparent text-xl text-bodytext hover:text-navy">
+        <div className="mhead flex items-center justify-between border-b border-[#eee4d6] pb-4">
+          <h2 className="display m-0 text-2xl font-bold text-navy">Post a job vacancy</h2>
+          <button type="button" onClick={onClose} className="cursor-pointer rounded-lg bg-[#FAF7F2] px-3 py-1 text-lg font-bold text-navy hover:bg-peach">
             ✕
           </button>
         </div>
 
         {mutation.isError && (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-800">
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-medium text-red-800">
             {extractApiError(mutation.error).message}
           </div>
         )}
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3.5 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <label className={labelCls}>Job title *</label>
             <input
@@ -742,11 +799,11 @@ function PostJobModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
           </div>
         </div>
 
-        <p className="info-note">
+        <p className="rounded-xl border border-peach bg-[#FFF6EC] p-3 text-xs text-[#8a4a1c]">
           Skill tags come from the canonical AI vocabulary so the recommender can rank this job accurately.
         </p>
 
-        <div className="modal-actions flex flex-wrap justify-end gap-2.5">
+        <div className="modal-actions flex flex-wrap justify-end gap-2.5 pt-2">
           <button type="button" onClick={onClose} className="btn btn-outline">
             Cancel
           </button>

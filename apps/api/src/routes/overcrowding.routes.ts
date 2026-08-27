@@ -1,4 +1,4 @@
-﻿import { Router } from "express";
+import { Router } from "express";
 import { z } from "zod";
 import { Role } from "@rihai/shared-types";
 import { asyncHandler, ApiError } from "../middleware/errors.js";
@@ -21,6 +21,9 @@ overcrowdingJailRouter.get(
   "/current",
   requireJailAccess,
   asyncHandler(async (req, res) => {
+    if (req.user?.role === Role.DlsaLawyer || req.access?.roleAtJail === Role.DlsaLawyer) {
+      throw ApiError.forbidden("DLSA Lawyers are not authorized to view overcrowding metrics");
+    }
     res.json({ data: await getCurrentState(req.params.jailId!) });
   }),
 );
@@ -29,6 +32,9 @@ overcrowdingJailRouter.get(
   "/projection",
   requireJailAccess,
   asyncHandler(async (req, res) => {
+    if (req.user?.role === Role.DlsaLawyer || req.access?.roleAtJail === Role.DlsaLawyer) {
+      throw ApiError.forbidden("DLSA Lawyers are not authorized to view overcrowding metrics");
+    }
     const parsed = daysSchema.safeParse(Number(req.query.days ?? 30));
     const days = parsed.success ? (parsed.data as 30 | 60 | 90) : 30;
     res.json({ data: await getProjection(req.params.jailId!, days) });
@@ -39,6 +45,9 @@ overcrowdingJailRouter.get(
   "/backlog-breakdown",
   requireJailAccess,
   asyncHandler(async (req, res) => {
+    if (req.user?.role === Role.DlsaLawyer || req.access?.roleAtJail === Role.DlsaLawyer) {
+      throw ApiError.forbidden("DLSA Lawyers are not authorized to view overcrowding metrics");
+    }
     res.json({ data: await getBacklogBreakdown(req.params.jailId!) });
   }),
 );

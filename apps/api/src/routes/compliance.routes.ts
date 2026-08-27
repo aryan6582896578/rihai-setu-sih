@@ -28,6 +28,9 @@ complianceJailRouter.get(
   "/",
   requireJailAccess,
   asyncHandler(async (req: Request, res: Response) => {
+    if (req.user?.role === Role.DlsaLawyer || req.access?.roleAtJail === Role.DlsaLawyer) {
+      throw ApiError.forbidden("DLSA Lawyers are not authorized to view compliance reports");
+    }
     const { from, to } = parseRange(req);
     res.json({ data: await getComplianceMetrics(req.params.jailId!, from, to) });
   }),
@@ -37,6 +40,9 @@ complianceJailRouter.get(
   "/export",
   requireJailAccess,
   asyncHandler(async (req: Request, res: Response) => {
+    if (req.user?.role === Role.DlsaLawyer || req.access?.roleAtJail === Role.DlsaLawyer) {
+      throw ApiError.forbidden("DLSA Lawyers are not authorized to view compliance reports");
+    }
     const { from, to } = parseRange(req);
     const format = z.enum(["csv", "xlsx", "pdf"]).catch("csv").parse(req.query.format);
     const out = await buildExport(

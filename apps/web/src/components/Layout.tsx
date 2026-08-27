@@ -7,6 +7,7 @@ import { api, extractApiError } from "../lib/api";
 import { useLang, LangToggle } from "../lib/i18n";
 import { useAuthStore } from "../state/authStore";
 import SessionKeepAlive from "./SessionKeepAlive";
+import logoImg from "../public/rihai_setu_logo.png";
 
 const NAV_LINKS: { to: string; labelKey: string; roles?: string[] }[] = [
   { to: "/jails", labelKey: "nav.jails" },
@@ -27,8 +28,8 @@ export default function Layout() {
   const queryClient = useQueryClient();
   const { t } = useLang();
   const location = useLocation();
-  // NGO portal is English-only for its audience: no language switch there.
-  const showLangToggle = !location.pathname.startsWith("/ngo");
+  const isNgoRoute = location.pathname.startsWith("/ngo");
+  const showLangToggle = !isNgoRoute;
   const [menuOpen, setMenuOpen] = useState(false);
   const [mfaOpen, setMfaOpen] = useState(false);
   const [mfaSecret, setMfaSecret] = useState<string | null>(null);
@@ -86,9 +87,11 @@ export default function Layout() {
         <div className="wrap-app flex items-center justify-between py-3">
           <div className="flex items-center gap-4 sm:gap-7">
             <NavLink to="/jails" className="flex items-center gap-3">
-              <span className="display flex h-11 w-11 items-center justify-center rounded-[10px] bg-gradient-to-br from-terracotta to-saffron text-[17px] font-extrabold text-white">
-                RS
-              </span>
+              <img
+                src={logoImg}
+                alt="RIHAI SETU"
+                className="h-11 w-11 rounded-[10px] object-cover shadow-sm"
+              />
               <span className="leading-tight">
                 <span className="display block text-[19px] font-extrabold tracking-tight text-navy">
                   RIHAI SETU
@@ -121,36 +124,35 @@ export default function Layout() {
             <div className="flex items-center gap-2 sm:gap-4">
               <Link
                 to="/notifications"
-                className="relative rounded-md p-2 text-navy/70 hover:bg-peach/40"
+                className="relative rounded-xl border border-[#eee4d6] bg-[#FAF7F2] p-2 text-navy/70 hover:bg-peach/40 hover:text-terracotta transition-colors shadow-sm"
                 title={t("app.notifications")}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
                 {(unread ?? 0) > 0 && (
-                  <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[9px] font-bold text-white">
+                  <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[9px] font-bold text-white shadow-sm">
                     {unread}
                   </span>
                 )}
               </Link>
+
               {showLangToggle && <LangToggle />}
-              <button
-                onClick={() => {
-                  setMfaOpen(true);
-                  setMfaSecret(null);
-                  setMfaMsg(null);
-                  setMfaErr(null);
-                }}
-                className="btn btn-outline btn-sm hidden sm:inline-flex"
-                title="Two-factor authentication"
-              >
-                {t("app.mfa")}
-              </button>
-              <div className="hidden text-right leading-tight lg:block">
-                <p className="text-[13px] font-bold text-navy">{user.name}</p>
-                <p className="text-[11.5px] text-bodytext">{t(`role.${user.role}`)}</p>
+
+              {/* User Identity Pill */}
+              <div className="hidden items-center gap-2.5 rounded-xl border border-[#eee4d6] bg-[#FAF7F2] px-3.5 py-1.5 lg:flex shadow-sm">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                <div className="text-right leading-tight">
+                  <p className="text-xs font-extrabold text-navy">{user.name}</p>
+                  <p className="text-[10.5px] font-semibold text-terracotta">{t(`role.${user.role}`)}</p>
+                </div>
               </div>
-              <button onClick={handleLogout} className="btn btn-outline btn-sm">
-                {t("app.logout")}
+
+              <button
+                onClick={handleLogout}
+                className="btn btn-outline btn-sm font-bold border-[#EBE3D7] hover:border-terracotta hover:text-terracotta transition-colors"
+              >
+                {t("app.logout")} →
               </button>
+
               <button
                 onClick={() => setMenuOpen((v) => !v)}
                 className="rounded-md p-2 text-navy md:hidden"
@@ -180,15 +182,7 @@ export default function Layout() {
                 {t(l.labelKey)}
               </NavLink>
             ))}
-            <button
-              onClick={() => {
-                setMenuOpen(false);
-                setMfaOpen(true);
-              }}
-              className="block w-full rounded-lg px-3 py-2.5 text-left text-sm font-bold text-navy hover:bg-cream sm:hidden"
-            >
-              Two-factor authentication
-            </button>
+
           </nav>
         )}
       </header>

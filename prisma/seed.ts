@@ -1,4 +1,4 @@
-﻿import "dotenv/config";
+import "dotenv/config";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -174,7 +174,7 @@ async function main() {
     for (const s of ["a", "b"]) {
       const st = await prisma.user.create({
         data: {
-          name: `Jail Staff ${suffix}${s.toUpperCase()}`,
+          name: `Jailor ${suffix}${s.toUpperCase()}`,
           email: `staff${suffix}${s}@rihai.gov.in`,
           passwordHash,
           role: "jail_staff",

@@ -3,11 +3,10 @@ import { Role } from "@rihai/shared-types";
 import { ApiError } from "./errors.js";
 import type { AuthedRequest } from "./auth.js";
 
-export const EDITOR_ROLES: Role[] = [Role.SuperAdmin, Role.JailSuperintendent, Role.JailStaff];
+export const EDITOR_ROLES: Role[] = [Role.SuperAdmin, Role.JailSuperintendent];
 export const ADVANCE_ROLES: Role[] = [
   Role.SuperAdmin,
   Role.JailSuperintendent,
-  Role.JailStaff,
   Role.DlsaLawyer,
 ];
 export const REVIEW_ROLES: Role[] = [Role.SuperAdmin, Role.JailSuperintendent, Role.DlsaLawyer];

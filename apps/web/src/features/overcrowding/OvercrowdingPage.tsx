@@ -1,8 +1,9 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import type { ProjectionPoint } from "@rihai/shared-types";
 import { api, extractApiError } from "../../lib/api";
+import { useAuthStore } from "../../state/authStore";
 import LineChart from "../../components/LineChart";
 import { ErrorBanner, OccupancyBadge, Spinner } from "../../components/ui";
 
@@ -24,7 +25,26 @@ interface Backlog {
 
 export default function OvercrowdingPage() {
   const { jailId = "" } = useParams();
+  const user = useAuthStore((s) => s.user);
   const [days, setDays] = useState<30 | 60 | 90>(30);
+
+  if (user?.role === "dlsa_lawyer") {
+    return (
+      <div className="space-y-4">
+        <Link to={`/jails/${jailId}`} className="crumb">← Jail portal</Link>
+        <div className="rounded-card border border-amber-200 bg-amber-50 p-6 text-center">
+          <h2 className="display text-lg font-bold text-navy mb-2">Access Restricted</h2>
+          <p className="text-sm text-bodytext mb-4">
+            DLSA Lawyer accounts are not authorized to view overcrowding metrics.
+          </p>
+          <div className="flex justify-center gap-3">
+            <Link to={`/jails/${jailId}/court-tracking`} className="btn btn-primary btn-sm">Court Tracking</Link>
+            <Link to={`/jails/${jailId}/legal-aid`} className="btn btn-outline btn-sm">Legal Aid</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const currentQuery = useQuery({
     queryKey: ["overcrowding-current", jailId],

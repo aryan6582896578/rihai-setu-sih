@@ -14,6 +14,26 @@ export default function ComplianceReportPage() {
 
   const allowed = !isRollup || user?.role === "super_admin";
 
+  if (user?.role === "dlsa_lawyer") {
+    return (
+      <div className="space-y-4">
+        <Link to={jailId ? `/jails/${jailId}` : "/jails"} className="crumb">← Jail portal</Link>
+        <div className="rounded-card border border-amber-200 bg-amber-50 p-6 text-center">
+          <h2 className="display text-lg font-bold text-navy mb-2">Access Restricted</h2>
+          <p className="text-sm text-bodytext mb-4">
+            DLSA Lawyer accounts are not authorized to view compliance reports.
+          </p>
+          {jailId && (
+            <div className="flex justify-center gap-3">
+              <Link to={`/jails/${jailId}/court-tracking`} className="btn btn-primary btn-sm">Court Tracking</Link>
+              <Link to={`/jails/${jailId}/legal-aid`} className="btn btn-outline btn-sm">Legal Aid</Link>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   const defaultFrom = new Date(Date.now() - 90 * 86_400_000).toISOString().slice(0, 10);
   const defaultTo = new Date().toISOString().slice(0, 10);
   const [from, setFrom] = useState(defaultFrom);

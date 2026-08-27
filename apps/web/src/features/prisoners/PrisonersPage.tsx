@@ -8,7 +8,7 @@ import { useAuthStore } from "../../state/authStore";
 import { EmptyState, Spinner } from "../../components/ui";
 import AddPrisonerModal from "./AddPrisonerModal";
 
-const EDITOR_ROLES: string[] = ["super_admin", "jail_superintendent", "jail_staff"];
+const EDITOR_ROLES: string[] = ["super_admin", "jail_superintendent"];
 
 export default function PrisonersPage() {
   const { jailId = "" } = useParams();
@@ -45,6 +45,24 @@ export default function PrisonersPage() {
       return res.data;
     },
   });
+
+  if (user?.role === Role.DlsaLawyer) {
+    return (
+      <div className="space-y-4">
+        <Link to={`/jails/${jailId}`} className="crumb">← Jail portal</Link>
+        <div className="rounded-card border border-amber-200 bg-amber-50 p-6 text-center">
+          <h2 className="display text-lg font-bold text-navy mb-2">Access Restricted</h2>
+          <p className="text-sm text-bodytext mb-4">
+            DLSA Lawyer accounts are restricted from viewing full prisoner directories and personal info.
+          </p>
+          <div className="flex justify-center gap-3">
+            <Link to={`/jails/${jailId}/court-tracking`} className="btn btn-primary btn-sm">Court Tracking</Link>
+            <Link to={`/jails/${jailId}/legal-aid`} className="btn btn-outline btn-sm">Legal Aid</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (query.isLoading) return <Spinner label="Loading prisoners…" />;
 
