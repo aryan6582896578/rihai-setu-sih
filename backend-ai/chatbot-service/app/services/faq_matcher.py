@@ -53,6 +53,7 @@ _HARD_ESCALATION_TERMS = frozenset(
 _LEGAL_DECISION_TERMS = frozenset(
     {
         "bail", "case", "court", "offence", "police", "release order",
+        "section 479", "bnss",
         "sentence",
     }
 )
@@ -69,8 +70,8 @@ _ESCALATION = (
     "or portal administrator."
 )
 _OUT_OF_SCOPE = (
-    "I can only help with RIHAI SETU, jobs, skills, training, rehabilitation "
-    "and general access to approved support services."
+    "I can only help with RIHAI SETU, undertrial review, Section 479, legal-aid "
+    "access, jobs, skills, training and approved support services."
 )
 
 

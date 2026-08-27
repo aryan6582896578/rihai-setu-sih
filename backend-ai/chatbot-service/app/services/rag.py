@@ -35,6 +35,7 @@ _SCOPE_TERMS = frozenset(
         "ngo", "nalsa", "occupation", "pmkvy", "portal", "post release",
         "prison", "prisoner", "recommendation", "rehabilitation", "resume",
         "rihai", "setu", "skill", "skills", "training", "undertrial",
+        "undertrial review", "bnss", "479", "release", "prison release",
         "vacancy", "vocational", "work", "workplace",
     }
 )
@@ -50,7 +51,7 @@ def tokenize(value: str) -> list[str]:
 
 
 def question_is_in_scope(message: str) -> bool:
-    """Allow only website, employment, rehabilitation and legal-aid topics."""
+    """Allow only RIHAI SETU, undertrial-review and support-service topics."""
 
     normalized = " ".join(tokenize(message))
     tokens = set(normalized.split())

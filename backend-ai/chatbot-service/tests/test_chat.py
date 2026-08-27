@@ -144,7 +144,7 @@ def test_knowledge_status_reports_built_index() -> None:
 
     assert response.status_code == 200
     assert response.json()["ready"] is True
-    assert response.json()["document_count"] == 7
+    assert response.json()["document_count"] == 8
     assert response.json()["chunk_count"] > 100
 
 
@@ -152,6 +152,17 @@ def test_personal_bail_question_is_escalated() -> None:
     response = client.post(
         "/api/v1/chat/ask",
         json={"message": "Am I eligible for bail in my case?"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["source"] == "safety"
+    assert response.json()["escalation_required"] is True
+
+
+def test_personal_section_479_question_is_escalated() -> None:
+    response = client.post(
+        "/api/v1/chat/ask",
+        json={"message": "Am I eligible under Section 479 in my case?"},
     )
 
     assert response.status_code == 200

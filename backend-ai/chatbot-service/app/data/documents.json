@@ -40,6 +40,14 @@
     "category": "legal-aid"
   },
   {
+    "source_id": "bnss-2023",
+    "title": "Bharatiya Nagarik Suraksha Sanhita, 2023",
+    "issuer": "Bureau of Police Research and Development, Government of India",
+    "filename": "bnss_2023.pdf",
+    "url": "https://bprd.nic.in/uploads/pdf/Final_BNSS.pdf",
+    "category": "undertrial-law"
+  },
+  {
     "source_id": "nalsa-prison-clinics",
     "title": "SOP - Functioning of Prison Legal Aid Clinics 2022",
     "issuer": "National Legal Services Authority",

@@ -153,5 +153,35 @@
     "category": "Safety",
     "question": "What should I do if I need urgent help?",
     "answer": "For urgent safety, medical or legal help, contact your authorized NGO caseworker, prison authority, emergency service or legal aid provider immediately."
+  },
+  {
+    "category": "Undertrial support",
+    "question": "What is Section 479 of the BNSS?",
+    "answer": "Section 479 of the Bharatiya Nagarik Suraksha Sanhita, 2023 concerns review of release for certain undertrial prisoners. The applicable conditions and exclusions must be checked by authorised prison and legal-aid officials; this chatbot cannot decide an individual case."
+  },
+  {
+    "category": "Undertrial support",
+    "question": "What is an undertrial review?",
+    "answer": "An undertrial review is an authorised check of custody and case information to identify matters that may need legal-aid, committee or court action. RIHAI SETU helps organise information and alerts; people, not the software, make decisions."
+  },
+  {
+    "category": "Undertrial support",
+    "question": "How can an undertrial get legal aid?",
+    "answer": "An undertrial or their family can ask the prison legal-aid clinic, the District Legal Services Authority (DLSA) or an authorised caseworker about available assistance. They can explain the correct process for the individual case."
+  },
+  {
+    "category": "Undertrial support",
+    "question": "Can this chatbot tell me if I qualify under Section 479?",
+    "answer": "No. Individual eligibility depends on verified case and custody records and must be determined by authorised legal, prison or judicial officials. Please contact the prison legal-aid clinic, DLSA or your caseworker."
+  },
+  {
+    "category": "Undertrial support",
+    "question": "How does RIHAI SETU help with undertrial cases?",
+    "answer": "RIHAI SETU organises undertrial records, custody timelines, hearing and legal-aid information, and highlights cases that may need authorised human review. It does not order or automate release."
+  },
+  {
+    "category": "Undertrial support",
+    "question": "What is an Undertrial Review Committee?",
+    "answer": "An Undertrial Review Committee is an authorised body that reviews eligible undertrial matters and coordinates follow-up with the relevant justice and legal-aid authorities. Ask the prison or DLSA for the current local process."
   }
 ]
