@@ -20,6 +20,9 @@ import {
   setPinFirstTimeKiosk,
   setPinFromSession,
 } from "../services/portal.service.js";
+import { getPrisonerProduction } from "../services/production.service.js";
+import { recommendedJobsForPrisoner } from "../services/recommendations.service.js";
+import { applyToJob } from "../services/jobs.service.js";
 
 export const portalRouter = Router();
 
@@ -183,5 +186,66 @@ portalRouter.get(
       ipAddress: req.ip ?? undefined,
     });
     res.json({ data: docs });
+  }),
+);
+
+portalRouter.get(
+  "/production",
+  requirePrisoner,
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const summary = await getPrisonerProduction(req.prisoner!.id);
+    audit({
+      actorType: "prisoner",
+      actorId: req.prisoner!.id,
+      actorName: req.prisoner!.fullName,
+      action: "portal.production_read",
+      entityType: "Prisoner",
+      entityId: req.prisoner!.id,
+      fieldsTouched: [`count:${summary.totalItems}`],
+      ipAddress: req.ip ?? undefined,
+    });
+    res.json({ data: summary });
+  }),
+);
+
+portalRouter.get(
+  "/recommended-jobs",
+  requirePrisoner,
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const recs = await recommendedJobsForPrisoner(req.prisoner!.id, 10, { bypassConsentCheck: true });
+    audit({
+      actorType: "prisoner",
+      actorId: req.prisoner!.id,
+      actorName: req.prisoner!.fullName,
+      action: "portal.recommended_jobs_read",
+      entityType: "Prisoner",
+      entityId: req.prisoner!.id,
+      fieldsTouched: [`count:${recs.length}`],
+      ipAddress: req.ip ?? undefined,
+    });
+    res.json({ data: recs });
+  }),
+);
+
+portalRouter.post(
+  "/jobs/:jobId/apply",
+  requirePrisoner,
+  asyncHandler(async (req: AuthedRequest, res) => {
+    const app = await applyToJob(
+      req.prisoner!.id,
+      req.params.jobId!,
+      req.prisoner!.fullName ?? "Candidate Prisoner",
+      req.body?.note || "Applied via Prisoner Self-Service Portal Kiosk",
+    );
+    audit({
+      actorType: "prisoner",
+      actorId: req.prisoner!.id,
+      actorName: req.prisoner!.fullName,
+      action: "portal.job_apply",
+      entityType: "JobApplication",
+      entityId: app.id,
+      ipAddress: req.ip ?? undefined,
+    });
+    res.json({ data: app });
   }),
 );

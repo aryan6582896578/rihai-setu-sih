@@ -8,8 +8,7 @@ import { useAuthStore } from "../../state/authStore";
 import { EmptyState, ErrorBanner, Spinner } from "../../components/ui";
 import { SearchPagination, useSearchPage } from "../../components/SearchPagination";
 
-/** Only these stages can still receive court updates; concluded orders cannot. */
-const SYNCABLE = new Set<string>([ApplicationStage.Filed, ApplicationStage.HearingScheduled]);
+
 
 export default function CourtTrackingPage() {
   const { jailId = "" } = useParams();
@@ -52,7 +51,7 @@ export default function CourtTrackingPage() {
       r.orderOutcome ?? ""
     } ${r.hearingDate ?? ""}`,
   );
-  const syncableRows = rows.filter((r) => SYNCABLE.has(r.stage));
+  const syncableRows = rows.filter((r) => r.orderOutcome !== "granted" && r.stage !== ApplicationStage.Released);
 
   const syncAll = useMutation({
     mutationFn: async (targets: CourtTrackingRow[]) => {
@@ -137,7 +136,7 @@ export default function CourtTrackingPage() {
               </thead>
               <tbody>
                 {sp.paged.map((r) => {
-                  const syncable = SYNCABLE.has(r.stage);
+                  const syncable = r.orderOutcome !== "granted" && r.stage !== ApplicationStage.Released;
                   return (
                     <tr key={r.applicationId}>
                       <td className="font-semibold text-navy">{r.prisonerName}</td>

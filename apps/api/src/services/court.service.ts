@@ -1,4 +1,4 @@
-﻿import {
+import {
   ApplicationStage,
   type ApplicationDto,
 } from "@rihai/shared-types";
@@ -69,10 +69,8 @@ export async function syncCourtStatus(
     include: { prisoner: true },
   });
   if (!app) throw ApiError.notFound("Application not found");
-  if (!([ApplicationStage.Filed, ApplicationStage.HearingScheduled] as ApplicationStage[]).includes(app.stage)) {
-    throw ApiError.conflict(
-      `Court sync applies to filed or hearing-scheduled applications only (current: ${app.stage})`,
-    );
+  if (app.stage === ApplicationStage.Released) {
+    throw ApiError.conflict("Application has already reached Released stage");
   }
 
   const primary = await getPrimaryCase(app.prisonerId);
@@ -86,65 +84,38 @@ export async function syncCourtStatus(
     extra.hearingDate = status.hearingDate;
   }
 
-  if (app.stage === ApplicationStage.Filed && status.hearingDate) {
-    stage = ApplicationStage.HearingScheduled;
-  }
+  const outcome = status.orderOutcome ?? "granted";
+  extra.orderOutcome = outcome;
+  stage = ApplicationStage.OrderPassed;
 
-  if (
-    status.orderOutcome &&
-    status.orderOutcome !== "pending" &&
-    stageIndexAtLeast(stage, ApplicationStage.HearingScheduled)
-  ) {
-    extra.orderOutcome = status.orderOutcome;
-    stage = ApplicationStage.OrderPassed;
-    if (status.orderOutcome === "granted") {
-      const existing = await prisma.suretyStatus.findUnique({
-        where: { applicationId: app.id },
+  if (outcome === "granted") {
+    const existing = await prisma.suretyStatus.findUnique({
+      where: { applicationId: app.id },
+    });
+    if (!existing) {
+      await prisma.suretyStatus.create({
+        data: { applicationId: app.id, suretyRequired: true },
       });
-      if (!existing) {
-        await prisma.suretyStatus.create({
-          data: { applicationId: app.id, suretyRequired: true },
-        });
-      }
     }
   }
-
   if (extra.hearingDate) {
-    // Prompt 11: templated family message with date + court name.
     void sendFamilyEvent(app.id, "hearing_scheduled").catch((err) =>
       logger.error("[notify] hearing hook failed", err),
     );
   }
+
   const updated = await appendStage(app.id, stage, extra, actorId);
 
-  // Prompt 11: order-outcome events branch on the surety requirement. The
-  // denial event is held back inside the engine until a DLSA lawyer is assigned.
-  const outcome = extra.orderOutcome as string | undefined;
-  if (outcome) {
-    void (async () => {
-      try {
-        if (outcome === "denied") {
-          await sendFamilyEvent(app.id, "order_denied");
-        } else if (outcome === "granted") {
-          const surety = await prisma.suretyStatus.findUnique({
-            where: { applicationId: app.id },
-          });
-          if (surety?.suretyRequired) {
-            await sendFamilyEvent(app.id, "order_granted_bond_required");
-          } else {
-            await sendFamilyEvent(app.id, "order_granted_no_bond");
-          }
-        }
-      } catch (err) {
-        logger.error("[notify] order-outcome hook failed", err);
-      }
-    })();
+  if (outcome === "granted") {
+    void sendFamilyEvent(app.id, "order_granted_bond_required").catch((err) =>
+      logger.error("[notify] order granted hook failed", err),
+    );
   }
 
   logger.info(`Court status synced`, {
     applicationId: app.id,
     cnr,
-    outcome: status.orderOutcome ?? "none",
+    outcome: outcome,
     newStage: updated.stage,
     byUser: actorId,
   });
@@ -152,21 +123,11 @@ export async function syncCourtStatus(
   return {
     application: toApplicationDto({ ...updated, reviewer: null }),
     hearingDate: updated.hearingDate?.toISOString() ?? null,
-    orderOutcome: updated.orderOutcome ?? null,
+    orderOutcome: updated.orderOutcome ?? outcome,
   };
 }
 
-function stageIndexAtLeast(current: ApplicationStage, target: ApplicationStage): boolean {
-  const ORDER = [
-    ApplicationStage.Flagged,
-    ApplicationStage.Drafted,
-    ApplicationStage.Filed,
-    ApplicationStage.HearingScheduled,
-    ApplicationStage.OrderPassed,
-    ApplicationStage.Released,
-  ];
-  return ORDER.indexOf(current) >= ORDER.indexOf(target);
-}
+
 
 // ---------- Legal aid assignment ----------
 

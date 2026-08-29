@@ -418,6 +418,7 @@ export interface RecommendationDto {
   ineligibility_reasons: string[];
   component_scores: Record<string, number>;
   job: JobPostingDto;
+
   appliedAlready: boolean;
 }
 
@@ -466,4 +467,39 @@ export interface PortalDocumentDto {
   detail: string;
   issuedAt: string | null;
   url: string;
+}
+
+// ---------- In-Custody Production Tracking & Kara Bazaar (Prompt 15) ----------
+
+export type KaraBazaarListingStatus = "not_listed" | "pending" | "listed";
+
+export interface ProductionRecordDto {
+  id: string;
+  prisonerId: string;
+  trainingProgramId: string | null;
+  trainingProgramName: string | null;
+  category: string;
+  itemName: string;
+  quantity: number;
+  producedAt: string;
+  saleValueEstimate: number | null;
+  karaBazaarListingStatus: KaraBazaarListingStatus;
+  karaBazaarListingUrl: string | null;
+  recordedById: string;
+  recordedByName: string | null;
+  createdAt: string;
+}
+
+export interface ProductionSummaryDto {
+  totalItems: number;
+  totalValueEstimate: number;
+  byCategory: Record<string, number>;
+  records: ProductionRecordDto[];
+}
+
+export interface JailProductionSummaryDto {
+  totalItemsThisQuarter: number;
+  totalEstimatedValue: number;
+  byCategory: Record<string, number>;
+  listedOnKaraBazaarCount: number;
 }

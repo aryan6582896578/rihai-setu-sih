@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TECHNICAL APPROACH — RIHAI SETU (SIH Template)</title>
+  <style>
+    :root {
+      --primary-red: #B91C1C;
+      --navy: #0F172A;
+      --blue-accent: #0284C7;
+      --sih-blue: #0284C7;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, Helvetica, sans-serif; }
+
+    body {
+      background-color: #0f172a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 15px;
+    }
+
+    /* SIH Standard 16:9 Canvas (1280x720) */
+    .slide-canvas {
+      width: 1280px;
+      height: 720px;
+      background: #FFFFFF;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Header Bar */
+    .header-bar {
+      height: 75px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 30px;
+      border-bottom: 2px solid #E2E8F0;
+      position: relative;
+    }
+
+    .team-oval {
+      border: 3px solid #7C3AED;
+      border-radius: 50px;
+      padding: 6px 20px;
+      text-align: center;
+      background: #FFFFFF;
+    }
+    .team-oval-title {
+      font-size: 16px;
+      font-weight: 900;
+      color: #7C3AED;
+      line-height: 1;
+    }
+
+    .slide-main-title {
+      font-size: 42px;
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      color: #000000;
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    .sih-header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    /* SIH Brain Logo graphic representation */
+    .sih-brain-logo {
+      width: 48px;
+      height: 48px;
+      background: #059669;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 22px;
+      font-weight: 900;
+      box-shadow: 0 4px 6px rgba(5, 150, 105, 0.2);
+    }
+
+    .sih-text-block {
+      text-align: right;
+      font-weight: 900;
+      font-size: 15px;
+      color: #0F172A;
+      line-height: 1.15;
+    }
+    .sih-text-block span {
+      display: block;
+      font-size: 16px;
+      font-weight: 900;
+      color: #1E293B;
+    }
+
+    /* Content Area (Left Sidebar 230px | Right Canvas 1000px) */
+    .main-body {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 225px 1fr;
+      padding: 10px 20px 0 20px;
+      gap: 15px;
+      height: calc(720px - 105px);
+    }
+
+    /* Left Sidebar */
+    .sidebar-left {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .tech-title {
+      font-size: 13px;
+      font-weight: 900;
+      color: #000000;
+      margin-bottom: 2px;
+    }
+
+    .tech-list {
+      list-style-type: decimal;
+      padding-left: 16px;
+      font-size: 11px;
+      color: #1E293B;
+      font-weight: 800;
+      line-height: 1.4;
+    }
+
+    .logo-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 6px 0;
+      align-items: center;
+    }
+    .logo-badge {
+      background: #F1F5F9;
+      border: 1px solid #CBD5E1;
+      border-radius: 6px;
+      padding: 3px 6px;
+      font-size: 9px;
+      font-weight: 800;
+      color: #334155;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .logo-badge .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+
+    /* UI Screenshot Box */
+    .ui-screenshot-box {
+      border: 1.5px solid #CBD5E1;
+      border-radius: 8px;
+      background: #FFFFFF;
+      padding: 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .ui-screenshot-img {
+      width: 100%;
+      height: 110px;
+      object-fit: cover;
+      border-radius: 5px;
+    }
+
+    .btn-figma {
+      width: 100%;
+      background: #38BDF8;
+      color: #0F172A;
+      font-size: 10px;
+      font-weight: 800;
+      text-align: center;
+      padding: 4px;
+      border-radius: 4px;
+      text-decoration: none;
+      box-shadow: 0 2px 4px rgba(56, 189, 248, 0.3);
+    }
+
+    .btn-youtube-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 2px;
+    }
+    .yt-icon {
+      width: 28px;
+      height: 20px;
+      background: #FF0000;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 10px;
+    }
+    .btn-youtube-pink {
+      flex: 1;
+      background: #FCA5A5;
+      color: #7F1D1D;
+      font-size: 10px;
+      font-weight: 800;
+      text-align: center;
+      padding: 5px;
+      border-radius: 6px;
+      text-decoration: none;
+    }
+
+    /* Free-Flowing Diagram Canvas (Exact Copy of Reference) */
+    .diagram-canvas {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-columns: 105px 1fr;
+      gap: 15px;
+    }
+
+    /* Actors Container (Left Tall Vertical Box) */
+    .actors-column-box {
+      border: 1.5px solid #64748B;
+      border-radius: 10px;
+      background: #FFFFFF;
+      padding: 10px 4px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      align-items: center;
+      text-align: center;
+      height: 100%;
+    }
+
+    .actor-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+    .actor-circle-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #F8FAFC;
+      border: 1.5px solid #475569;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+    .actor-label-text {
+      font-size: 10px;
+      font-weight: 900;
+      color: #1E293B;
+      line-height: 1.15;
+    }
+
+    /* Right Flowchart Workspace */
+    .flow-workspace {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      padding-top: 5px;
+    }
+
+    /* Horizontal Flow Rows */
+    .flow-path-line {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      position: relative;
+    }
+
+    /* Step Node Item */
+    .node-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      width: 80px;
+    }
+    .node-icon-img {
+      font-size: 22px;
+      margin-bottom: 2px;
+    }
+    .node-text-title {
+      font-size: 8.5px;
+      font-weight: 800;
+      color: #0F172A;
+      line-height: 1.15;
+    }
+
+    .flow-arrow-next {
+      font-size: 12px;
+      color: #64748B;
+      font-weight: bold;
+    }
+
+    /* Orange Algo Highlight Box (Exact copy of LSTM / SVM box in reference) */
+    .algo-box-orange-ref {
+      background: #FFF7ED;
+      border: 1.5px solid #F97316;
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 8.5px;
+      font-weight: 800;
+      color: #C2410C;
+      text-align: center;
+      width: 105px;
+    }
+
+    /* Yellow Algo Box */
+    .algo-box-yellow-ref {
+      background: #FEFCE8;
+      border: 1.5px solid #CA8A04;
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 8.5px;
+      font-weight: 800;
+      color: #854D0E;
+      text-align: center;
+      width: 105px;
+    }
+
+    /* Green Checkmark Node */
+    .confirm-node-green {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .confirm-title-text {
+      font-size: 8.5px;
+      font-weight: 900;
+      color: #047857;
+    }
+    .green-check-badge {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #10B981;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    /* Text Description Box in Middle */
+    .info-box-middle {
+      border: 1.5px solid #CBD5E1;
+      border-radius: 6px;
+      background: #FFFFFF;
+      padding: 5px 8px;
+      font-size: 8.5px;
+      font-weight: 700;
+      color: #334155;
+      width: 180px;
+      text-align: center;
+      line-height: 1.25;
+    }
+
+    /* Database Cylinder Block & Admin Section */
+    .db-admin-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-left: 280px;
+    }
+
+    .db-cylinder-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .db-cylinder-img {
+      font-size: 32px;
+    }
+    .db-label-text {
+      font-size: 9px;
+      font-weight: 900;
+      color: #0F172A;
+    }
+
+    .admin-box {
+      border: 1.5px solid #475569;
+      border-radius: 8px;
+      background: #FFFFFF;
+      padding: 6px 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .admin-icon { font-size: 20px; }
+    .admin-title { font-size: 9px; font-weight: 900; color: #0F172A; }
+
+    .role-box {
+      border: 1.5px solid #94A3B8;
+      border-radius: 6px;
+      background: #F8FAFC;
+      padding: 4px 8px;
+      font-size: 8.5px;
+      font-weight: 800;
+      color: #334155;
+    }
+
+    /* Right Output Actions Column */
+    .right-output-actions {
+      position: absolute;
+      right: 0;
+      top: 140px;
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+    }
+
+    .action-output-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      width: 85px;
+    }
+    .action-icon { font-size: 22px; margin-bottom: 2px; }
+    .action-title { font-size: 8.5px; font-weight: 900; color: #0F172A; line-height: 1.15; }
+
+    /* Map Graphic Row (Bottom Left) */
+    .map-row-bottom {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .map-graphic-box {
+      width: 140px;
+      height: 65px;
+      background: #38BDF8;
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+      border: 1.5px solid #0284C7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .map-graphic-bg {
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 30% 40%, #FEF08A 0%, #38BDF8 60%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .kmeans-pink-box {
+      background: #FCE7F3;
+      border: 1.5px solid #EC4899;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 8.5px;
+      font-weight: 800;
+      color: #BE185D;
+      text-align: center;
+    }
+
+    .siren-icon { font-size: 24px; }
+
+    /* Bottom Large Yellow Box (Exact match of Disaster Casualty Box in reference) */
+    .disaster-box-large {
+      background: #FEFCE8;
+      border: 2px solid #EAB308;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 9px;
+      color: #713F12;
+      line-height: 1.35;
+      margin-top: 4px;
+    }
+    .disaster-box-title {
+      font-weight: 900;
+      color: #854D0E;
+    }
+
+    /* Footer Bar */
+    .footer-bar {
+      height: 26px;
+      background: #0284C7;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 30px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="slide-canvas">
+    
+    <!-- Top Header -->
+    <div class="header-bar">
+      <div class="team-oval">
+        <div class="team-oval-title">Team Rihai Setu</div>
+      </div>
+
+      <h1 class="slide-main-title">TECHNICAL APPROACH</h1>
+
+      <div class="sih-header-right">
+        <div class="sih-brain-logo">SIH</div>
+        <div class="sih-text-block">
+          SMART INDIA
+          <span>HACKATHON 2024 / 2026</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main-body">
+      
+      <!-- Left Sidebar -->
+      <div class="sidebar-left">
+        <div class="tech-title">Tech Stack used:</div>
+        <ol class="tech-list">
+          <li>React Framework</li>
+          <li>Node.js & Express</li>
+          <li>PostgreSQL & Prisma</li>
+          <li>Python FastAPI (Recommender)</li>
+          <li>Groq Llama-3.3 AI</li>
+          <li>Scikit-Learn ML</li>
+        </ol>
+
+        <!-- Brand Logos Cloud -->
+        <div class="logo-cloud">
+          <span class="logo-badge"><span class="dot" style="background:#F97316"></span>scikit-learn</span>
+          <span class="logo-badge"><span class="dot" style="background:#EE4C2C"></span>PyTorch</span>
+          <span class="logo-badge"><span class="dot" style="background:#38BDF8"></span>React</span>
+          <span class="logo-badge"><span class="dot" style="background:#22C55E"></span>Node.js</span>
+          <span class="logo-badge"><span class="dot" style="background:#3B82F6"></span>Postgres</span>
+        </div>
+
+        <!-- UI Screenshot Box -->
+        <div class="ui-screenshot-box">
+          <img src="apps/web/src/public/legal_books_gavel.png" alt="Rihai Setu UI Mockup" class="ui-screenshot-img" />
+          <a href="#" class="btn-figma">UI Figma link</a>
+        </div>
+
+        <div class="btn-youtube-row">
+          <div class="yt-icon">▶</div>
+          <a href="#" class="btn-youtube-pink">Youtube Video Link</a>
+        </div>
+      </div>
+
+      <!-- Center & Right Canvas Diagram (Exact Copy of Reference Flow) -->
+      <div class="diagram-canvas">
+        
+        <!-- Actors Tall Box (Left Column) -->
+        <div class="actors-column-box">
+          <div class="actor-block">
+            <div class="actor-circle-icon">🧑‍⚖️</div>
+            <div class="actor-label-text">Undertrial<br>Prisoners</div>
+          </div>
+
+          <div class="actor-block">
+            <div class="actor-circle-icon">👨‍⚖️</div>
+            <div class="actor-label-text">DLSA<br>Lawyer</div>
+          </div>
+
+          <div class="actor-block">
+            <div class="actor-circle-icon">👮‍♂️</div>
+            <div class="actor-label-text">Jail<br>Superintendent</div>
+          </div>
+        </div>
+
+        <!-- Flow Workspace -->
+        <div class="flow-workspace">
+          
+          <!-- Path 1: Section 479 Legal Pipeline -->
+          <div class="flow-path-line">
+            <div class="node-item">
+              <div class="node-icon-img">⏱️</div>
+              <div class="node-text-title">Sec 479 Engine</div>
+            </div>
+            <span class="flow-arrow-next">➔</span>
+
+            <div class="node-item">
+              <div class="node-icon-img">🔎</div>
+              <div class="node-text-title">Threshold Check</div>
+            </div>
+            <span class="flow-arrow-next">➔</span>
+
+            <div class="node-item">
+              <div class="node-icon-img">📄</div>
+              <div class="node-text-title">Auto Petition Draft</div>
+            </div>
+            <span class="flow-arrow-next">➔</span>
+
+            <div class="node-item">
+              <div class="node-icon-img">⚖️</div>
+              <div class="node-text-title">DLSA Review</div>
+            </div>
+            <span class="flow-arrow-next">➔</span>
+
+            <div class="algo-box-orange-ref">HTTP 409 Guardrail Approval</div>
+            <span class="flow-arrow-next">➔</span>
+
+            <div class="confirm-node-green">
+              <div class="confirm-title-text">Confirmation</div>
+              <div class="green-check-badge">✓</div>
+            </div>
+          </div>
+
+          <!-- Path 2: Skill Passport & Rehab -->
+          <div class="flow-path-line">
+            <div class="node-item">
+              <div class="node-icon-img">📜</div>
+              <div class="node-text-title">Skill Passport</div>
+            </div>
+            <span class="flow-arrow-next">➔</span>
+
+            <div class="node-item">
+              <div class="node-icon-img">🧵</div>
+              <div class="node-text-title">Kara Bazaar</div>
+            </div>
+            <span class="flow-arrow-next">➔</span>
+
+            <div class="node-item">
+              <div class="node-icon-img">🎯</div>
+              <div class="node-text-title">Match Verified Skills</div>
+            </div>
+            <span class="flow-arrow-next">➔</span>
+
+            <div class="algo-box-orange-ref">100-Pt RapidFuzz + Cosine Engine</div>
+            <span class="flow-arrow-next">➔</span>
+
+            <div class="confirm-node-green">
+              <div class="confirm-title-text">Confirmation</div>
+              <div class="green-check-badge">✓</div>
+            </div>
+          </div>
+
+          <!-- Path 3: Kiosk & Info Box -->
+          <div class="flow-path-line">
+            <div class="node-item">
+              <div class="node-icon-img">🖥️</div>
+              <div class="node-text-title">Prisoner Kiosk</div>
+            </div>
+            <span class="flow-arrow-next">➔</span>
+
+            <div class="node-item">
+              <div class="node-icon-img">💬</div>
+              <div class="node-text-title">Check Case Status</div>
+            </div>
+            <span class="flow-arrow-next">➔</span>
+
+            <div class="info-box-middle">
+              Provides self-service legal aid status, verified certificates, and post-release job recommendations
+            </div>
+            <span class="flow-arrow-next">➔</span>
+            <span style="font-size:10px; font-weight:bold; color:#64748B">Line to DB ↴</span>
+          </div>
+
+          <!-- Path 4: AI Legal Chatbot & Database Store -->
+          <div class="flow-path-line">
+            <div class="node-item">
+              <div class="node-icon-img">🤖</div>
+              <div class="node-text-title">AI Legal Chatbot</div>
+            </div>
+            <span class="flow-arrow-next">➔</span>
+
+            <div class="node-item">
+              <div class="node-icon-img">📖</div>
+              <div class="node-text-title">BNSS Knowledge Base</div>
+            </div>
+            <span class="flow-arrow-next">➔</span>
+
+            <div class="algo-box-yellow-ref">Groq Llama-3.3 Multilingual RAG Engine</div>
+          </div>
+
+          <!-- Database Cylinder & Admin Block (Center Right) -->
+          <div class="db-admin-section">
+            <div class="db-cylinder-block">
+              <div class="db-cylinder-img">🗄️</div>
+              <div class="db-label-text">Store in Database</div>
+            </div>
+
+            <span class="flow-arrow-next">➔</span>
+
+            <div class="admin-box">
+              <div class="admin-icon">🏢</div>
+              <div class="admin-title">Superintendent<br>Admin</div>
+            </div>
+
+            <span class="flow-arrow-next">➔</span>
+
+            <div class="role-box">Role-base<br>access</div>
+          </div>
+
+          <!-- Map Path (Bottom Left) -->
+          <div class="map-row-bottom">
+            <div class="map-graphic-box">
+              <div class="map-graphic-bg">🗺️</div>
+            </div>
+            <span class="flow-arrow-next">➔</span>
+
+            <div class="kmeans-pink-box">Scikit-Learn Time Series ML</div>
+            <span class="flow-arrow-next">➔</span>
+
+            <div class="siren-icon">🚨</div>
+            <span class="flow-arrow-next">➔</span>
+            <div class="node-item">
+              <div class="node-icon-img">🏛️</div>
+              <div class="node-text-title">Facility Capacity</div>
+            </div>
+            <span class="flow-arrow-next">➔</span>
+            <div class="node-item">
+              <div class="node-icon-img">📈</div>
+              <div class="node-text-title">30/60/90 Projection</div>
+            </div>
+          </div>
+
+          <!-- Right Action Outputs -->
+          <div class="right-output-actions">
+            <div class="action-output-item">
+              <div class="action-icon">🔓</div>
+              <div class="action-title">Release<br>Management</div>
+            </div>
+
+            <div class="action-output-item">
+              <div class="action-icon">📋</div>
+              <div class="action-title">Legal Aid Queue<br>Management</div>
+            </div>
+
+            <div class="action-output-item">
+              <div class="action-icon">💼</div>
+              <div class="action-title">NGO Job<br>Placement</div>
+            </div>
+          </div>
+
+          <!-- Bottom Yellow Box (Exact match of Disaster Casualty Management box) -->
+          <div class="disaster-box-large">
+            <span class="disaster-box-title">Overcrowding & Statutory Legal Compliance System:</span> The government will be provided with an interface where they can select a prison facility on the map to view real-time occupancy and 30/60/90 day pipeline projections. The interface will highlight Section 479 eligible undertrials and expedite legal aid petitions to safely reduce prison overcrowding.
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Bottom Footer Bar -->
+    <div class="footer-bar">
+      <div>@SIH Idea submission- Template</div>
+      <div>3</div>
+    </div>
+
+  </div>
+
+</body>
+</html>

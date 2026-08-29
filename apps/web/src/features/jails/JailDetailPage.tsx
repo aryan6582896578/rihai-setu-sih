@@ -10,6 +10,7 @@ import OverviewTab from "./tabs/OverviewTab";
 import StaffTab from "./tabs/StaffTab";
 import StallTab from "./tabs/StallTab";
 import type { JailStats, StallRow } from "@rihai/shared-types";
+import JailProductionSummaryCard from "./JailProductionSummaryCard";
 
 type TabKey = "overview" | "staff" | "stalls";
 
@@ -52,7 +53,15 @@ export default function JailDetailPage() {
     return (
       <div className="space-y-4">
         <ErrorBanner message={statsQuery.error.message} />
-        <Link to="/jails" className="crumb">← All jails</Link>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => statsQuery.refetch()}
+            className="btn btn-primary btn-sm"
+          >
+            ↻ Retry Loading Portal
+          </button>
+          <Link to="/jails" className="btn btn-outline btn-sm">← Back to All Jails</Link>
+        </div>
       </div>
     );
   }
@@ -156,6 +165,7 @@ export default function JailDetailPage() {
                 <p className="v">{stats.staffCount}</p>
               </div>
             </div>
+            <JailProductionSummaryCard jailId={jailId} />
             <OverviewTab activity={stats.recentActivity} />
           </>
         ))}

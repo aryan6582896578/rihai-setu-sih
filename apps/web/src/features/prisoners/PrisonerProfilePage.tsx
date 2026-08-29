@@ -14,6 +14,7 @@ import { api, extractApiError } from "../../lib/api";
 import { formatDate, formatDateTime, STAGE_LABELS, eligibilityBadge } from "../../lib/format";
 import { useAuthStore } from "../../state/authStore";
 import { EmptyState, ErrorBanner, Spinner } from "../../components/ui";
+import PrisonProductionPanel from "./PrisonProductionPanel";
 
 const EDITOR_ROLES = ["super_admin", "jail_superintendent"];
 const ADVANCE_ROLES = ["super_admin", "jail_superintendent", "dlsa_lawyer"];
@@ -110,6 +111,7 @@ export default function PrisonerProfilePage() {
       <ApplicationProgressCard detail={detail} onChanged={refresh} />
       <SkillPassportPanel detail={detail} canEdit={canEdit} onChanged={refresh} />
       <RecommendedJobsPanel detail={detail} canEdit={canEdit} />
+      <PrisonProductionPanel prisonerId={detail.id} />
       <NotesPanel detail={detail} canEdit={!!user && user.role !== "viewer"} onChanged={refresh} />
     </div>
   );

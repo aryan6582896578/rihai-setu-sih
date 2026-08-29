@@ -82,3 +82,36 @@ export function OccupancyBadge({ pct }: { pct: number }) {
     <span className={cls}>{pct}% capacity</span>
   );
 }
+
+export function Modal({
+  title,
+  onClose,
+  children,
+}: {
+  title: string;
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(20,15,10,0.5)] p-4 overflow-y-auto"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-lg rounded-card bg-white p-6 shadow-2xl transition-all"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4 flex items-center justify-between border-b border-[#eee4d6] pb-3">
+          <h3 className="display text-lg font-bold text-navy">{title}</h3>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-1 text-bodytext hover:bg-peach/50 hover:text-navy"
+          >
+            ✕
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}

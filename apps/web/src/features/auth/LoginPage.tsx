@@ -6,6 +6,7 @@ import { api, extractApiError } from "../../lib/api";
 import { useLang, LangToggle } from "../../lib/i18n";
 import { useAuthStore } from "../../state/authStore";
 import logoImg from "../../public/rihai_setu_logo.png";
+import legalGavelImg from "../../public/legal_books_gavel.png";
 
 const DEMO_ACCOUNTS = [
   { key: "demo.admin.role", email: "superadmin@rihai.gov.in", roleTag: "Super Admin", desc: "Access all 6 correctional facilities" },
@@ -304,6 +305,16 @@ export default function LoginPage() {
 
               {/* Demo Accounts Panel */}
               <aside className="rounded-[24px] border-[2px] border-[#f0e4d3] bg-[#FAF7F2] p-6 sm:p-8 shadow-lg">
+                <div className="mb-5 flex items-center gap-4 rounded-xl border border-terracotta/20 bg-white p-3.5 shadow-sm">
+                  <img src={legalGavelImg} alt="Legal Justice" className="h-16 w-16 shrink-0 object-contain drop-shadow-md" />
+                  <div>
+                    <span className="rounded-full bg-peach/80 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-terracotta">
+                      Role-Based Access
+                    </span>
+                    <h4 className="display text-sm font-bold text-navy">Section 479 Legal Aid Portal</h4>
+                  </div>
+                </div>
+
                 <div className="mb-4 flex items-center justify-between border-b border-[#eee4d6] pb-3.5">
                   <h2 className="display text-base font-bold text-navy">{t("demo.h")}</h2>
                   <span className="rounded-full bg-navy px-2.5 py-0.5 font-mono text-[11px] font-bold text-saffron">

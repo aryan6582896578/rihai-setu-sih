@@ -22,6 +22,7 @@ import { audit } from "../lib/audit.js";
 import { ApiError } from "../middleware/errors.js";
 import { getPrimaryCase, recomputeForPrisoner } from "./eligibility.service.js";
 import { buildCertificateHtml } from "./certificates.service.js";
+import { notificationProvider } from "../lib/notification-provider.js";
 import { sendPrisonerFamilyEvent } from "./family-notifications.service.js";
 
 const MS_PER_DAY = 86_400_000;
@@ -698,9 +699,18 @@ export async function updateEnrollment(
     include: { program: true },
   });
 
-  // First time this enrollment reaches completed -> tell the family (consent-
-  // gated inside the notification service; fire-and-forget by design).
+  // First time this enrollment reaches completed -> notify Telegram + family
   if (existing.status !== "completed" && e.status === "completed") {
+    const prisoner = await prisma.prisoner.findUnique({ where: { id: existing.prisonerId } });
+    const pii = prisoner ? piiPublic(prisoner) : null;
+    const prisonerName = pii?.fullName || "Prisoner";
+
+    void notificationProvider.send(
+      prisonerName,
+      "sms",
+      `🎓 *Skill Certificate Earned / Completed*\n\n*Prisoner*: ${prisonerName} (Reg: ${prisoner?.prisonerRegNo || "N/A"})\n*Trade Program*: ${e.program.name}\n*Progress*: 100% Completed\n*Certificate Link*: ${e.certificateUrl || "Generated"}`
+    ).catch((err) => logger.error("[notify] skill completion notification failed", err));
+
     void sendPrisonerFamilyEvent({
       prisonerId: existing.prisonerId,
       entityType: "Enrollment",

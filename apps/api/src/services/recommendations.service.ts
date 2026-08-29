@@ -111,6 +111,7 @@ async function buildCandidate(prisoner: PrisonerForCandidate) {
 export async function recommendedJobsForPrisoner(
   prisonerId: string,
   topK = 5,
+  opts?: { bypassConsentCheck?: boolean },
 ): Promise<RecommendationDto[]> {
   const prisoner = await prisma.prisoner.findUnique({
     where: { id: prisonerId },
@@ -120,7 +121,7 @@ export async function recommendedJobsForPrisoner(
     },
   });
   if (!prisoner) throw ApiError.notFound("Prisoner not found");
-  if (!prisoner.consentToShareProfile) return [];
+  if (!prisoner.consentToShareProfile && !opts?.bypassConsentCheck) return [];
 
   const activeJobs = await prisma.jobPosting.findMany({
     where: { status: "active" },

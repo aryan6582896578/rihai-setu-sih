@@ -12,11 +12,6 @@ import logoImg from "../public/rihai_setu_logo.png";
 
 const NAV_LINKS: { to: string; labelKey: string; roles?: string[] }[] = [
   { to: "/jails", labelKey: "nav.jails" },
-  {
-    to: "/admin/data-ingestion",
-    labelKey: "nav.dataingestion",
-    roles: ["super_admin", "jail_superintendent"],
-  },
   { to: "/overcrowding", labelKey: "nav.overcrowding", roles: ["super_admin"] },
 ];
 

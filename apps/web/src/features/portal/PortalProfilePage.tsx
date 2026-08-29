@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { PortalProfileDto } from "@rihai/shared-types";
+import type { PortalProfileDto, ProductionSummaryDto } from "@rihai/shared-types";
 import { STAGE_ORDER, ApplicationStage } from "@rihai/shared-types";
 import { portalApi } from "../../lib/portalApi";
 import { Spinner, EmptyState, ErrorBanner } from "../../components/ui";
@@ -148,10 +148,60 @@ export default function PortalProfilePage() {
         )}
       </section>
 
+      <PortalProductionSection />
+
       <p className="text-center text-xs text-bodytext">
         Everything on this page is read-only. Corrections are made by jail staff — ask at the welfare desk.
       </p>
     </div>
+  );
+}
+
+function PortalProductionSection() {
+  const { data } = useQuery({
+    queryKey: ["portal-production"],
+    queryFn: async () => {
+      const res = await portalApi.get<{ data: ProductionSummaryDto }>("/portal/production");
+      return res.data.data;
+    },
+  });
+
+  if (!data || data.records.length === 0) return null;
+
+  return (
+    <section className="panel" id="things-ive-made">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#eee4d6] pb-3.5 mb-4">
+        <div>
+          <h2 className="display text-base font-bold text-navy">🎨 Things I've Made (Prison Industries)</h2>
+          <p className="text-xs text-bodytext">In-custody vocational work, craft output & Kara Bazaar listings</p>
+        </div>
+        <span className="code-chip font-bold text-terracotta">{data.totalItems} Items Logged</span>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        {data.records.map((r) => (
+          <div key={r.id} className="rounded-xl border border-[#f0e4d3] bg-white p-4 shadow-sm">
+            <div className="flex items-start justify-between gap-2">
+              <h4 className="font-bold text-navy text-sm">{r.itemName}</h4>
+              <span className="code-chip text-[11px]">{r.category}</span>
+            </div>
+            <p className="mt-1 text-xs text-bodytext">
+              Quantity: <b className="text-navy">{r.quantity}</b> · Date: {formatDate(r.producedAt)}
+            </p>
+            {r.karaBazaarListingStatus === "listed" && (
+              <div className="mt-2.5 flex items-center justify-between border-t border-[#f4ede2] pt-2 text-[11px]">
+                <span className="pill pill-ok py-0.5 px-2 text-[10px]">Listed on Kara Bazaar</span>
+                {r.karaBazaarListingUrl && (
+                  <a href={r.karaBazaarListingUrl} target="_blank" rel="noreferrer" className="font-bold text-terracotta hover:underline">
+                    View Product ↗
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 

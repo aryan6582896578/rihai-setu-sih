@@ -195,11 +195,110 @@ async function main() {
     });
   }
 
-  const dlsaLawyer = await prisma.user.create({
-    data: { name: "Adv. Neha Srivastava", email: "dlsa@rihai.gov.in", passwordHash, role: "dlsa_lawyer", isActive: true },
+  // ---------- DLSA Advocates (panel lawyers across all jails) ----------
+  const dlsaLawyers = [
+    { name: "Adv. Neha Srivastava (DLSA Senior)", email: "dlsa@rihai.gov.in" },
+    { name: "Adv. Rajesh Verma (DLSA Panel)", email: "dlsa2@rihai.gov.in" },
+    { name: "Adv. Sunita Rao (DLSA Panel)", email: "dlsa3@rihai.gov.in" },
+  ];
+
+  for (const lawyer of dlsaLawyers) {
+    const user = await prisma.user.create({
+      data: { name: lawyer.name, email: lawyer.email, passwordHash, role: "dlsa_lawyer", isActive: true },
+    });
+    for (const jail of jails) {
+      await prisma.jailAccess.create({ data: { userId: user.id, jailId: jail.id, roleAtJail: "dlsa_lawyer" } });
+    }
+  }
+
+  // ---------- NGO Partner User & Job Postings ----------
+  const ngoUser = await prisma.user.create({
+    data: { name: "Seva Foundation NGO", email: "ngo1@rihai.gov.in", passwordHash, role: "ngo_partner", isActive: true },
   });
-  for (const jail of jails.slice(0, 2)) {
-    await prisma.jailAccess.create({ data: { userId: dlsaLawyer.id, jailId: jail.id, roleAtJail: "dlsa_lawyer" } });
+  for (const jail of jails) {
+    await prisma.jailAccess.create({ data: { userId: ngoUser.id, jailId: jail.id, roleAtJail: "ngo_partner" } });
+  }
+
+  const sampleJobs = [
+    {
+      title: "Garment & Textile Artisan Specialist",
+      description: "Post-release vocational employment in industrial garment manufacturing & handloom textiles.",
+      requiredSkills: ["Tailoring & Garment Construction", "Embroidery & Needlework", "Handloom Weaving"],
+      preferredSkills: ["Quality Control", "Pattern Cutting"],
+      requiredCertificates: ["Tailoring & Garment Construction"],
+      minExperienceMonths: 3,
+      jobCategory: "Textiles & Apparel",
+      district: "Mumbai",
+      wageInfo: "₹18,000 / month + EPF",
+      openings: 12,
+    },
+    {
+      title: "Woodworking & Furniture Craftsman",
+      description: "Join Seva Foundation's carpenter workshop producing eco-friendly teakwood furniture.",
+      requiredSkills: ["Carpentry & Furniture Making", "Wood Polishing", "Furniture Assembly"],
+      preferredSkills: ["Wood Carving"],
+      requiredCertificates: ["Carpentry & Furniture Making"],
+      minExperienceMonths: 6,
+      jobCategory: "Carpentry & Woodwork",
+      district: "Delhi NCR",
+      wageInfo: "₹20,000 / month",
+      openings: 8,
+    },
+    {
+      title: "Commercial Bakery & Food Processing Assistant",
+      description: "Operate commercial bakery equipment, baking loaves, cookies, and artisanal snacks.",
+      requiredSkills: ["Baking & Confectionery", "Food Safety & Hygiene"],
+      preferredSkills: ["Industrial Oven Operation"],
+      requiredCertificates: ["Baking & Confectionery"],
+      minExperienceMonths: 0,
+      jobCategory: "Food Processing & Bakery",
+      district: "Bhopal",
+      wageInfo: "₹16,500 / month",
+      openings: 15,
+    },
+    {
+      title: "Handicrafts & Decor Production Associate",
+      description: "Production of handcrafted brass lamps, leather stationery, and home decor items.",
+      requiredSkills: ["Handicrafts & Leather Work", "Artisan Crafts"],
+      preferredSkills: ["Packaging"],
+      requiredCertificates: [],
+      minExperienceMonths: 0,
+      jobCategory: "Handicrafts",
+      district: "Jammu",
+      wageInfo: "₹15,000 / month",
+      openings: 10,
+    },
+    {
+      title: "Computer Operator & Data Entry Executive",
+      description: "Data entry, digitizing records, and office administrative assistance.",
+      requiredSkills: ["Basic Computer Operations", "MS Office / Typing"],
+      preferredSkills: ["Data Entry"],
+      requiredCertificates: ["Basic Computer Operations"],
+      minExperienceMonths: 0,
+      jobCategory: "IT & Secretarial",
+      district: "Mumbai",
+      wageInfo: "₹22,000 / month",
+      openings: 5,
+    },
+  ];
+
+  for (const job of sampleJobs) {
+    await prisma.jobPosting.create({
+      data: {
+        ngoId: ngoUser.id,
+        title: job.title,
+        description: job.description,
+        requiredSkills: job.requiredSkills,
+        preferredSkills: job.preferredSkills,
+        requiredCertificates: job.requiredCertificates,
+        minExperienceMonths: job.minExperienceMonths,
+        jobCategory: job.jobCategory,
+        district: job.district,
+        wageInfo: job.wageInfo,
+        openings: job.openings,
+        status: "active",
+      },
+    });
   }
 
   const auditor = await prisma.user.create({
@@ -230,16 +329,45 @@ async function main() {
   const applicationValues: Prisma.ApplicationCreateManyInput[] = [];
   const enrollmentValues: Prisma.EnrollmentCreateManyInput[] = [];
   const noteValues: Prisma.NoteCreateManyInput[] = [];
+  const productionValues: Prisma.ProductionRecordCreateManyInput[] = [];
+
+  const UNIQUE_NAMES = [
+    "Ramesh Kumar", "Rajesh Sharma", "Vikram Singh", "Amit Patel", "Priya Sharma",
+    "Manoj Verma", "Deepak Gupta", "Suresh Yadav", "Anand Kumar", "Rahul Verma",
+    "Sanjay Mishra", "Sunita Devi", "Ajay Chauhan", "Pankaj Tripathy", "Kavita Malhotra",
+    "Sunil Joshi", "Alok Mukherjee", "Devendra Saxena", "Mahesh Kulkarni", "Harish Chandra",
+    "Arun Kumar", "Gautam Das", "Rohan Saxena", "Siddharth Rao", "Nilesh Patil",
+    "Vikas Choudhary", "Brijesh Shukla", "Dinesh Agarwal", "Manish Kapoor", "Tarun Bhatia",
+    "Rakesh Sharma", "Aakash Singh", "Karan Johar", "Preeti Patel", "Nitin Verma",
+    "Gaurav Sharma", "Saurabh Saxena", "Kishore Kumar", "Mohan Lal", "Sohan Singh",
+    "Deepika Singh", "Meena Kumari", "Virendra Sehwag", "Sachin Pilot", "Ravi Shankar"
+  ];
+  const usedNames = new Set<string>();
+  let nameIdx = 0;
+  let itemIdx = 0;
 
   for (const t of tracking) {
     const jailId = jailIdByCode.get(t.prison_id);
     if (!jailId) continue;
 
+    itemIdx++;
     const staffList = usersByJail.get(jailId)!;
     const passport = passportByPid.get(t.prisoner_id);
-    const fullName =
-      passport?.candidate_alias_or_name?.trim() ||
-      `Undertrial ${t.prisoner_id.slice(-5)}`;
+    
+    let rawName = passport?.candidate_alias_or_name?.trim();
+    let fullName = rawName;
+    if (!fullName || usedNames.has(fullName) || fullName.startsWith("Undertrial")) {
+      while (nameIdx < UNIQUE_NAMES.length && usedNames.has(UNIQUE_NAMES[nameIdx])) {
+        nameIdx++;
+      }
+      if (nameIdx < UNIQUE_NAMES.length) {
+        fullName = UNIQUE_NAMES[nameIdx++];
+      } else {
+        fullName = `Prisoner ${t.prisoner_id.slice(-5)}`;
+      }
+    }
+    usedNames.add(fullName);
+
     const age = Number(t.age ?? 30);
     const prisonerId = randomUUID();
 
@@ -273,6 +401,21 @@ async function main() {
     const deathLife = !!t.death_or_life_flag;
     const pending = Number(t.pending_case_count ?? 0);
 
+    // Varied case statuses (~40% undertrial, ~45% convict, ~15% acquitted/closed)
+    const statusCycle: ("undertrial" | "convict" | "acquitted" | "closed")[] = [
+      "undertrial",
+      "convict",
+      "undertrial",
+      "convict",
+      "convict",
+      "undertrial",
+      "acquitted",
+      "convict",
+      "undertrial",
+      "closed",
+    ];
+    const caseStatus = statusCycle[itemIdx % statusCycle.length];
+
     caseValues.push({
       id: randomUUID(),
       prisonerId,
@@ -285,7 +428,7 @@ async function main() {
       isFirstTimeOffender: fto,
       pendingCaseCount: pending,
       custodyStartDate: custodyStart,
-      caseStatus: "undertrial",
+      caseStatus,
       updatedAt: parseDate(t.last_hearing_date) ?? custodyStart,
     });
 
@@ -388,6 +531,28 @@ async function main() {
         body: `Medical flag: ${t.medical_needs}. Security risk: ${t.security_risk}.`,
       });
     }
+
+    if (itemIdx % 2 === 0) {
+      const sampleItems = [
+        { itemName: "Handwoven Cotton Bedspread", category: "Textiles & Apparel", qty: 4, val: 1200, status: "listed", url: "https://karabazaar.eprisons.gov.in/item/1001" },
+        { itemName: "Handcrafted Carved Teak Stool", category: "Carpentry & Furniture", qty: 2, val: 1800, status: "listed", url: "https://karabazaar.eprisons.gov.in/item/1002" },
+        { itemName: "Artisan Whole Wheat Bakery Cookies", category: "Bakery & Food Processing", qty: 15, val: 450, status: "pending", url: null },
+        { itemName: "Embossed Leather Diary & Pen Set", category: "Handicrafts & Decor", qty: 6, val: 950, status: "listed", url: "https://karabazaar.eprisons.gov.in/item/1004" },
+        { itemName: "Hand-printed Jute Tote Bags", category: "Textiles & Apparel", qty: 10, val: 750, status: "not_listed", url: null },
+      ];
+      const prod = sampleItems[itemIdx % sampleItems.length];
+      productionValues.push({
+        id: randomUUID(),
+        prisonerId,
+        itemName: prod.itemName,
+        category: prod.category,
+        quantity: prod.qty,
+        saleValueEstimate: prod.val,
+        karaBazaarListingStatus: prod.status as "not_listed" | "pending" | "listed",
+        karaBazaarListingUrl: prod.url,
+        recordedById: staffList[0].id,
+      });
+    }
   }
 
   await chunked(prisonerValues, (c) => prisma.prisoner.createMany({ data: c }));
@@ -396,6 +561,7 @@ async function main() {
   await chunked(applicationValues, (c) => prisma.application.createMany({ data: c }));
   await chunked(enrollmentValues, (c) => prisma.enrollment.createMany({ data: c }));
   await chunked(noteValues, (c) => prisma.note.createMany({ data: c }));
+  await chunked(productionValues, (c) => prisma.productionRecord.createMany({ data: c }));
 
   // ---------- occupancy snapshots (45 days, ramps up to the dataset occupancy) ----------
   const snapshotValues: Prisma.OccupancySnapshotCreateManyInput[] = [];

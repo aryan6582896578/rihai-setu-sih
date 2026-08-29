@@ -68,44 +68,188 @@ type TemplateSeed = Record<FamilyEventKey, Record<"en" | "hi", string>>;
 
 const TEMPLATE_SEED: TemplateSeed = {
   application_drafted: {
-    en: "RIHAI SETU update: {{prisoner_name}}'s release application has been prepared and is under review by the legal aid lawyer. No action is needed from you right now.",
-    hi: "रिहाई सेतु सूचना: {{prisoner_name}} के रिहाई आवेदन तैयार कर लिए गए हैं और विधिक सलाहकार की समीक्षा में हैं। अभी आपसे कोई कार्रवाई की आवश्यकता नहीं है।",
+    en: "📢 OFFICIAL RIHAI SETU DISPATCH\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "🔒 SENDER: Rihai Setu Legal Aid System\n" +
+        "👤 RECIPIENT: Family of {{prisoner_name}}\n" +
+        "⚖️ CASE TYPE: {{case_type}}\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "MESSAGE: The legal aid petition for {{prisoner_name}} has been drafted and submitted to DLSA Advocate {{lawyer_name}} for mandatory review.\n\n" +
+        "⚠️ ACTION REQUIRED: No action needed from family at this stage.\n" +
+        "🔒 CONFIDENTIALITY NOTICE: Authorized legal update under BNSS §479.",
+    hi: "📢 आधिकारिक रिहाई सेतु प्रेषण\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "🔒 प्रेषक: रिहाई सेतु विधिक सहायता प्रणाली\n" +
+        "👤 प्राप्तकर्ता: {{prisoner_name}} का परिवार\n" +
+        "⚖️ मामला प्रकार: {{case_type}}\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "संदेश: {{prisoner_name}} का रिहाई आवेदन तैयार कर लिया गया है तथा विधिक सलाहकार {{lawyer_name}} की समीक्षा में है।\n\n" +
+        "⚠️ चेतावनी / कार्रवाई: अभी आपसे किसी कार्रवाई की आवश्यकता नहीं है।\n" +
+        "🔒 गोपनीयता सूचना: बीएनएसएस धारा 479 के तहत आधिकारिक विधिक अपडेट।",
   },
   application_filed: {
-    en: "RIHAI SETU update: {{prisoner_name}}'s {{case_type}} application has been filed in court (CNR: {{cnr_number}}). You will be informed as soon as a hearing date is set.",
-    hi: "रिहाई सेतु सूचना: {{prisoner_name}} का {{case_type}} आवेदन अदालत में दर्ज कर दिया गया है (CNR: {{cnr_number}})। सुनवाई की तारीख तय होते ही सूचित किया जाएगा।",
+    en: "📢 OFFICIAL RIHAI SETU DISPATCH\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "🔒 SENDER: Rihai Setu Judicial Pipeline\n" +
+        "👤 RECIPIENT: Family of {{prisoner_name}}\n" +
+        "🏛️ COURT: {{court_name}} (CNR: {{cnr_number}})\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "MESSAGE: The {{case_type}} petition for {{prisoner_name}} has been officially filed in {{court_name}}.\n\n" +
+        "⚠️ WARNING / NOTICE: You will receive an immediate notification as soon as the court allocates a hearing date.",
+    hi: "📢 आधिकारिक रिहाई सेतु प्रेषण\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "🔒 प्रेषक: रिहाई सेतु न्यायिक पाइपलाइन\n" +
+        "👤 प्राप्तकर्ता: {{prisoner_name}} का परिवार\n" +
+        "🏛️ न्यायालय: {{court_name}} (CNR: {{cnr_number}})\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "संदेश: {{prisoner_name}} का {{case_type}} याचिका {{court_name}} में दर्ज कर दी गई है।\n\n" +
+        "⚠️ सूचना: अदालत द्वारा सुनवाई की तारीख तय होते ही आपको सूचित किया जाएगा।",
   },
   hearing_scheduled: {
-    en: "RIHAI SETU update: a hearing in {{prisoner_name}}'s case is scheduled for {{hearing_date}} at {{court_name}}.",
-    hi: "रिहाई सेतु सूचना: {{prisoner_name}} के मामले की सुनवाई {{hearing_date}} को, {{court_name}} में निर्धारित हुई है।",
+    en: "📢 OFFICIAL RIHAI SETU DISPATCH\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "🔒 SENDER: Rihai Setu Court Hearing Tracker\n" +
+        "👤 RECIPIENT: Family of {{prisoner_name}}\n" +
+        "🏛️ COURT: {{court_name}}\n" +
+        "📅 HEARING DATE: {{hearing_date}}\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "MESSAGE: A formal court hearing for {{prisoner_name}} is scheduled on {{hearing_date}} at {{court_name}}.\n\n" +
+        "⚠️ ACTION: You may consult Advocate {{lawyer_name}} at {{lawyer_phone}} for attendance guidance.",
+    hi: "📢 आधिकारिक रिहाई सेतु प्रेषण\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "🔒 प्रेषक: रिहाई सेतु न्यायालय सुनवाई ट्रैकर\n" +
+        "👤 प्राप्तकर्ता: {{prisoner_name}} का परिवार\n" +
+        "🏛️ न्यायालय: {{court_name}}\n" +
+        "📅 सुनवाई तिथि: {{hearing_date}}\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "संदेश: {{prisoner_name}} की सुनवाई {{hearing_date}} को {{court_name}} में निर्धारित हुई है।\n\n" +
+        "⚠️ कार्रवाई: सहायता हेतु अधिवक्ता {{lawyer_name}} से {{lawyer_phone}} पर संपर्क कर सकते हैं।",
   },
   order_granted_no_bond: {
-    en: "Good news: the court has granted {{case_type}} for {{prisoner_name}}. Release processing has started - no action is needed from the family.",
-    hi: "अच्छी खबर: अदालत ने {{prisoner_name}} का {{case_type}} स्वीकृत कर दिया है। रिहाई की प्रक्रिया शुरू हो गई है - परिवार की ओर से कोई कार्रवाई आवश्यक नहीं है।",
+    en: "📢 OFFICIAL RIHAI SETU DISPATCH\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "🔒 SENDER: Rihai Setu Judicial Release Directorate\n" +
+        "👤 RECIPIENT: Family of {{prisoner_name}}\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "MESSAGE: Exceptional Good News! The court has granted unconditional release/bail for {{prisoner_name}} with no bond required.\n\n" +
+        "⚠️ NOTICE: Jail discharge processing has commenced. Family action is not required.",
+    hi: "📢 आधिकारिक रिहाई सेतु प्रेषण\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "🔒 प्रेषक: रिहाई सेतु न्यायिक रिहाई निदेशालय\n" +
+        "👤 प्राप्तकर्ता: {{prisoner_name}} का परिवार\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "संदेश: शुभ समाचार! अदालत ने {{prisoner_name}} की बिना किसी जमानत राशि के रिहाई स्वीकृत कर दी है।\n\n" +
+        "⚠️ सूचना: रिहाई की अंतिम प्रक्रिया शुरू हो चुकी है।",
   },
   order_granted_bond_required: {
-    en: "Update: the court has granted {{case_type}} for {{prisoner_name}}, but a surety/bond of {{bond_amount}} must be arranged before release. To arrange it, please contact their legal aid lawyer {{lawyer_name}} at {{lawyer_phone}}.",
-    hi: "सूचना: अदालत ने {{prisoner_name}} का {{case_type}} स्वीकृत किया है, परंतु रिहाई से पहले {{bond_amount}} की धरौटी/बॉन्ड व्यवस्था आवश्यक है। कृपया उनके विधिक सलाहकार {{lawyer_name}} से {{lawyer_phone}} पर संपर्क करें।",
+    en: "📢 OFFICIAL RIHAI SETU DISPATCH\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "🔒 SENDER: Rihai Setu Release & Surety Cell\n" +
+        "👤 RECIPIENT: Family of {{prisoner_name}}\n" +
+        "💰 REQUIRED SURETY BOND: {{bond_amount}}\n" +
+        "📞 LAWYER CONTACT: {{lawyer_name}} ({{lawyer_phone}})\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "MESSAGE: The court has granted bail/release for {{prisoner_name}}, subject to furnishing a surety bond of {{bond_amount}}.\n\n" +
+        "⚠️ ACTION REQUIRED URGENTLY: Please immediately contact Legal Aid Advocate {{lawyer_name}} at {{lawyer_phone}} to arrange the bond paperwork.\n" +
+        "🔒 CONFIDENTIALITY NOTICE: Do not share bond documents with unauthorized third parties.",
+    hi: "📢 आधिकारिक रिहाई सेतु प्रेषण\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "🔒 प्रेषक: रिहाई सेतु रिहाई व जमानत सेल\n" +
+        "👤 प्राप्तकर्ता: {{prisoner_name}} का परिवार\n" +
+        "💰 आवश्यक धरौटी/बॉन्ड: {{bond_amount}}\n" +
+        "📞 अधिवक्ता संपर्क: {{lawyer_name}} ({{lawyer_phone}})\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "संदेश: अदालत ने {{prisoner_name}} की रिहाई मंजूर कर ली है, परंतु {{bond_amount}} की जमानत राशि/बॉन्ड प्रस्तुत करना आवश्यक है।\n\n" +
+        "⚠️ तत्काल कार्रवाई आवश्यक: जमानत दस्तावेज़ पूरा करने हेतु तुरंत अधिवक्ता {{lawyer_name}} से {{lawyer_phone}} पर संपर्क करें।\n" +
+        "🔒 गोपनीयता सूचना: अनाधिकृत व्यक्तियों के साथ दस्तावेज़ साझा न करें।",
   },
   order_denied: {
-    en: "Update: the court did not grant {{case_type}} for {{prisoner_name}} at this time. Their legal aid lawyer, {{lawyer_name}}, can explain the next steps - you can call {{lawyer_phone}}.",
-    hi: "सूचना: अदालत ने इस समय {{prisoner_name}} का {{case_type}} स्वीकृत नहीं किया है। आगे की प्रक्रिया समझने के लिए कृपया उनके विधिक सलाहकार {{lawyer_name}} से {{lawyer_phone}} पर संपर्क करें।",
+    en: "📢 OFFICIAL RIHAI SETU DISPATCH\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "🔒 SENDER: Rihai Setu Legal Advisory\n" +
+        "👤 RECIPIENT: Family of {{prisoner_name}}\n" +
+        "📞 DLSA ADVOCATE: {{lawyer_name}} ({{lawyer_phone}})\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "MESSAGE: The court did not grant the petition for {{prisoner_name}} at this stage.\n\n" +
+        "⚠️ ACTION / NEXT STEPS: Contact DLSA Advocate {{lawyer_name}} at {{lawyer_phone}} to discuss appeal options.",
+    hi: "📢 आधिकारिक रिहाई सेतु प्रेषण\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "🔒 प्रेषक: रिहाई सेतु विधिक परामर्श\n" +
+        "👤 प्राप्तकर्ता: {{prisoner_name}} का परिवार\n" +
+        "📞 विधिक अधिवक्ता: {{lawyer_name}} ({{lawyer_phone}})\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "संदेश: अदालत ने इस समय {{prisoner_name}} का आवेदन स्वीकार नहीं किया है।\n\n" +
+        "⚠️ कार्रवाई / आगे के चरण: अपील विकल्प हेतु अधिवक्ता {{lawyer_name}} से {{lawyer_phone}} पर बात करें।",
   },
   surety_arranged: {
-    en: "RIHAI SETU update: the surety/bond for {{prisoner_name}} is complete. Release processing is now underway.",
-    hi: "रिहाई सेतु सूचना: {{prisoner_name}} की धरौटी/बॉन्ड व्यवस्था पूरी हो गई है। रिहाई की प्रक्रिया अंतिम चरण में है।",
+    en: "📢 OFFICIAL RIHAI SETU DISPATCH\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "🔒 SENDER: Rihai Setu Release Operations\n" +
+        "👤 RECIPIENT: Family of {{prisoner_name}}\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "MESSAGE: Surety bond verification for {{prisoner_name}} is completed and verified by the court clerk.\n\n" +
+        "⚠️ NOTICE: Final release discharge order is being processed by jail authorities.",
+    hi: "📢 आधिकारिक रिहाई सेतु प्रेषण\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "🔒 प्रेषक: रिहाई सेतु रिहाई संचालन\n" +
+        "👤 प्राप्तकर्ता: {{prisoner_name}} का परिवार\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "संदेश: {{prisoner_name}} का जमानत बॉन्ड सत्यापित हो चुका है।\n\n" +
+        "⚠️ सूचना: अंतिम रिहाई आदेश प्रक्रिया जारी है।",
   },
   released: {
-    en: "Good news: {{prisoner_name}} was released today. Warm wishes to the whole family - RIHAI SETU.",
-    hi: "अच्छी खबर: {{prisoner_name}} आज रिहा हो गए हैं। पूरे परिवार को रिहाई सेतु की ओर से शुभकामनाएं।",
+    en: "📢 OFFICIAL RIHAI SETU DISPATCH\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "🎉 CELEBRATION: {{prisoner_name}} RELEASED TODAY\n" +
+        "🔒 SENDER: Rihai Setu Rehabilitation Directorate\n" +
+        "👤 RECIPIENT: Family of {{prisoner_name}}\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "MESSAGE: {{prisoner_name}} has officially been released from custody today! Warmest congratulations and best wishes from the entire RIHAI SETU team.",
+    hi: "📢 आधिकारिक रिहाई सेतु प्रेषण\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "🎉 शुभ संदेश: {{prisoner_name}} आज रिहा हो चुके हैं\n" +
+        "🔒 प्रेषक: रिहाई सेतु पुनर्वास निदेशालय\n" +
+        "👤 प्राप्तकर्ता: {{prisoner_name}} का परिवार\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "संदेश: {{prisoner_name}} आज अधिकारिक रूप से रिहा हो गए हैं! रिहाई सेतु टीम की ओर से हार्दिक बधाई व शुभकामनाएं।",
   },
   skill_course_completed: {
-    en: "Good news: {{prisoner_name}} has successfully completed the skill course \"{{program_name}}\" and earned a certificate - one step closer to employment after release. - RIHAI SETU",
-    hi: "अच्छी खबर: {{prisoner_name}} ने कौशल प्रशिक्षण \"{{program_name}}\" सफलतापूर्वक पूरा कर प्रमाणपत्र अर्जित किया है - रिहाई के बाद रोज़गार की ओर एक और कदम। - रिहाई सेतु",
+    en: "📢 OFFICIAL RIHAI SETU DISPATCH\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "📜 SKILL PASSPORT CERTIFICATE MILESTONE\n" +
+        "👤 PARTICIPANT: {{prisoner_name}}\n" +
+        "🎓 PROGRAM: {{program_name}}\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "MESSAGE: {{prisoner_name}} has successfully completed the vocational training program \"{{program_name}}\" and received an authentic QR-verified Skill Passport certificate.\n\n" +
+        "⚠️ REHABILITATION IMPACT: This qualification qualifies them for post-release NGO employment placement.",
+    hi: "📢 आधिकारिक रिहाई सेतु प्रेषण\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "📜 कौशल पासपोर्ट प्रमाणपत्र उपलब्धि\n" +
+        "👤 प्रतिभागी: {{prisoner_name}}\n" +
+        "🎓 कार्यक्रम: {{program_name}}\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "संदेश: {{prisoner_name}} ने व्यावसायिक प्रशिक्षण \"{{program_name}}\" सफलतापूर्वक पूरा कर आधिकारिक QR-सत्यापित प्रमाणपत्र प्राप्त कर लिया है।\n\n" +
+        "⚠️ प्रभाव: यह योग्यता उन्हें रिहाई के बाद एनजीओ रोजगार हेतु पात्र बनाती है।",
   },
   job_application_shortlisted: {
-    en: "RIHAI SETU update: {{prisoner_name}} has been shortlisted by {{ngo_name}} for the role \"{{job_title}}\". The facility will coordinate the next steps.",
-    hi: "रिहाई सेतु सूचना: {{prisoner_name}} को {{ngo_name}} द्वारा \"{{job_title}}\" पद हेतु शॉर्टलिस्ट किया गया है। आगे की कार्रवाई हेतु जेल प्रशासन समन्वय करेगा।",
+    en: "📢 OFFICIAL RIHAI SETU DISPATCH\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "💼 EMPLOYMENT PLACEMENT UPDATE\n" +
+        "👤 CANDIDATE: {{prisoner_name}}\n" +
+        "🏢 EMPLOYER: {{ngo_name}}\n" +
+        "📋 VACANCY: {{job_title}}\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "MESSAGE: {{prisoner_name}} has been SHORTLISTED by {{ngo_name}} for the position of \"{{job_title}}\".\n\n" +
+        "⚠️ NOTICE: Jail rehabilitation officers are coordinating joining terms.",
+    hi: "📢 आधिकारिक रिहाई सेतु प्रेषण\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "💼 रोज़गार शॉर्टलिस्ट अपडेट\n" +
+        "👤 उम्मीदवार: {{prisoner_name}}\n" +
+        "🏢 नियोक्ता: {{ngo_name}}\n" +
+        "📋 पद: {{job_title}}\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "संदेश: {{prisoner_name}} को {{ngo_name}} द्वारा \"{{job_title}}\" पद हेतु शॉर्टलिस्ट किया गया है।\n\n" +
+        "⚠️ सूचना: जेल पुनर्वास अधिकारी आगे की प्रक्रिया में लगे हैं।",
   },
   job_application_hired: {
     en: "Good news: {{ngo_name}} has selected {{prisoner_name}} for the role \"{{job_title}}\". Jail staff will coordinate the joining formalities. - RIHAI SETU",

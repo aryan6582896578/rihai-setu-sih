@@ -90,11 +90,13 @@ export async function assertJailMembership(
   user: { id: string; role: Role },
   jailId: string,
 ): Promise<JailMembership> {
-  const jail = await prisma.jail.findUnique({ where: { id: jailId } });
+  const jail = await prisma.jail.findFirst({
+    where: { OR: [{ id: jailId }, { code: jailId }] },
+  });
   if (!jail) throw ApiError.notFound("Jail not found");
   if (user.role !== Role.SuperAdmin) {
     const access = await prisma.jailAccess.findUnique({
-      where: { userId_jailId: { userId: user.id, jailId } },
+      where: { userId_jailId: { userId: user.id, jailId: jail.id } },
     });
     if (!access) throw ApiError.forbidden("No jail access assigned for this jail", "JAIL_ACCESS_DENIED");
     return { jail, roleAtJail: access.roleAtJail };

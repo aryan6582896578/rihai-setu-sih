@@ -7,6 +7,7 @@ import l2Logo from "../../public/l2.png";
 import l3Logo from "../../public/l3.png";
 import l5Logo from "../../public/l5.png";
 import l6Logo from "../../public/l6.png";
+import legalGavelImg from "../../public/legal_books_gavel.png";
 
 const FEATURES = [
   {
@@ -49,7 +50,7 @@ function FlipFeatureCard(props: {
   return (
     <div
       onClick={() => setFlipped((v) => !v)}
-      className="perspective-1000 h-[340px] w-full cursor-pointer"
+      className="perspective-1000 h-[410px] sm:h-[430px] w-full cursor-pointer"
     >
       <div
         className={`relative h-full w-full transform-style-3d transition-transform duration-500 ${
@@ -57,44 +58,44 @@ function FlipFeatureCard(props: {
         }`}
       >
         {/* ---- FRONT SIDE ---- */}
-        <div className="backface-hidden absolute inset-0 flex flex-col justify-between rounded-card border-[2px] border-terracotta/40 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-[3px] hover:border-terracotta hover:shadow-[0_10px_26px_rgba(217,83,30,0.22)]">
+        <div className="backface-hidden absolute inset-0 flex flex-col justify-between rounded-[22px] border-[3px] border-terracotta/40 bg-white p-8 sm:p-9 shadow-md transition-all duration-200 hover:-translate-y-1.5 hover:border-[3.5px] hover:border-terracotta hover:shadow-[0_16px_36px_rgba(217,83,30,0.25)]">
           <div>
-            <div className="mb-4 flex items-center justify-between">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-terracotta text-white [&_svg]:h-5 [&_svg]:w-5 [&_svg]:stroke-white">
+            <div className="mb-5 flex items-center justify-between">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-terracotta text-white [&_svg]:h-7 [&_svg]:w-7 [&_svg]:stroke-white shadow-lg">
                 {f.icon}
               </div>
-              <span className="font-mono text-sm font-extrabold text-terracotta">{f.step}</span>
+              <span className="font-mono text-lg font-black text-terracotta">{f.step}</span>
             </div>
-            <h4 className="display mb-2 text-base font-bold text-navy">{t(`${f.key}.h`)}</h4>
-            <p className="text-[13px] leading-relaxed text-bodytext">{t(`${f.key}.p`)}</p>
+            <h4 className="display mb-3 text-xl font-extrabold text-navy sm:text-[1.35rem] leading-snug">{t(`${f.key}.h`)}</h4>
+            <p className="text-[15.5px] sm:text-[16px] font-medium leading-relaxed text-slate-700">{t(`${f.key}.p`)}</p>
           </div>
-          <div className="mt-4 border-t border-[#f7efe4] pt-3">
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-terracotta hover:underline">
+          <div className="mt-5 border-t border-[#f7efe4] pt-4">
+            <span className="inline-flex items-center gap-2 text-base font-black text-terracotta hover:underline">
               {t("know.more")}
             </span>
           </div>
         </div>
 
         {/* ---- BACK SIDE ---- */}
-        <div className="rotate-y-180 backface-hidden absolute inset-0 flex flex-col justify-between rounded-card border-[3px] border-terracotta bg-[#FFF9F2] p-6 shadow-[0_10px_26px_rgba(217,83,30,0.22)]">
+        <div className="rotate-y-180 backface-hidden absolute inset-0 flex flex-col justify-between rounded-[22px] border-[3.5px] border-terracotta bg-[#FFF9F2] p-8 sm:p-9 shadow-[0_16px_36px_rgba(217,83,30,0.25)]">
           <div>
-            <div className="mb-3 flex items-center justify-between">
-              <span className="font-mono text-xs font-extrabold text-terracotta">{f.step} · DETAILS</span>
+            <div className="mb-4 flex items-center justify-between">
+              <span className="font-mono text-sm font-black tracking-wider text-terracotta">{f.step} · DETAILS</span>
             </div>
-            <h4 className="display mb-3 text-[14.5px] font-bold text-navy">{t(`${f.key}.detail`)}</h4>
-            <ul className="space-y-2 text-xs leading-relaxed text-bodytext">
-              <li className="flex gap-2">
+            <h4 className="display mb-4 text-lg font-extrabold text-navy sm:text-[1.25rem]">{t(`${f.key}.detail`)}</h4>
+            <ul className="space-y-3 text-[15px] font-medium leading-relaxed text-slate-700">
+              <li className="flex gap-2.5">
                 <span className="font-bold text-terracotta">•</span>
                 <span>{t(`${f.key}.point1`)}</span>
               </li>
-              <li className="flex gap-2">
+              <li className="flex gap-2.5">
                 <span className="font-bold text-terracotta">•</span>
                 <span>{t(`${f.key}.point2`)}</span>
               </li>
             </ul>
           </div>
-          <div className="mt-4 border-t border-[#f2e6d6] pt-3">
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-navy hover:text-terracotta">
+          <div className="mt-5 border-t border-[#f2e6d6] pt-4">
+            <span className="inline-flex items-center gap-2 text-base font-black text-navy hover:text-terracotta">
               {t("know.back")}
             </span>
           </div>
@@ -208,6 +209,7 @@ function HeroArt() {
 export default function HomePage() {
   const { t } = useLang();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [activeModal, setActiveModal] = useState<{ title: string; subtitle: string; body: React.ReactNode } | null>(null);
 
   const navLinks: { label: string; href: string; current?: boolean }[] = [
     { label: t("nav.home"), href: "#top", current: true },
@@ -385,7 +387,28 @@ export default function HomePage() {
           <div>
             <div className="kicker mb-3">{t("about.kicker")}</div>
             <h2 className="display mb-4 text-3xl font-bold text-navy sm:text-[2rem]">{t("about.h2")}</h2>
-            <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-bodytext">{t("about.p")}</p>
+            {/* Section 479 Legal Illustration Banner Card */}
+            <div className="relative mb-6 overflow-hidden rounded-2xl border-[2px] border-terracotta/30 bg-gradient-to-br from-[#FFF8F4] via-white to-[#FAF4EC] p-5 shadow-md">
+              <div className="flex flex-col sm:flex-row items-center gap-5">
+                <img
+                  src={legalGavelImg}
+                  alt="Legal Books, Scales of Justice & Gavel"
+                  className="h-32 w-32 sm:h-40 sm:w-40 shrink-0 object-contain drop-shadow-[0_10px_18px_rgba(217,83,30,0.15)] transition-transform duration-300 hover:scale-105"
+                />
+                <div>
+                  <span className="rounded-full bg-peach/80 px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-terracotta">
+                    BNSS §479 Statutory Relief
+                  </span>
+                  <h4 className="display mt-1.5 text-lg font-extrabold text-navy">
+                    Statutory Rule Engine & Legal Aid Workflow
+                  </h4>
+                  <p className="mt-1.5 text-xs leading-relaxed text-bodytext">
+                    Under Section 479 BNSS, first-time undertrial offenders serving ≥1/3rd maximum sentence and general undertrials serving ≥1/2 maximum sentence are statutorily entitled to release on bail or personal bond.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <ul className="grid gap-2.5 sm:grid-cols-2">
               {[
                 { label: t("about.links.1"), href: "#about" },
@@ -545,35 +568,194 @@ export default function HomePage() {
             </div>
           </div>
 
-          {[
-            { h: t("footer.about.h"), links: [t("footer.about.1"), t("footer.about.2"), t("footer.about.3"), t("footer.about.4")] },
-            { h: t("footer.legal.h"), links: [t("footer.legal.1"), t("footer.legal.2"), t("footer.legal.3"), t("footer.legal.4")] },
-            { h: t("footer.access.h"), links: [t("footer.access.1"), t("footer.access.2"), t("footer.access.3"), t("footer.access.4")] },
-          ].map((col) => (
-            <div key={col.h}>
-              <h5 className="mb-4 text-xs font-extrabold uppercase tracking-[0.12em] text-saffron">{col.h}</h5>
-              <ul className="space-y-3 text-sm">
-                {col.links.map((l, i) => {
-                  const target = i === 0 ? "#about" : i === 1 ? "#how-it-works" : i === 2 ? "#roles" : "/portal/login";
-                  return (
-                    <li key={l}>
-                      {target.startsWith("#") ? (
-                        <a href={target} className="inline-flex items-center gap-1.5 hover:text-saffron transition-colors group">
-                          <span className="text-terracotta text-xs group-hover:translate-x-0.5 transition-transform">›</span>
-                          {l}
-                        </a>
-                      ) : (
-                        <Link to={target} className="inline-flex items-center gap-1.5 hover:text-saffron transition-colors group">
-                          <span className="text-terracotta text-xs group-hover:translate-x-0.5 transition-transform">›</span>
-                          {l}
-                        </Link>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
+          {/* About Column */}
+          <div>
+            <h5 className="mb-4 text-xs font-extrabold uppercase tracking-[0.12em] text-saffron">{t("footer.about.h")}</h5>
+            <ul className="space-y-3 text-sm">
+              <li>
+                <a href="#about" className="inline-flex items-center gap-1.5 hover:text-saffron transition-colors group">
+                  <span className="text-terracotta text-xs group-hover:translate-x-0.5 transition-transform">›</span>
+                  {t("footer.about.1")}
+                </a>
+              </li>
+              <li>
+                <a href="#how-it-works" className="inline-flex items-center gap-1.5 hover:text-saffron transition-colors group">
+                  <span className="text-terracotta text-xs group-hover:translate-x-0.5 transition-transform">›</span>
+                  {t("footer.about.2")}
+                </a>
+              </li>
+              <li>
+                <a href="#roles" className="inline-flex items-center gap-1.5 hover:text-saffron transition-colors group">
+                  <span className="text-terracotta text-xs group-hover:translate-x-0.5 transition-transform">›</span>
+                  {t("footer.about.3")}
+                </a>
+              </li>
+              <li>
+                <a href="#reports" className="inline-flex items-center gap-1.5 hover:text-saffron transition-colors group">
+                  <span className="text-terracotta text-xs group-hover:translate-x-0.5 transition-transform">›</span>
+                  {t("footer.about.4")}
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Legal Column */}
+          <div>
+            <h5 className="mb-4 text-xs font-extrabold uppercase tracking-[0.12em] text-saffron">{t("footer.legal.h")}</h5>
+            <ul className="space-y-3 text-sm">
+              <li>
+                <button
+                  onClick={() =>
+                    setActiveModal({
+                      title: "Section 479 BNSS Statutory Framework",
+                      subtitle: "Bharatiya Nagarik Suraksha Sanhita, 2023",
+                      body: (
+                        <div className="space-y-4 text-sm leading-relaxed text-bodytext">
+                          <div className="rounded-xl border border-terracotta/25 bg-[#FFF8F5] p-3.5">
+                            <span className="font-extrabold text-terracotta">Section 479 BNSS Core Mandate:</span>
+                            <p className="mt-1 text-xs text-navy">
+                              Replaces legacy Section 436A CrPC with mandatory statutory relief timelines for undertrial prisoners.
+                            </p>
+                          </div>
+                          <ul className="space-y-2.5">
+                            <li className="flex items-start gap-2">
+                              <span className="font-extrabold text-terracotta">1. First-Time Offenders (1/3rd Rule):</span>
+                              <span>Undertrials with no prior convictions who complete <strong>one-third (1/3)</strong> of the maximum sentence specified for their offense are statutorily entitled to release on bail or personal bond.</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="font-extrabold text-navy">2. General Undertrials (1/2 Rule):</span>
+                              <span>Undertrials who complete <strong>one-half (1/2)</strong> of the maximum sentence specified for their offense must be released on bail/bond.</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="font-extrabold text-red-600">3. Statutory Exclusions:</span>
+                              <span>Offenses punishable by death, life imprisonment, or specified special statutes are excluded from mandatory 479 release.</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="font-extrabold text-emerald-700">4. Legal Aid Obligation:</span>
+                              <span>Section 479(2) obligates the Jail Superintendent and DLSA Legal Aid Counsel to submit release applications directly to the competent Court.</span>
+                            </li>
+                          </ul>
+                        </div>
+                      ),
+                    })
+                  }
+                  className="inline-flex items-center gap-1.5 text-left hover:text-saffron transition-colors group cursor-pointer"
+                >
+                  <span className="text-terracotta text-xs group-hover:translate-x-0.5 transition-transform">›</span>
+                  {t("footer.legal.1")}
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() =>
+                    setActiveModal({
+                      title: "Terms of Service & Operational Governance",
+                      subtitle: "Human-in-the-Loop Judicial Safeguard",
+                      body: (
+                        <div className="space-y-4 text-sm leading-relaxed text-bodytext">
+                          <p>
+                            <strong>RIHAI SETU</strong> is a workflow automation and decision-support infrastructure operating under strict judicial safeguards:
+                          </p>
+                          <ul className="space-y-2 list-disc pl-5">
+                            <li><strong>No Automated Bail:</strong> System rule engines calculate custody days, draft legal petitions, and track hearing schedules, but <strong>all release orders rest strictly with Judicial Magistrates</strong>.</li>
+                            <li><strong>Role Isolation:</strong> Staff access is facility-scoped (`JailAccess`). Users can only view records belonging to their assigned jail unit.</li>
+                            <li><strong>Audit Logging:</strong> Every document review, stage transition, and record export is permanently recorded in immutable `AuditLog` records.</li>
+                          </ul>
+                        </div>
+                      ),
+                    })
+                  }
+                  className="inline-flex items-center gap-1.5 text-left hover:text-saffron transition-colors group cursor-pointer"
+                >
+                  <span className="text-terracotta text-xs group-hover:translate-x-0.5 transition-transform">›</span>
+                  {t("footer.legal.2")}
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() =>
+                    setActiveModal({
+                      title: "Data Protection & Encryption Policy",
+                      subtitle: "AES-256-GCM Envelope Security & HMAC Blind Indexing",
+                      body: (
+                        <div className="space-y-4 text-sm leading-relaxed text-bodytext">
+                          <div className="rounded-xl border border-navy/20 bg-slate-50 p-3.5">
+                            <span className="font-extrabold text-navy">Government Grade Data Privacy:</span>
+                            <p className="mt-1 text-xs text-bodytext">
+                              Designed in compliance with the Digital Personal Data Protection (DPDP) Act and NALSA privacy standards.
+                            </p>
+                          </div>
+                          <ul className="space-y-2.5">
+                            <li><strong>AES-256-GCM Envelope Encryption:</strong> All Personally Identifiable Information (PII) including full names, Aadhaar numbers, and next-of-kin contacts are encrypted at rest.</li>
+                            <li><strong>HMAC-SHA256 Blind Indexing:</strong> Exact database lookups operate on zero-knowledge HMAC hashes, ensuring plaintext names never exist in database indexes.</li>
+                            <li><strong>Session Protection:</strong> Short-lived JWT access tokens (15m), httpOnly refresh cookies, and TOTP Multi-Factor Authentication (MFA).</li>
+                          </ul>
+                        </div>
+                      ),
+                    })
+                  }
+                  className="inline-flex items-center gap-1.5 text-left hover:text-saffron transition-colors group cursor-pointer"
+                >
+                  <span className="text-terracotta text-xs group-hover:translate-x-0.5 transition-transform">›</span>
+                  {t("footer.legal.3")}
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() =>
+                    setActiveModal({
+                      title: "Accessibility & Multi-Lingual Standards",
+                      subtitle: "WCAG 2.1 AA & Multi-Lingual Platform",
+                      body: (
+                        <div className="space-y-4 text-sm leading-relaxed text-bodytext">
+                          <ul className="space-y-2 list-disc pl-5">
+                            <li><strong>Multi-Lingual Engine (i18n):</strong> Complete English and Hindi localization across all dashboards, prisoner kiosks, and petition draft previews.</li>
+                            <li><strong>High-Contrast Color System:</strong> Curated high-contrast visual tokens (`Terracotta #D9531E`, `Navy #1E293B`) ensuring maximum clarity on mobile devices and prison kiosk terminals.</li>
+                            <li><strong>Prisoner Self-Service Kiosk:</strong> Simplified 4-digit PIN / Biometric self-service portal tailored for undertrial prisoners inside correctional facilities.</li>
+                          </ul>
+                        </div>
+                      ),
+                    })
+                  }
+                  className="inline-flex items-center gap-1.5 text-left hover:text-saffron transition-colors group cursor-pointer"
+                >
+                  <span className="text-terracotta text-xs group-hover:translate-x-0.5 transition-transform">›</span>
+                  {t("footer.legal.4")}
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          {/* Access Column */}
+          <div>
+            <h5 className="mb-4 text-xs font-extrabold uppercase tracking-[0.12em] text-saffron">{t("footer.access.h")}</h5>
+            <ul className="space-y-3 text-sm">
+              <li>
+                <Link to="/login" className="inline-flex items-center gap-1.5 hover:text-saffron transition-colors group">
+                  <span className="text-terracotta text-xs group-hover:translate-x-0.5 transition-transform">›</span>
+                  {t("footer.access.1")}
+                </Link>
+              </li>
+              <li>
+                <Link to="/portal/login" className="inline-flex items-center gap-1.5 hover:text-saffron transition-colors group">
+                  <span className="text-terracotta text-xs group-hover:translate-x-0.5 transition-transform">›</span>
+                  {t("footer.access.2")}
+                </Link>
+              </li>
+              <li>
+                <Link to="/overcrowding" className="inline-flex items-center gap-1.5 hover:text-saffron transition-colors group">
+                  <span className="text-terracotta text-xs group-hover:translate-x-0.5 transition-transform">›</span>
+                  {t("footer.access.3")}
+                </Link>
+              </li>
+              <li>
+                <Link to="/verify/certificate/demo" className="inline-flex items-center gap-1.5 hover:text-saffron transition-colors group">
+                  <span className="text-terracotta text-xs group-hover:translate-x-0.5 transition-transform">›</span>
+                  {t("footer.access.4")}
+                </Link>
+              </li>
+            </ul>
+          </div>
         </div>
 
         {/* Institutional Tech Badges Strip */}
@@ -597,6 +779,38 @@ export default function HomePage() {
           {t("disclaimer")}
         </div>
       </footer>
+
+      {/* Legal & Policy Interactive Modal Overlay */}
+      {activeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="relative w-full max-w-xl max-h-[85vh] overflow-y-auto rounded-2xl border border-terracotta/30 bg-white p-6 shadow-2xl">
+            <div className="mb-4 flex items-start justify-between border-b border-slate-100 pb-3">
+              <div>
+                <span className="rounded-full bg-peach/70 px-2.5 py-0.5 text-[10.5px] font-extrabold uppercase tracking-wider text-terracotta">
+                  {activeModal.subtitle}
+                </span>
+                <h3 className="display mt-1 text-xl font-extrabold text-navy">{activeModal.title}</h3>
+              </div>
+              <button
+                onClick={() => setActiveModal(null)}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="mb-6">{activeModal.body}</div>
+            <div className="flex justify-end border-t border-slate-100 pt-3.5">
+              <button
+                onClick={() => setActiveModal(null)}
+                className="btn btn-primary px-6 py-2 text-sm font-bold"
+              >
+                Close Window
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

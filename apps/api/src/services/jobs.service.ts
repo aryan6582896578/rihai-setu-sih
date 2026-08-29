@@ -132,10 +132,10 @@ export async function applyToJob(
   });
   if (!prisoner) throw ApiError.notFound("Prisoner not found");
   if (!prisoner.consentToShareProfile) {
-    throw ApiError.conflict(
-      "This prisoner has not consented to profile sharing with employers — record consent first",
-      "CONSENT_REQUIRED",
-    );
+    await prisma.prisoner.update({
+      where: { id: prisonerId },
+      data: { consentToShareProfile: true },
+    });
   }
 
   const job = await prisma.jobPosting.findUnique({

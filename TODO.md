@@ -188,6 +188,30 @@ scripts/_probe5.ps1 (removed post-run): all five checks above printed PASS-equiv
 
 ---
 
+## 2026-08-27 -- Prompt 15: In-Custody Production Tracking & Kara Bazaar Linkage
+
+Status: **COMPLETED**
+
+### Schema & Database
+- [x] `ProductionRecord` table created in `prisma/schema.prisma` (`prisonerId`, `trainingProgramId` nullable, `category`, `itemName`, `quantity`, `producedAt`, `saleValueEstimate`, `karaBazaarListingStatus` [not_listed|pending|listed], `karaBazaarListingUrl`, `recordedById`)
+- [x] `KaraBazaarListingStatus` enum added to Prisma schema & database synced via `npx prisma db push`
+- [x] Seed script updated in `prisma/seed.ts` to seed production logs with realistic categories & Kara Bazaar URLs
+
+### API Endpoints
+- [x] `GET /api/v1/prisoners/:id/production` — fetch prisoner production entries & category summary
+- [x] `POST /api/v1/prisoners/:id/production` — staff logs new in-custody production entry
+- [x] `PATCH /api/v1/production/:id` — staff updates Kara Bazaar listing status & product URL
+- [x] `GET /api/v1/jails/:jailId/production-summary` — jail overview aggregate count, value rollup & Kara Bazaar listing count
+- [x] `GET /api/v1/portal/production` — read-only "Things I've Made" for logged-in prisoner portal user
+
+### Frontend UI & Integrations
+- [x] Prisoner Profile (`PrisonProductionPanel.tsx`) — "Prison Industries" panel with output summary, category chips, production log table, Add Production modal & Edit Kara Bazaar Status modal
+- [x] Jail Overview Tab (`JailProductionSummaryCard.tsx`) — "In-Custody Production Output" stat card with quarterly items count, turnover valuation & Kara Bazaar listed count
+- [x] Prisoner Portal (`PortalProfilePage.tsx`) — "Things I've Made (Prison Industries)" read-only pride showcase list with listing badges & Kara Bazaar links
+- [x] Typecheck & Build: clean `npm run typecheck` across `@rihai/shared-types`, `apps/api`, `apps/web`
+
+---
+
 ## 2026-08-22 -- Session 6 (PAUSED): Notifications & Compliance Reporting (Prompt 6) -- PENDING
 
 Status: paused mid-build per user request. Resume from here next session.

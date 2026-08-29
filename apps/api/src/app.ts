@@ -28,6 +28,7 @@ import { courtJailRouter } from "./routes/court.routes.js";
 import { applicationCourtRouter } from "./routes/application-court.routes.js";
 import { adminRouter } from "./routes/admin.routes.js";
 import { portalRouter } from "./routes/portal.routes.js";
+import { productionRouter } from "./routes/production.routes.js";
 import { chatbotRouter, portalChatbotRouter } from "./routes/chatbot.routes.js";
 import {
   ngoRouter,
@@ -146,6 +147,7 @@ app.use("/api/v1/skills", skillsCatalogRouter);
 app.use("/api/v1/chat", chatbotRouter);
 app.use("/api/v1/portal/chat", portalChatbotRouter);
 app.use("/api/v1/portal", portalRouter);
+app.use("/api/v1", productionRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

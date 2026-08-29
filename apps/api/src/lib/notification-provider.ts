@@ -86,6 +86,139 @@ export class TwilioNotificationProvider implements NotificationProvider {
   }
 }
 
+/**
+ * Fast2SMS Provider — Best Free Trial & Low-Cost SMS provider for Indian Mobile Numbers (+91).
+ * Uses Fast2SMS Bulk V2 API.
+ */
+export class Fast2SMSNotificationProvider implements NotificationProvider {
+  async send(to: string, channel: NotificationChannel, message: string): Promise<NotificationSendResult> {
+    if (channel === "in_app") return { status: "logged" };
+
+    const rawPhone = to.replace(/[^\d]/g, "");
+    const numbers = rawPhone.length > 10 ? rawPhone.slice(-10) : rawPhone;
+
+    if (!config.FAST2SMS_API_KEY) {
+      return { status: "failed", providerError: "FAST2SMS_API_KEY is not configured" };
+    }
+
+    try {
+      const resp = await fetch("https://www.fast2sms.com/dev/bulkV2", {
+        method: "POST",
+        headers: {
+          authorization: config.FAST2SMS_API_KEY,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          route: "q",
+          message: message,
+          language: "english",
+          flash: 0,
+          numbers: numbers,
+        }),
+      });
+
+      if (!resp.ok) {
+        const text = await resp.text().catch(() => "");
+        logger.error(`[fast2sms] send failed (${resp.status}): ${text.slice(0, 200)}`);
+        return { status: "failed", providerError: `Fast2SMS HTTP ${resp.status}` };
+      }
+
+      logger.info(`[fast2sms] SMS sent to ${numbers}`);
+      return { status: "sent" };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      logger.error(`[fast2sms] send error: ${msg}`);
+      return { status: "failed", providerError: msg };
+    }
+  }
+}
+
+/**
+ * Textlocal Provider — Popular SMS Gateway with free trial credits.
+ */
+export class TextlocalNotificationProvider implements NotificationProvider {
+  async send(to: string, channel: NotificationChannel, message: string): Promise<NotificationSendResult> {
+    if (channel === "in_app") return { status: "logged" };
+
+    const rawPhone = to.replace(/[^\d]/g, "");
+    const number = rawPhone.length > 10 ? rawPhone.slice(-10) : rawPhone;
+
+    if (!config.TEXTLOCAL_API_KEY) {
+      return { status: "failed", providerError: "TEXTLOCAL_API_KEY is not configured" };
+    }
+
+    try {
+      const params = new URLSearchParams({
+        apikey: config.TEXTLOCAL_API_KEY,
+        numbers: `91${number}`,
+        message: message,
+        sender: "TXTLCL",
+      });
+
+      const resp = await fetch("https://api.textlocal.in/send/", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: params.toString(),
+      });
+
+      if (!resp.ok) {
+        const text = await resp.text().catch(() => "");
+        logger.error(`[textlocal] send failed (${resp.status}): ${text.slice(0, 200)}`);
+        return { status: "failed", providerError: `Textlocal HTTP ${resp.status}` };
+      }
+
+      logger.info(`[textlocal] SMS sent to ${number}`);
+      return { status: "sent" };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      logger.error(`[textlocal] send error: ${msg}`);
+      return { status: "failed", providerError: msg };
+    }
+  }
+}
+
+/**
+ * Telegram Bot Provider — 100% FREE Unlimited Custom Instant Push Messaging.
+ * No DLT, no trial limit, zero cost forever.
+ */
+export class TelegramNotificationProvider implements NotificationProvider {
+  async send(to: string, channel: NotificationChannel, message: string): Promise<NotificationSendResult> {
+    if (channel === "in_app") return { status: "logged" };
+
+    const token = config.TELEGRAM_BOT_TOKEN;
+    const chatId = config.TELEGRAM_CHAT_ID;
+
+    if (!token || !chatId) {
+      return { status: "failed", providerError: "TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID missing" };
+    }
+
+    try {
+      const resp = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: `🔔 *RIHAI SETU Notification*\n\n📱 *Recipient*: ${to}\n\n${message}`,
+          parse_mode: "Markdown",
+        }),
+      });
+
+      if (!resp.ok) {
+        const text = await resp.text().catch(() => "");
+        logger.error(`[telegram] send failed (${resp.status}): ${text.slice(0, 200)}`);
+        return { status: "failed", providerError: `Telegram HTTP ${resp.status}` };
+      }
+
+      logger.info(`[telegram] Instant message delivered to chat ${chatId}`);
+      return { status: "sent" };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      logger.error(`[telegram] send error: ${msg}`);
+      return { status: "failed", providerError: msg };
+    }
+  }
+}
+
 /** All four credentials present => real sends; otherwise the logging fallback. */
 export function twilioConfigured(): boolean {
   return Boolean(
@@ -95,10 +228,27 @@ export function twilioConfigured(): boolean {
   );
 }
 
-// TODO(SMS): wire Twilio delivery status callbacks (MessageStatus webhook) so a
-// failed WhatsApp handoff can trigger the SMS fallback after the fact instead of
-// only when the REST call itself errors.
+function selectProvider(): NotificationProvider {
+  if (config.TELEGRAM_BOT_TOKEN && config.TELEGRAM_CHAT_ID) {
+    logger.info("[notifications] Using 100% Free Telegram Bot provider");
+    return new TelegramNotificationProvider();
+  }
+  if (config.FAST2SMS_API_KEY) {
+    logger.info("[notifications] Using Fast2SMS provider for custom SMS");
+    return new Fast2SMSNotificationProvider();
+  }
+  if (config.TEXTLOCAL_API_KEY) {
+    logger.info("[notifications] Using Textlocal provider for custom SMS");
+    return new TextlocalNotificationProvider();
+  }
+  if (twilioConfigured()) {
+    logger.info("[notifications] Using Twilio provider");
+    return new TwilioNotificationProvider();
+  }
+  logger.info("[notifications] Using Logging fallback provider");
+  return new LoggingNotificationProvider();
+}
 
-export const notificationProvider: NotificationProvider = twilioConfigured()
-  ? new TwilioNotificationProvider()
-  : new LoggingNotificationProvider();
+export const notificationProvider: NotificationProvider = selectProvider();
+
+

@@ -22,7 +22,6 @@ import OvercrowdingPage from "./features/overcrowding/OvercrowdingPage";
 import RollupPage from "./features/overcrowding/RollupPage";
 import NotificationsPage from "./features/notifications/NotificationsPage";
 import ComplianceReportPage from "./features/compliance/ComplianceReportPage";
-import DataIngestionPage from "./features/admin/DataIngestionPage";
 import CertificateVerificationPage from "./features/verify/CertificateVerificationPage";
 
 export default function App() {
@@ -59,7 +58,6 @@ export default function App() {
           <Route path="/jails/:jailId/compliance-report" element={<ComplianceReportPage />} />
           <Route path="/compliance-report" element={<ComplianceReportPage />} />
           <Route path="/ngo" element={<NgoDashboardPage />} />
-          <Route path="/admin/data-ingestion" element={<DataIngestionPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

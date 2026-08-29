@@ -68,161 +68,206 @@ export async function buildCertificateHtml(enrollmentId: string): Promise<string
 <meta charset="utf-8">
 <title>Official Skill Passport & Certificate - ${prisonerName}</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
   * { box-sizing: border-box; }
   body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #F8FAFC;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #0F172A;
     color: #1E293B;
     margin: 0;
-    padding: 32px 16px;
+    padding: 40px 20px;
     display: flex;
     justify-content: center;
+    align-items: center;
+    min-height: 100vh;
   }
   .cert-card {
     background: #FFFFFF;
-    border: 3px double #D9531E;
-    border-radius: 16px;
-    max-width: 820px;
+    border: 12px solid #1E293B;
+    outline: 3px solid #F5A623;
+    outline-offset: -8px;
+    border-radius: 20px;
+    max-width: 880px;
     width: 100%;
-    padding: 48px 56px;
+    padding: 50px 60px;
     position: relative;
-    box-shadow: 0 12px 36px rgba(30, 41, 59, 0.08);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     overflow: hidden;
   }
-  .cert-card::before {
-    content: '';
+  /* Corner Ornaments */
+  .corner-gold {
     position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 8px;
-    background: linear-gradient(90deg, #D9531E 0%, #F5A623 50%, #D9531E 100%);
+    width: 40px;
+    height: 40px;
+    border: 3px solid #F5A623;
   }
+  .corner-tl { top: 16px; left: 16px; border-right: none; border-bottom: none; }
+  .corner-tr { top: 16px; right: 16px; border-left: none; border-bottom: none; }
+  .corner-bl { bottom: 16px; left: 16px; border-right: none; border-top: none; }
+  .corner-br { bottom: 16px; right: 16px; border-left: none; border-top: none; }
+
+  /* Background Watermark Logo */
+  .cert-watermark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 260px;
+    font-weight: 900;
+    color: rgba(217, 83, 30, 0.03);
+    user-select: none;
+    pointer-events: none;
+    font-family: 'Cinzel', serif;
+    letter-spacing: -10px;
+  }
+
   .header-brand {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 2px solid #EEE4D6;
-    padding-bottom: 20px;
+    border-bottom: 2px solid #E2E8F0;
+    padding-bottom: 24px;
     margin-bottom: 32px;
   }
   .logo-box {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
   }
-  .logo-icon {
-    background: linear-gradient(135deg, #D9531E, #F5A623);
+  .logo-badge {
+    background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+    border: 2px solid #D9531E;
     color: #FFFFFF;
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 800;
-    font-size: 18px;
-    letter-spacing: -0.5px;
+    font-weight: 900;
+    font-size: 20px;
+    box-shadow: 0 4px 10px rgba(217, 83, 30, 0.25);
   }
   .logo-title {
-    font-size: 20px;
+    font-family: 'Cinzel', serif;
+    font-size: 24px;
     font-weight: 800;
     color: #1E293B;
-    letter-spacing: -0.5px;
+    letter-spacing: 0.05em;
     line-height: 1.1;
   }
   .logo-sub {
-    font-size: 10.5px;
+    font-size: 10px;
     text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: #64748B;
-    font-weight: 600;
+    letter-spacing: 0.18em;
+    color: #D9531E;
+    font-weight: 800;
+    margin-top: 2px;
   }
   .cert-code-badge {
     background: #FFF6EC;
-    border: 1px solid #EEE4D6;
-    color: #D9531E;
-    padding: 6px 14px;
-    border-radius: 20px;
+    border: 1.5px solid #FDBA74;
+    color: #C2410C;
+    padding: 8px 16px;
+    border-radius: 30px;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 800;
     font-family: monospace;
+    letter-spacing: 0.05em;
   }
+
   .cert-body {
     text-align: center;
+    position: relative;
+    z-index: 2;
   }
   .cert-tag {
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.25em;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.3em;
     text-transform: uppercase;
     color: #D9531E;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
   }
   h1 {
-    font-size: 32px;
+    font-family: 'Cinzel', serif;
+    font-size: 36px;
     font-weight: 800;
-    color: #1E293B;
-    margin: 0 0 16px 0;
-    letter-spacing: -0.5px;
+    color: #0F172A;
+    margin: 0 0 14px 0;
+    letter-spacing: 0.02em;
   }
   .certify-text {
     font-size: 14px;
     color: #64748B;
+    font-weight: 500;
     margin-bottom: 8px;
   }
   .recipient-name {
-    font-size: 30px;
+    font-family: 'Cinzel', serif;
+    font-size: 34px;
     font-weight: 800;
     color: #D9531E;
-    margin: 8px 0;
-    letter-spacing: -0.5px;
+    margin: 10px 0;
+    letter-spacing: 0.02em;
+    text-decoration: underline;
+    text-decoration-color: #FDBA74;
+    text-underline-offset: 8px;
   }
   .recipient-meta {
-    font-size: 13.5px;
-    color: #475569;
-    font-weight: 500;
+    font-size: 13px;
+    color: #334155;
+    font-weight: 600;
+    margin-top: 14px;
     margin-bottom: 24px;
   }
   .divider-gold {
-    width: 140px;
+    width: 180px;
     height: 3px;
     background: linear-gradient(90deg, transparent, #F5A623, transparent);
-    margin: 20px auto;
+    margin: 22px auto;
   }
   .course-box {
-    background: #FFF6EC;
-    border: 1px solid #EEE4D6;
-    border-radius: 12px;
-    padding: 20px;
-    margin: 20px 0;
+    background: linear-gradient(135deg, #FFF6EC 0%, #FFEDD5 100%);
+    border: 1.5px solid #FDBA74;
+    border-radius: 14px;
+    padding: 22px;
+    margin: 22px auto;
     display: inline-block;
     width: 100%;
-    max-width: 580px;
+    max-width: 600px;
+    box-shadow: 0 4px 12px rgba(217, 83, 30, 0.06);
   }
   .course-name {
     font-size: 22px;
     font-weight: 800;
-    color: #1E293B;
-    margin-bottom: 4px;
+    color: #0F172A;
+    margin-bottom: 6px;
   }
   .course-cat {
-    font-size: 13px;
-    font-weight: 600;
-    color: #D9531E;
-    background: rgba(217, 83, 30, 0.1);
+    font-size: 12px;
+    font-weight: 800;
+    color: #C2410C;
+    background: #FFFFFF;
+    border: 1px solid #FDBA74;
     display: inline-block;
-    padding: 3px 12px;
-    border-radius: 12px;
+    padding: 4px 14px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
   }
+  
   .verification-footer {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 24px;
-    border-top: 2px dashed #EEE4D6;
-    padding-top: 28px;
-    margin-top: 36px;
+    border-top: 2px dashed #E2E8F0;
+    padding-top: 24px;
+    margin-top: 32px;
     text-align: left;
+    position: relative;
+    z-index: 2;
   }
   .qr-container {
     display: flex;
@@ -230,70 +275,81 @@ export async function buildCertificateHtml(enrollmentId: string): Promise<string
     gap: 16px;
   }
   .qr-container img {
-    border: 2px solid #EEE4D6;
+    border: 2px solid #CBD5E1;
     border-radius: 10px;
     padding: 6px;
     background: #FFFFFF;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
   }
   .qr-info h4 {
     margin: 0 0 4px 0;
     font-size: 13px;
-    font-weight: 700;
-    color: #1E293B;
+    font-weight: 800;
+    color: #0F172A;
   }
   .qr-info p {
     margin: 0 0 6px 0;
-    font-size: 11.5px;
+    font-size: 11px;
     color: #64748B;
     line-height: 1.4;
   }
   .verify-link {
-    font-size: 11px;
+    font-size: 10.5px;
     color: #D9531E;
-    font-weight: 600;
+    font-weight: 700;
     word-break: break-all;
     text-decoration: none;
   }
   .seal-badge {
-    border: 2px solid #10B981;
+    border: 2px solid #059669;
     background: #ECFDF5;
     color: #065F46;
-    padding: 12px 18px;
-    border-radius: 12px;
+    padding: 14px 20px;
+    border-radius: 14px;
     text-align: center;
-    min-width: 170px;
+    min-width: 180px;
+    box-shadow: 0 4px 6px rgba(5, 150, 105, 0.1);
   }
   .seal-title {
     font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.1em;
+    font-weight: 900;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     display: block;
     margin-bottom: 2px;
   }
   .seal-sub {
-    font-size: 10px;
-    font-weight: 600;
+    font-size: 9.5px;
+    font-weight: 700;
   }
 </style>
 </head>
 <body>
   <div class="cert-card">
+    <!-- Corner Ornaments -->
+    <div class="corner-gold corner-tl"></div>
+    <div class="corner-gold corner-tr"></div>
+    <div class="corner-gold corner-bl"></div>
+    <div class="corner-gold corner-br"></div>
+
+    <!-- Watermark Logo -->
+    <div class="cert-watermark">RS</div>
+
     <div class="header-brand">
       <div class="logo-box">
-        <div class="logo-icon">RS</div>
+        <div class="logo-badge">RS</div>
         <div>
           <div class="logo-title">RIHAI SETU</div>
-          <div class="logo-sub">Rehabilitation &amp; Skill Passport</div>
+          <div class="logo-sub">Official Skill Passport &amp; Rehabilitation Registry</div>
         </div>
       </div>
       <div class="cert-code-badge">${certCode}</div>
     </div>
 
     <div class="cert-body">
-      <div class="cert-tag">SKILL PASSPORT &middot; OFFICIAL RECORD</div>
+      <div class="cert-tag">PRISON INDUSTRIES &middot; OFFICIAL VOCATIONAL CERTIFICATE</div>
       <h1>Certificate of Completion</h1>
-      <p class="certify-text">This document certifies that</p>
+      <p class="certify-text">This official state document hereby certifies that</p>
       <div class="recipient-name">${prisonerName}</div>
       <div class="recipient-meta">
         Prisoner Reg. No: <strong>${e.prisoner.prisonerRegNo}</strong> &nbsp;&middot;&nbsp; 
@@ -302,31 +358,31 @@ export async function buildCertificateHtml(enrollmentId: string): Promise<string
 
       <div class="divider-gold"></div>
 
-      <p class="certify-text">has successfully completed the certified vocational skill program</p>
+      <p class="certify-text">has successfully completed the verified in-custody trade training course</p>
       
       <div class="course-box">
         <div class="course-name">${e.program.name}</div>
         <div class="course-cat">${e.program.category}</div>
       </div>
 
-      <p style="font-size: 13px; color: #64748B; margin-top: 12px;">
-        Issued on <strong>${completedOn}</strong> &middot; Verified by Jail Administration
+      <p style="font-size: 12.5px; color: #64748B; margin-top: 14px; font-weight: 600;">
+        Issued on <strong>${completedOn}</strong> &middot; Authenticated by Jail Vocational Training Directorate
       </p>
     </div>
 
     <div class="verification-footer">
       <div class="qr-container">
-        <img src="${qrDataUrl}" alt="Verification QR Code" width="120" height="120">
+        <img src="${qrDataUrl}" alt="Verification QR Code" width="110" height="110">
         <div class="qr-info">
-          <h4>Scan to Verify Authenticity</h4>
-          <p>Scan with any camera to validate official authenticity on the public RIHAI SETU portal.</p>
+          <h4>Public QR Verification</h4>
+          <p>Scan with any mobile camera to verify digital authenticity on Rihai-Setu portal.</p>
           <a href="${publicVerifyUrl}" target="_blank" class="verify-link">${publicVerifyUrl}</a>
         </div>
       </div>
 
       <div class="seal-badge">
         <span class="seal-title">&check; VERIFIED RECORD</span>
-        <span class="seal-sub">AUTHENTICATED ON-CHAIN</span>
+        <span class="seal-sub">AUTHENTICATED DIGITAL CERTIFICATE</span>
       </div>
     </div>
   </div>

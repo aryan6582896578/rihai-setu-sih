@@ -46,6 +46,12 @@ enum EnrollmentStatus {
   completed
 }
 
+enum KaraBazaarListingStatus {
+  not_listed
+  pending
+  listed
+}
+
 // Not named in master context; required for undertrial vs convict counts.
 enum CaseStatus {
   undertrial
@@ -77,6 +83,7 @@ model User {
   legalAidAssignments  LegalAidAssignment[] @relation("LegalAidAssignments")
   refreshSessions      RefreshSession[]
   jobPostings          JobPosting[]         @relation("NgoJobPostings")
+  recordedProduction   ProductionRecord[]   @relation("RecordedProduction")
 
   @@map("User")
 }
@@ -178,6 +185,7 @@ model Prisoner {
   notes         Note[]
   dataRequests  DataRequest[]
   jobApplications JobApplication[] @relation("JobApplications")
+  productionRecords ProductionRecord[]
 
   @@index([jailId])
   @@index([nameIdx])
@@ -284,7 +292,8 @@ model TrainingProgram {
   name     String @unique
   category String
 
-  enrollments Enrollment[]
+  enrollments       Enrollment[]
+  productionRecords ProductionRecord[]
 
   @@map("TrainingProgram")
 }
@@ -536,4 +545,29 @@ model JobApplication {
   @@index([prisonerId])
   @@index([jobId])
   @@map("JobApplication")
+}
+
+model ProductionRecord {
+  id                      String                  @id @default(cuid())
+  prisonerId              String                  @map("prisoner_id")
+  trainingProgramId       String?                 @map("training_program_id")
+  category                String
+  itemName                String                  @map("item_name")
+  quantity                Int                     @default(1)
+  producedAt              DateTime                @default(now()) @map("produced_at")
+  saleValueEstimate       Float?                  @map("sale_value_estimate")
+  karaBazaarListingStatus KaraBazaarListingStatus @default(not_listed) @map("kara_bazaar_listing_status")
+  karaBazaarListingUrl    String?                 @map("kara_bazaar_listing_url")
+  recordedById            String                  @map("recorded_by_id")
+  createdAt               DateTime                @default(now()) @map("created_at")
+  updatedAt               DateTime                @default(now()) @updatedAt @map("updated_at")
+
+  prisoner        Prisoner         @relation(fields: [prisonerId], references: [id], onDelete: Cascade)
+  trainingProgram TrainingProgram? @relation(fields: [trainingProgramId], references: [id], onDelete: SetNull)
+  recordedBy      User             @relation("RecordedProduction", fields: [recordedById], references: [id])
+
+  @@index([prisonerId])
+  @@index([trainingProgramId])
+  @@index([recordedById])
+  @@map("ProductionRecord")
 }

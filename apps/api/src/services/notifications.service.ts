@@ -1,4 +1,4 @@
-﻿import { ApplicationStage, Role } from "@rihai/shared-types";
+import { ApplicationStage, Role } from "@rihai/shared-types";
 import { prisma } from "../lib/prisma.js";
 import { logger } from "../lib/logger.js";
 import { notificationProvider } from "../lib/notification-provider.js";
@@ -53,10 +53,17 @@ export async function notifyStageChange(
   });
   if (!app) return;
 
-  // Prompt 11: family messages are templated per event, not generic. Only these
-  // stages carry a family-facing event; hearing/order/surety hooks fire from the
-  // court-sync and surety flows where their specifics (date, outcome, amount)
-  // are known.
+  const pii = piiPublic(app.prisoner);
+  const prisonerName = pii.fullName || "Prisoner";
+  const stageFormatted = newStage.toUpperCase().replaceAll("_", " ");
+
+  // Direct case progression notification to Telegram / Notification Provider
+  void notificationProvider.send(
+    prisonerName,
+    "sms",
+    `⚖️ *Case Progressed / Stage Updated*\n\n*Prisoner*: ${prisonerName} (Reg: ${app.prisoner.prisonerRegNo})\n*New Stage*: ${stageFormatted}\n*Application Type*: ${app.type.toUpperCase()}`
+  ).catch((err) => logger.error("[notify] stage change notification failed", err));
+
   const stageEvent: Partial<Record<ApplicationStage, FamilyEventKey>> = {
     [ApplicationStage.Drafted]: "application_drafted",
     [ApplicationStage.Filed]: "application_filed",
@@ -72,7 +79,6 @@ export async function notifyStageChange(
   }
 
   if (app.legalAidAssignment) {
-    const pii = piiPublic(app.prisoner);
     const stageText = newStage.replaceAll("_", " ");
     await logAndSend({
       recipientType: "dlsa_lawyer",
@@ -108,12 +114,6 @@ export async function notifyStallEscalated(
   }
 }
 
-/**
- * NGO moved a candidate through the hiring pipeline (shortlisted/hired/rejected).
- * Jail staff of the prisoner's facility get an in-app row. The family-facing
- * message goes out separately as a templated family event (see
- * family-notifications.service, fired from jobs.service.updateApplicationStatus).
- */
 export async function notifyJobApplicationStatus(opts: {
   jailId: string;
   applicationId: string;
@@ -188,5 +188,3 @@ export async function markNotificationRead(notificationId: string, userId: strin
     data: { isRead: true },
   });
 }
-
-

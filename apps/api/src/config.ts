@@ -25,6 +25,12 @@ const envSchema = z.object({
   TWILIO_AUTH_TOKEN: z.string().trim().default(""),
   TWILIO_SMS_FROM: z.string().trim().default(""),
   TWILIO_WHATSAPP_FROM: z.string().trim().default(""),
+  // Free / Cheap Indian SMS alternatives (Fast2SMS / Textlocal)
+  FAST2SMS_API_KEY: z.string().trim().default(""),
+  TEXTLOCAL_API_KEY: z.string().trim().default(""),
+  // 100% Free Telegram Bot Messaging Option (Zero cost, no recharge ever)
+  TELEGRAM_BOT_TOKEN: z.string().trim().default(""),
+  TELEGRAM_CHAT_ID: z.string().trim().default(""),
 });
 
 const parsed = envSchema.safeParse(process.env);
